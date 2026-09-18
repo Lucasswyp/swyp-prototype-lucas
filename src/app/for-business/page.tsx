@@ -39,9 +39,9 @@ export default function ForBusinessPage() {
             Swyp beloont consumenten voor het bekijken van jouw advertenties — en geeft jou het inzicht om precies
             te zien wat werkt.
           </p>
-          <Link href="/business">
+          <Link href="/business/signup">
             <Button size="lg" className="gap-2">
-              Bekijk demo dashboard <ArrowRight size={18} />
+              Meld je bedrijf aan <ArrowRight size={18} />
             </Button>
           </Link>
         </div>
@@ -88,10 +88,10 @@ export default function ForBusinessPage() {
       <section className="px-4 sm:px-6 py-20">
         <div className="max-w-3xl mx-auto text-center rounded-3xl border border-white/10 bg-gradient-to-br from-violet/20 to-magenta/10 p-10 sm:p-14">
           <h2 className="font-heading text-3xl font-bold mb-4">Klaar om te adverteren op Swyp?</h2>
-          <p className="text-white/60 mb-8">Bekijk het volledige business-dashboard, met jouw eigen demo-campagnes.</p>
-          <Link href="/business">
+          <p className="text-white/60 mb-8">Maak een gratis account en zet je eerste campagne live.</p>
+          <Link href="/business/signup">
             <Button size="lg" className="gap-2">
-              Naar dashboard <ArrowRight size={18} />
+              Meld je bedrijf aan <ArrowRight size={18} />
             </Button>
           </Link>
         </div>

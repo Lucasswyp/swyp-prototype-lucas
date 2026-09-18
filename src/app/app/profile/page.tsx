@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Heart,
   Ticket,
@@ -20,6 +22,7 @@ import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { formatTokens, formatEuro } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import { createClient } from "@/lib/supabase/client";
 
 const menu = [
   { icon: Heart, label: "Mijn interesses", href: "/app/interests" },
@@ -34,6 +37,8 @@ const menu = [
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const [name, setName] = useState("Swyp-gebruiker");
   const tokenBalance = useAppStore((s) => s.tokenBalance);
   const xp = useAppStore((s) => s.xp);
   const level = useAppStore((s) => s.level());
@@ -44,6 +49,24 @@ export default function ProfilePage() {
   const resetDemo = useAppStore((s) => s.resetDemo);
   const followedCompanyIds = useAppStore((s) => s.followedCompanyIds);
   const savedProductIds = useAppStore((s) => s.savedProductIds);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("consumers")
+      .select("name")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.name) setName(data.name);
+      });
+  }, []);
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/get-started");
+    router.refresh();
+  }
 
   const xpIntoLevel = xp % 1000;
   const totalSaved = walletHistory
@@ -57,10 +80,10 @@ export default function ProfilePage() {
       <div className="px-4">
         <Card className="p-5 mb-4 flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet to-magenta flex items-center justify-center font-heading text-xl font-extrabold shrink-0">
-            L
+            {name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-heading font-bold text-lg truncate">Lucas</p>
+            <p className="font-heading font-bold text-lg truncate">{name}</p>
             <p className="text-xs text-white/40 mb-2">Swyp Level {level}</p>
             <ProgressBar value={xpIntoLevel} max={1000} />
             <p className="text-[11px] text-white/35 mt-1">{xpIntoLevel} / 1.000 XP</p>
@@ -144,7 +167,10 @@ export default function ProfilePage() {
         >
           <RotateCcw size={18} /> Demo Mode: reset voortgang
         </button>
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/5 text-sm text-red-300">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/5 text-sm text-red-300"
+        >
           <LogOut size={18} /> Uitloggen
         </button>
       </div>

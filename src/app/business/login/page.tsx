@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -66,6 +67,14 @@ export default function BusinessLoginPage() {
             </Button>
           </form>
         </div>
+        <p className="text-center text-xs text-white/30 mt-6 flex flex-col gap-1.5">
+          <Link href="/business/signup" className="hover:text-white/60">
+            Nog geen account? Meld je bedrijf aan
+          </Link>
+          <Link href="/get-started" className="hover:text-white/60">
+            ← Ander pad kiezen
+          </Link>
+        </p>
       </div>
     </div>
   );

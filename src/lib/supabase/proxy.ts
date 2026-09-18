@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PUBLIC_BUSINESS_AUTH_ROUTES = ["/business/login", "/business/signup"];
+const PUBLIC_USER_AUTH_ROUTES = ["/get-started", "/get-started/user"];
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -28,7 +31,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isBusinessRoute = path.startsWith("/business") && !path.startsWith("/business/login");
+  const isBusinessAuthRoute = PUBLIC_BUSINESS_AUTH_ROUTES.includes(path);
+  const isUserAuthRoute = PUBLIC_USER_AUTH_ROUTES.includes(path);
+  const isBusinessRoute = path.startsWith("/business") && !isBusinessAuthRoute;
+  const isAppRoute = path.startsWith("/app");
 
   if (isBusinessRoute && !user) {
     const url = request.nextUrl.clone();
@@ -36,9 +42,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (path === "/business/login" && user) {
+  if (isAppRoute && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/business";
+    url.pathname = "/get-started/user";
+    return NextResponse.redirect(url);
+  }
+
+  if ((isBusinessAuthRoute || isUserAuthRoute) && user) {
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    const url = request.nextUrl.clone();
+    url.pathname = business ? "/business" : "/app";
     return NextResponse.redirect(url);
   }
 

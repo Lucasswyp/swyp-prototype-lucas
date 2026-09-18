@@ -42,7 +42,7 @@ export default function LandingPage() {
             <Link href="/for-business" className="hidden sm:block">
               <Button variant="secondary" size="sm">Voor bedrijven</Button>
             </Link>
-            <Link href="/app">
+            <Link href="/get-started">
               <Button size="sm">Download Swyp</Button>
             </Link>
           </div>
@@ -63,7 +63,7 @@ export default function LandingPage() {
               Ontdek merken, producten en ervaringen die bij je passen — en word beloond voor je aandacht.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/app">
+              <Link href="/get-started">
                 <Button size="lg" className="gap-2">
                   Download Swyp <ArrowRight size={18} />
                 </Button>
@@ -147,7 +147,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto text-center rounded-3xl border border-white/10 bg-gradient-to-br from-violet/20 to-magenta/10 p-10 sm:p-14">
           <h2 className="font-heading text-3xl font-bold mb-4">Klaar om te swipen?</h2>
           <p className="text-white/60 mb-8">Start vandaag nog en verdien je eerste Tokens binnen 5 minuten.</p>
-          <Link href="/app">
+          <Link href="/get-started">
             <Button size="lg" className="gap-2">
               Download Swyp <ArrowRight size={18} />
             </Button>

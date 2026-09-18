@@ -1,156 +1,102 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { FeedCard } from "@/components/consumer/FeedCard";
 import { FeedTabs } from "@/components/consumer/FeedTabs";
-import { Chip } from "@/components/ui/Chip";
-import { ProductCard } from "@/components/consumer/ProductCard";
+import { TokenBadge } from "@/components/ui/TokenBadge";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
-import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
-import type { Category } from "@/types";
 
-const filters: (Category | "Trending" | "Voor jou" | "Dichtbij" | "Experiences")[] = [
-  "Trending",
-  "Voor jou",
-  "Dichtbij",
-  "Fashion",
-  "Food",
-  "Tech",
-  "Travel",
-  "Fitness",
-  "Events",
-  "Beauty",
-  "Experiences",
-];
-
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-7">
-      <div className="px-4 mb-3">
-        <h2 className="font-heading font-bold text-base">{title}</h2>
-        {subtitle && <p className="text-xs text-white/40 mt-0.5">{subtitle}</p>}
-      </div>
-      <div className="flex gap-3 overflow-x-auto no-scrollbar px-4">{children}</div>
-    </section>
-  );
-}
-
+// Discover is a second swipeable feed, distinct from For You's interest
+// ranking: it surfaces ads this device hasn't watched any of yet, so it
+// stays a way to stumble onto something new rather than re-ranking the same
+// pool. Once everything's been seen at least once, it falls back to the
+// full catalog so the feed never runs dry.
 export default function DiscoverPage() {
-  const [active, setActive] = useState<(typeof filters)[number]>("Trending");
-  const interests = useAppStore((s) => s.interests);
-  const savedProductIds = useAppStore((s) => s.savedProductIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const { requireAuth } = useConsumerAuth();
-  const { products, companies } = useData();
-  const getCompany = (id: string) => companies.find((c) => c.id === id);
+  const adWatchProgress = useAppStore((s) => s.adWatchProgress);
+  const { ads, companies, products, loading } = useData();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const filtered = useMemo(() => {
-    if (active === "Trending" || active === "Dichtbij" || active === "Experiences") return products;
-    if (active === "Voor jou") return products.filter((p) => interests.includes(p.category));
-    return products.filter((p) => p.category === active);
-  }, [active, interests, products]);
+  const orderedAds = useMemo(() => {
+    const unseen = ads.filter((a) => !adWatchProgress[a.id]);
+    const seen = ads.filter((a) => adWatchProgress[a.id]);
+    return [...unseen, ...seen];
+  }, [ads, adWatchProgress]);
 
-  const trending = [...filtered].slice().reverse();
-  const nearYou = filtered.slice(2).concat(filtered.slice(0, 2));
-  const deals = filtered.filter((p) => p.oldPrice);
-  const almostGone = filtered.slice(0, 5);
-  const forYou = filtered.filter((p) => interests.includes(p.category));
+  function handleScroll() {
+    const el = containerRef.current;
+    if (!el) return;
+    const index = Math.round(el.scrollTop / el.clientHeight);
+    if (index !== activeIndex) setActiveIndex(index);
+  }
+
+  function scrollToIndex(index: number) {
+    const el = containerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: index * el.clientHeight, behavior: "smooth" });
+  }
+
+  function skip(index: number) {
+    if (index < orderedAds.length - 1) {
+      scrollToIndex(index + 1);
+    }
+  }
+
+  const tokenBalance = useAppStore((s) => s.tokenBalance);
+
+  if (loading) {
+    // The branded SwypSplash in the layout covers this — nothing to render.
+    return null;
+  }
+
+  if (orderedAds.length === 0) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center text-center px-8 text-white/50 text-sm gap-2">
+        <p>Nog geen advertenties. Zodra een bedrijf een campagne publiceert, verschijnt die hier.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-full pb-28">
-      <header className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-indigo/85 backdrop-blur-xl border-b border-white/5">
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+    >
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 flex items-center justify-between px-4">
         <FeedTabs active="discover" />
-        <button aria-label="Meldingen" className="ml-auto rounded-full p-1.5 hover:bg-white/10">
-          <Bell size={20} />
-        </button>
-      </header>
-      <div className="px-4 pb-1">
-        <Link
-          href="/app/search"
-          className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white/40"
-        >
-          <Search size={16} /> Zoek merken, producten, deals...
-        </Link>
+        <div className="pointer-events-auto flex items-center gap-2">
+          <Link
+            href="/app/search"
+            aria-label="Zoeken"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/35 backdrop-blur border border-white/20"
+          >
+            <Search size={16} />
+          </Link>
+          <Link href="/app/wallet">
+            <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
+          </Link>
+        </div>
       </div>
-
-      <div className="flex gap-2 overflow-x-auto no-scrollbar px-4 py-4">
-        {filters.map((f) => (
-          <Chip key={f} active={active === f} onClick={() => setActive(f)}>
-            {f}
-          </Chip>
-        ))}
-      </div>
-
-      <Section title="Trending op Swyp" subtitle="Meest bekeken deze week">
-        {trending.slice(0, 8).map((p) => (
-          <ProductCard
-            key={p.id}
-            product={p}
-            company={getCompany(p.companyId)}
-            className="w-[150px] shrink-0"
-            saved={!!savedProductIds[p.id]}
-            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
-          />
-        ))}
-      </Section>
-
-      {forYou.length > 0 && (
-        <Section title="Speciaal voor jou" subtitle="Op basis van je interesses">
-          {forYou.slice(0, 8).map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              company={getCompany(p.companyId)}
-              className="w-[150px] shrink-0"
-              saved={!!savedProductIds[p.id]}
-              onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
+      {orderedAds.map((ad, i) => {
+        const company = companies.find((c) => c.id === ad.companyId);
+        const product = products.find((p) => p.id === ad.productId);
+        if (!company || !product) return null;
+        return (
+          <div key={ad.id} className="h-full w-full snap-start">
+            <FeedCard
+              ad={ad}
+              company={company}
+              product={product}
+              isActive={i === activeIndex}
+              onSkip={() => skip(i)}
             />
-          ))}
-        </Section>
-      )}
-
-      <Section title="Populair bij jou in de buurt" subtitle="Amsterdam en omgeving">
-        {nearYou.slice(0, 8).map((p) => (
-          <ProductCard
-            key={p.id}
-            product={p}
-            company={getCompany(p.companyId)}
-            className="w-[150px] shrink-0"
-            saved={!!savedProductIds[p.id]}
-            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
-          />
-        ))}
-      </Section>
-
-      {deals.length > 0 && (
-        <Section title="Nieuwe deals" subtitle="Tijdelijk extra korting">
-          {deals.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              company={getCompany(p.companyId)}
-              className="w-[150px] shrink-0"
-              saved={!!savedProductIds[p.id]}
-              onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
-            />
-          ))}
-        </Section>
-      )}
-
-      <Section title="Bijna uitverkocht" subtitle="Wees er snel bij">
-        {almostGone.map((p) => (
-          <ProductCard
-            key={p.id}
-            product={p}
-            company={getCompany(p.companyId)}
-            className="w-[150px] shrink-0"
-            saved={!!savedProductIds[p.id]}
-            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
-          />
-        ))}
-      </Section>
+          </div>
+        );
+      })}
     </div>
   );
 }

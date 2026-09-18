@@ -23,11 +23,13 @@ interface FeedCardProps {
 
 export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const progressTrackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [floatingReward, setFloatingReward] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [watchPct, setWatchPct] = useState(0);
+  const [scrubbing, setScrubbing] = useState(false);
 
   const x = useMotionValue(0);
 
@@ -97,6 +99,34 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
     }
   }
 
+  const seekFromClientX = useCallback((clientX: number) => {
+    const track = progressTrackRef.current;
+    const video = videoRef.current;
+    if (!track || !video || !video.duration) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    video.currentTime = ratio * video.duration;
+    setWatchPct(ratio * 100);
+  }, []);
+
+  function handleScrubStart(e: React.PointerEvent) {
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setScrubbing(true);
+    seekFromClientX(e.clientX);
+  }
+
+  function handleScrubMove(e: React.PointerEvent) {
+    if (!scrubbing) return;
+    e.stopPropagation();
+    seekFromClientX(e.clientX);
+  }
+
+  function handleScrubEnd(e: React.PointerEvent) {
+    e.stopPropagation();
+    setScrubbing(false);
+  }
+
   function handleTap() {
     setPaused((p) => !p);
     setShowPauseIcon(true);
@@ -164,12 +194,33 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
 
-      {/* watch progress */}
-      <div className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] left-3 right-3 h-1 rounded-full bg-white/20 overflow-hidden">
+      {/* watch progress — draggable to seek */}
+      <div
+        className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] left-3 right-3 z-20 flex h-6 -translate-y-2.5 items-center touch-none"
+        onPointerDown={handleScrubStart}
+        onPointerMove={handleScrubMove}
+        onPointerUp={handleScrubEnd}
+        onPointerCancel={handleScrubEnd}
+      >
         <div
-          className="h-full bg-white transition-[width] duration-150"
-          style={{ width: `${Math.min(100, watchPct)}%` }}
-        />
+          ref={progressTrackRef}
+          className={cn(
+            "relative w-full rounded-full bg-white/20 overflow-visible transition-[height]",
+            scrubbing ? "h-1.5" : "h-1"
+          )}
+        >
+          <div
+            className="h-full rounded-full bg-white transition-[width] duration-150"
+            style={{ width: `${Math.min(100, watchPct)}%` }}
+          />
+          <div
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(0,0,0,0.4)] transition-transform",
+              scrubbing ? "h-4 w-4 scale-110" : "h-2.5 w-2.5"
+            )}
+            style={{ left: `${Math.min(100, watchPct)}%` }}
+          />
+        </div>
       </div>
 
       <AnimatePresence>

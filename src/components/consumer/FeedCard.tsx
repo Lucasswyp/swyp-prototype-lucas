@@ -165,7 +165,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
 
       {/* watch progress */}
-      <div className="absolute top-2 left-3 right-3 h-1 rounded-full bg-white/20 overflow-hidden">
+      <div className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] left-3 right-3 h-1 rounded-full bg-white/20 overflow-hidden">
         <div
           className="h-full bg-white transition-[width] duration-150"
           style={{ width: `${Math.min(100, watchPct)}%` }}
@@ -215,7 +215,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
       </AnimatePresence>
 
       {/* right action rail */}
-      <div className="absolute right-3 bottom-28 flex flex-col items-center gap-5 z-10">
+      <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+12.5rem)] flex flex-col items-center gap-5 z-10">
         <button onClick={handleLike} className="flex flex-col items-center gap-1" aria-pressed={liked} aria-label="Like">
           <motion.span whileTap={{ scale: 1.3 }} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
             <Heart size={24} className={liked ? "fill-magenta text-magenta" : "text-white"} />
@@ -248,7 +248,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
       </div>
 
       {/* bottom info */}
-      <div className="absolute left-3 right-20 bottom-8 z-10 text-white">
+      <div className="absolute left-3 right-20 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-10 text-white">
         <Link href={`/app/company/${company.id}`} className="flex items-center gap-2 mb-2 w-fit">
           <CompanyAvatar src={company.logoUrl} name={company.name} verified={company.verified} size={30} />
           <span className="font-heading font-bold text-sm">{company.name}</span>

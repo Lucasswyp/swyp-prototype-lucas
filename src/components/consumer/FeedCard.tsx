@@ -18,10 +18,13 @@ interface FeedCardProps {
   company: Company;
   product: Product;
   isActive: boolean;
+  /** Immediately before/after the active card — worth preloading so the
+   * swipe to it doesn't start from zero bytes buffered. */
+  isNear?: boolean;
   onSkip: () => void;
 }
 
-export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardProps) {
+export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -30,6 +33,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   const [toast, setToast] = useState<string | null>(null);
   const [watchPct, setWatchPct] = useState(0);
   const [scrubbing, setScrubbing] = useState(false);
+  const [buffering, setBuffering] = useState(false);
 
   const x = useMotionValue(0);
 
@@ -53,11 +57,59 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (isActive && !paused) {
-      video.play().catch(() => {});
-    } else {
+
+    if (!isActive || paused) {
       video.pause();
+      setBuffering(false);
+      return;
     }
+
+    // Show the spinner right away if we're not already mid-playback —
+    // "playing" clears it as soon as frames actually start moving.
+    if (video.paused) setBuffering(true);
+
+    // .play() can silently no-op or reject if the browser hasn't buffered
+    // enough yet (common on a slow connection right after a swipe, since
+    // preload only starts in earnest once a card is active/near). Nothing
+    // retries on its own, so a video can sit stuck on frame 0 forever.
+    // Instead, keep attempting play() on every readiness signal until
+    // video.paused actually goes false, then stop.
+    let cancelled = false;
+
+    function attemptPlay() {
+      if (cancelled || !video || video.paused === false) return;
+      video.play().catch(() => {
+        // Ignored — the next readiness/timer tick will try again.
+      });
+    }
+
+    function onPlaying() {
+      setBuffering(false);
+    }
+    function onWaiting() {
+      setBuffering(true);
+    }
+
+    attemptPlay();
+    video.addEventListener("canplay", attemptPlay);
+    video.addEventListener("loadeddata", attemptPlay);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("waiting", onWaiting);
+
+    // Belt-and-suspenders: browsers don't always fire the above events when
+    // expected on stock video CDNs, so poll briefly as a fallback.
+    const retryInterval = window.setInterval(attemptPlay, 800);
+    const stopRetrying = window.setTimeout(() => window.clearInterval(retryInterval), 8000);
+
+    return () => {
+      cancelled = true;
+      video.removeEventListener("canplay", attemptPlay);
+      video.removeEventListener("loadeddata", attemptPlay);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("waiting", onWaiting);
+      window.clearInterval(retryInterval);
+      window.clearTimeout(stopRetrying);
+    };
   }, [isActive, paused]);
 
   useEffect(() => {
@@ -185,7 +237,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
           muted
           loop
           playsInline
-          preload={isActive ? "auto" : "none"}
+          preload={isActive || isNear ? "auto" : "none"}
           onTimeUpdate={handleTimeUpdate}
           onClick={handleTap}
           className="h-full w-full object-cover"
@@ -193,6 +245,20 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
       </motion.div>
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
+
+      <AnimatePresence>
+        {isActive && buffering && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.3 }}
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <div className="h-9 w-9 rounded-full border-2 border-white/25 border-t-white animate-spin" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* watch progress — draggable to seek */}
       <div

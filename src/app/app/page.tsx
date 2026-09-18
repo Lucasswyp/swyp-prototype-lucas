@@ -80,6 +80,7 @@ export default function FeedPage() {
               company={company}
               product={product}
               isActive={i === activeIndex}
+              isNear={Math.abs(i - activeIndex) === 1}
               onSkip={() => skip(i)}
             />
           </div>

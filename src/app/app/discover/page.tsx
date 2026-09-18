@@ -92,6 +92,7 @@ export default function DiscoverPage() {
               company={company}
               product={product}
               isActive={i === activeIndex}
+              isNear={Math.abs(i - activeIndex) === 1}
               onSkip={() => skip(i)}
             />
           </div>

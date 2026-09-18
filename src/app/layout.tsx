@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { StoreHydrator } from "@/components/StoreHydrator";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { NativeAppRefresh } from "@/components/NativeAppRefresh";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-indigo text-white">
         <StoreHydrator />
         <ServiceWorkerRegister />
+        <NativeAppRefresh />
         {children}
       </body>
     </html>

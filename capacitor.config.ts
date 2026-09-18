@@ -13,8 +13,16 @@ const config: CapacitorConfig = {
     url: "https://swyp-prototype-lucas.vercel.app/app",
     cleartext: false,
   },
+  // Without an explicit backgroundColor, the native root view behind the
+  // WebView defaults to white. Combined with contentInset reserving safe
+  // area space it doesn't paint, that showed up as a white sliver at the
+  // bottom of the screen (behind the home indicator). Setting the brand
+  // color here and letting the WebView draw fully edge-to-edge (our own CSS
+  // already handles safe-area padding) removes the gap entirely.
+  backgroundColor: "#0B0A2E",
   ios: {
-    contentInset: "always",
+    backgroundColor: "#0B0A2E",
+    contentInset: "never",
   },
 };
 

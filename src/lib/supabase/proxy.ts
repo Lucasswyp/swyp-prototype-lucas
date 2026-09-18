@@ -34,7 +34,6 @@ export async function updateSession(request: NextRequest) {
   const isBusinessAuthRoute = PUBLIC_BUSINESS_AUTH_ROUTES.includes(path);
   const isUserAuthRoute = PUBLIC_USER_AUTH_ROUTES.includes(path);
   const isBusinessRoute = path.startsWith("/business") && !isBusinessAuthRoute;
-  const isAppRoute = path.startsWith("/app");
 
   if (isBusinessRoute && !user) {
     const url = request.nextUrl.clone();
@@ -42,11 +41,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isAppRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/get-started/user";
-    return NextResponse.redirect(url);
-  }
+  // /app is browsable as a guest — swiping, watching and onboarding all work
+  // on the anonymous per-device id. Only actions like like/save/redeem prompt
+  // login, handled client-side via ConsumerAuthContext.
 
   if ((isBusinessAuthRoute || isUserAuthRoute) && user) {
     const { data: business } = await supabase

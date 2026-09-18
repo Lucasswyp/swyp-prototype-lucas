@@ -14,6 +14,7 @@ import { useData } from "@/contexts/DataContext";
 import { useAppStore } from "@/store/useAppStore";
 import { insertRedemption } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 
 export default function RewardDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -22,6 +23,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   const reward = rewards.find((r) => r.id === id);
   const tokenBalance = useAppStore((s) => s.tokenBalance);
   const redeemReward = useAppStore((s) => s.redeemReward);
+  const { requireAuth } = useConsumerAuth();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -91,7 +93,15 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
 
         {error && <p className="text-sm text-red-300 mb-3">{error}</p>}
 
-        <Button fullWidth size="lg" disabled={!canAfford} onClick={() => setConfirmOpen(true)}>
+        <Button
+          fullWidth
+          size="lg"
+          disabled={!canAfford}
+          onClick={() => {
+            if (!requireAuth()) return;
+            setConfirmOpen(true);
+          }}
+        >
           {canAfford ? `Wissel ${reward.tokenCost} Tokens in` : "Onvoldoende Tokens"}
         </Button>
       </div>

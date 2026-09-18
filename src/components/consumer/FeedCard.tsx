@@ -10,6 +10,7 @@ import { formatEuro, cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import type { Ad, Company, Product } from "@/types";
 
 interface FeedCardProps {
@@ -35,6 +36,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   const toggleLike = useAppStore((s) => s.toggleLike);
   const toggleSave = useAppStore((s) => s.toggleSave);
   const recordWatchProgress = useAppStore((s) => s.recordWatchProgress);
+  const { requireAuth } = useConsumerAuth();
 
   const flashReward = useCallback((label: string) => {
     setFloatingReward(label);
@@ -100,6 +102,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   }
 
   function handleLike() {
+    if (!requireAuth()) return;
     const rewarded = toggleLike(ad.id, ad.rewardRules.like);
     if (rewarded) {
       flashReward(`+${ad.rewardRules.like} SWYP`);
@@ -108,6 +111,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   }
 
   function handleSave() {
+    if (!requireAuth()) return;
     const rewarded = toggleSave(product.id, ad.id, ad.rewardRules.save);
     if (rewarded) {
       flashReward(`+${ad.rewardRules.save} SWYP`);

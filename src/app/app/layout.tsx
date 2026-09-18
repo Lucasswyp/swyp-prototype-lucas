@@ -6,6 +6,8 @@ import { MobileFrame } from "@/components/consumer/MobileFrame";
 import { BottomNav } from "@/components/consumer/BottomNav";
 import { useAppStore, useHasHydrated } from "@/store/useAppStore";
 import { DataProvider } from "@/contexts/DataContext";
+import { ConsumerAuthProvider } from "@/contexts/ConsumerAuthContext";
+import { LoginPromptModal } from "@/components/consumer/LoginPromptModal";
 
 const NO_NAV_ROUTES = ["/app/onboarding", "/app/interests"];
 
@@ -26,12 +28,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <DataProvider>
-      <MobileFrame>
-        <div className="relative h-full w-full overflow-y-auto no-scrollbar">
-          {children}
-        </div>
-        {showNav && <BottomNav />}
-      </MobileFrame>
+      <ConsumerAuthProvider>
+        <MobileFrame>
+          <div className="relative h-full w-full overflow-y-auto no-scrollbar">
+            {children}
+          </div>
+          {showNav && <BottomNav />}
+        </MobileFrame>
+        <LoginPromptModal />
+      </ConsumerAuthProvider>
     </DataProvider>
   );
 }

@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { TopBar } from "@/components/consumer/TopBar";
+import { Bell, Search } from "lucide-react";
+import { FeedTabs } from "@/components/consumer/FeedTabs";
 import { Chip } from "@/components/ui/Chip";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { useAppStore } from "@/store/useAppStore";
@@ -60,7 +60,12 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-full pb-28">
-      <TopBar title="Discover" />
+      <header className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-indigo/85 backdrop-blur-xl border-b border-white/5">
+        <FeedTabs active="discover" />
+        <button aria-label="Meldingen" className="ml-auto rounded-full p-1.5 hover:bg-white/10">
+          <Bell size={20} />
+        </button>
+      </header>
       <div className="px-4 pb-1">
         <Link
           href="/app/search"

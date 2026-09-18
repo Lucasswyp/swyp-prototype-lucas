@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FeedCard } from "@/components/consumer/FeedCard";
+import { FeedTabs } from "@/components/consumer/FeedTabs";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { Logo } from "@/components/ui/Logo";
 import { useAppStore } from "@/store/useAppStore";
@@ -62,8 +63,8 @@ export default function FeedPage() {
       onScroll={handleScroll}
       className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
     >
-      <div className="pointer-events-none absolute top-3 left-0 right-0 z-30 flex items-center justify-between px-4">
-        <Logo size="sm" className="drop-shadow" />
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 flex items-center justify-between px-4">
+        <FeedTabs active="for-you" />
         <Link href="/app/wallet" className="pointer-events-auto">
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
         </Link>

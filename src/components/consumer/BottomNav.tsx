@@ -2,12 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Gift, Bookmark, User } from "lucide-react";
+import { Home, Search, Gift, Bookmark, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/app", label: "Home", icon: Home, match: (p: string) => p === "/app" },
-  { href: "/app/discover", label: "Discover", icon: Compass, match: (p: string) => p.startsWith("/app/discover") || p.startsWith("/app/search") },
+  {
+    href: "/app",
+    label: "Home",
+    icon: Home,
+    match: (p: string) => p === "/app" || p.startsWith("/app/discover"),
+  },
+  { href: "/app/search", label: "Zoeken", icon: Search, match: (p: string) => p.startsWith("/app/search") },
   { href: "/app/rewards", label: "Rewards", icon: Gift, match: (p: string) => p.startsWith("/app/rewards") || p.startsWith("/app/my-rewards") },
   { href: "/app/saved", label: "Saved", icon: Bookmark, match: (p: string) => p.startsWith("/app/saved") },
   { href: "/app/profile", label: "Profiel", icon: User, match: (p: string) => p.startsWith("/app/profile") || p.startsWith("/app/wallet") },

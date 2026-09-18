@@ -123,7 +123,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 sm:absolute px-4 pb-6 pt-4 bg-gradient-to-t from-indigo via-indigo to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pt-4 bg-gradient-to-t from-indigo via-indigo to-transparent pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
         <a href={product.url} target="_blank" rel="noopener noreferrer" onClick={handleShopClick}>
           <Button fullWidth size="lg">
             Bekijk bij aanbieder →

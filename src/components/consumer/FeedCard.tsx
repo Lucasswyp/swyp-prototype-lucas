@@ -89,17 +89,30 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     function onWaiting() {
       setBuffering(true);
     }
+    function onError() {
+      // A real media error (interrupted download, decode hiccup — more
+      // common on a real device's variable connection than on a desktop
+      // test) leaves the element in a broken state that play() alone can't
+      // recover from. load() resets it so the next attemptPlay() has a
+      // clean start instead of retrying against a dead element forever.
+      if (cancelled || !video) return;
+      video.load();
+      window.setTimeout(attemptPlay, 300);
+    }
 
     attemptPlay();
     video.addEventListener("canplay", attemptPlay);
     video.addEventListener("loadeddata", attemptPlay);
     video.addEventListener("playing", onPlaying);
     video.addEventListener("waiting", onWaiting);
+    video.addEventListener("error", onError);
+    video.addEventListener("stalled", onError);
 
     // Belt-and-suspenders: browsers don't always fire the above events when
-    // expected on stock video CDNs, so poll briefly as a fallback.
+    // expected on stock video CDNs, so poll for longer than the happy path
+    // should ever need.
     const retryInterval = window.setInterval(attemptPlay, 800);
-    const stopRetrying = window.setTimeout(() => window.clearInterval(retryInterval), 8000);
+    const stopRetrying = window.setTimeout(() => window.clearInterval(retryInterval), 20000);
 
     return () => {
       cancelled = true;
@@ -107,6 +120,8 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       video.removeEventListener("loadeddata", attemptPlay);
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("waiting", onWaiting);
+      video.removeEventListener("error", onError);
+      video.removeEventListener("stalled", onError);
       window.clearInterval(retryInterval);
       window.clearTimeout(stopRetrying);
     };

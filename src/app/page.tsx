@@ -30,7 +30,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-indigo/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-indigo/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
           <Logo />
           <nav className="hidden sm:flex items-center gap-6 text-sm text-white/60">

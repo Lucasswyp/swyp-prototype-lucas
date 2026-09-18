@@ -21,7 +21,7 @@ export function TopBar({
 
   return (
     <header
-      className={`sticky top-0 z-30 flex items-center gap-3 px-4 py-3 ${
+      className={`sticky top-0 z-30 flex items-center gap-3 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] ${
         transparent ? "bg-transparent" : "bg-indigo/85 backdrop-blur-xl border-b border-white/5"
       }`}
     >

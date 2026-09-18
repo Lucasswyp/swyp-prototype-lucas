@@ -13,7 +13,7 @@ const benefits = [
 export default function ForBusinessPage() {
   return (
     <div className="min-h-screen w-full">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-indigo/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-indigo/80 backdrop-blur-xl pt-[env(safe-area-inset-top)]">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4">
           <Link href="/" className="flex items-center gap-1.5 whitespace-nowrap">
             <Logo size="sm" />

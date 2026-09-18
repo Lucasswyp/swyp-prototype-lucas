@@ -18,7 +18,7 @@ const items = [
 export function MobileTabs() {
   const pathname = usePathname();
   return (
-    <div className="lg:hidden sticky top-0 z-20 bg-indigo/95 backdrop-blur border-b border-white/10">
+    <div className="lg:hidden sticky top-0 z-20 bg-indigo/95 backdrop-blur border-b border-white/10 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-1 px-3 py-2">
         <Logo size="sm" className="mr-2 shrink-0" />
         <div className="flex gap-1 overflow-x-auto no-scrollbar">

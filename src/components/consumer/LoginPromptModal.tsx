@@ -25,16 +25,16 @@ export function LoginPromptModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5"
           onClick={closePrompt}
         >
           <motion.div
-            initial={{ y: 60, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 60, opacity: 0 }}
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md rounded-t-3xl bg-slate p-6 pb-8 text-center"
+            className="relative w-full max-w-sm rounded-3xl bg-slate p-6 pb-7 text-center"
           >
             <button
               onClick={closePrompt}

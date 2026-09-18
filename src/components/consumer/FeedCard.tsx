@@ -109,10 +109,30 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     video.addEventListener("stalled", onError);
 
     // Belt-and-suspenders: browsers don't always fire the above events when
-    // expected on stock video CDNs, so poll for longer than the happy path
-    // should ever need.
-    const retryInterval = window.setInterval(attemptPlay, 800);
-    const stopRetrying = window.setTimeout(() => window.clearInterval(retryInterval), 20000);
+    // expected on stock video CDNs, so poll for as long as this card stays
+    // active. On a throttled connection (e.g. iOS Low Power Mode, which can
+    // delay a request's start well past any fixed timeout) the request may
+    // never even reach readyState HAVE_NOTHING -> HAVE_CURRENT_DATA on its
+    // own, so this never gives up on its own — only cleanup (card leaves
+    // view / unmounts) stops it.
+    let stuckTicks = 0;
+    const retryInterval = window.setInterval(() => {
+      attemptPlay();
+      // If we've been sitting at readyState 0 (no data at all) for ~6s
+      // straight, the connection likely never got going rather than being
+      // merely slow — force a fresh request instead of continuing to poll
+      // a socket that's stalled before it started.
+      if (video.paused && video.readyState === 0) {
+        stuckTicks += 1;
+        if (stuckTicks >= 8) {
+          stuckTicks = 0;
+          video.load();
+          window.setTimeout(attemptPlay, 300);
+        }
+      } else {
+        stuckTicks = 0;
+      }
+    }, 800);
 
     return () => {
       cancelled = true;
@@ -123,7 +143,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       video.removeEventListener("error", onError);
       video.removeEventListener("stalled", onError);
       window.clearInterval(retryInterval);
-      window.clearTimeout(stopRetrying);
     };
   }, [isActive, paused]);
 

@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import type { Category } from "@/types";
 
 const filters: (Category | "Trending" | "Voor jou" | "Dichtbij" | "Experiences")[] = [
@@ -41,6 +42,7 @@ export default function DiscoverPage() {
   const interests = useAppStore((s) => s.interests);
   const savedProductIds = useAppStore((s) => s.savedProductIds);
   const toggleSave = useAppStore((s) => s.toggleSave);
+  const { requireAuth } = useConsumerAuth();
   const { products, companies } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
@@ -84,7 +86,7 @@ export default function DiscoverPage() {
             company={getCompany(p.companyId)}
             className="w-[150px] shrink-0"
             saved={!!savedProductIds[p.id]}
-            onToggleSave={() => toggleSave(p.id, `discover-${p.id}`, 3)}
+            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
           />
         ))}
       </Section>
@@ -98,7 +100,7 @@ export default function DiscoverPage() {
               company={getCompany(p.companyId)}
               className="w-[150px] shrink-0"
               saved={!!savedProductIds[p.id]}
-              onToggleSave={() => toggleSave(p.id, `discover-${p.id}`, 3)}
+              onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
             />
           ))}
         </Section>
@@ -112,7 +114,7 @@ export default function DiscoverPage() {
             company={getCompany(p.companyId)}
             className="w-[150px] shrink-0"
             saved={!!savedProductIds[p.id]}
-            onToggleSave={() => toggleSave(p.id, `discover-${p.id}`, 3)}
+            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
           />
         ))}
       </Section>
@@ -126,7 +128,7 @@ export default function DiscoverPage() {
               company={getCompany(p.companyId)}
               className="w-[150px] shrink-0"
               saved={!!savedProductIds[p.id]}
-              onToggleSave={() => toggleSave(p.id, `discover-${p.id}`, 3)}
+              onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
             />
           ))}
         </Section>
@@ -140,7 +142,7 @@ export default function DiscoverPage() {
             company={getCompany(p.companyId)}
             className="w-[150px] shrink-0"
             saved={!!savedProductIds[p.id]}
-            onToggleSave={() => toggleSave(p.id, `discover-${p.id}`, 3)}
+            onToggleSave={() => requireAuth() && toggleSave(p.id, `discover-${p.id}`, 3)}
           />
         ))}
       </Section>

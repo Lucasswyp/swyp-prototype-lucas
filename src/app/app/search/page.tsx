@@ -9,12 +9,14 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import Link from "next/link";
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
   const savedProductIds = useAppStore((s) => s.savedProductIds);
   const toggleSave = useAppStore((s) => s.toggleSave);
+  const { requireAuth } = useConsumerAuth();
   const { products, companies, rewards } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
@@ -110,7 +112,7 @@ export default function SearchPage() {
                 product={p}
                 company={getCompany(p.companyId)}
                 saved={!!savedProductIds[p.id]}
-                onToggleSave={() => toggleSave(p.id, `search-${p.id}`, 3)}
+                onToggleSave={() => requireAuth() && toggleSave(p.id, `search-${p.id}`, 3)}
               />
             ))}
           </div>

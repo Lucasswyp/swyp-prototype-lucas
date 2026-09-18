@@ -36,7 +36,7 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
   const toggleLike = useAppStore((s) => s.toggleLike);
   const toggleSave = useAppStore((s) => s.toggleSave);
   const recordWatchProgress = useAppStore((s) => s.recordWatchProgress);
-  const { requireAuth } = useConsumerAuth();
+  const { requireAuth, isLoggedIn } = useConsumerAuth();
 
   const flashReward = useCallback((label: string) => {
     setFloatingReward(label);
@@ -86,6 +86,8 @@ export function FeedCard({ ad, company, product, isActive, onSkip }: FeedCardPro
     if (!video || !video.duration) return;
     const pct = (video.currentTime / video.duration) * 100;
     setWatchPct(pct);
+    // Watching plays freely as a guest — earning Tokens for it requires an account.
+    if (!isLoggedIn) return;
     const [crossedWatch80, crossedComplete] = recordWatchProgress(ad.id, pct, ad.rewardRules);
     if (crossedWatch80) {
       logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });

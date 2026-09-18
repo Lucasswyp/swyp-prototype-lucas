@@ -13,6 +13,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -25,10 +26,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const followed = useAppStore((s) => (company ? !!s.followedCompanyIds[company.id] : false));
   const toggleFollow = useAppStore((s) => s.toggleFollow);
   const viewProduct = useAppStore((s) => s.viewProduct);
+  const { requireAuth, isLoggedIn } = useConsumerAuth();
 
   useEffect(() => {
-    if (product) viewProduct(product.id, 3);
-  }, [product, viewProduct]);
+    if (product && isLoggedIn) viewProduct(product.id, 3);
+  }, [product, isLoggedIn, viewProduct]);
 
   if (!product || !company) {
     return (
@@ -93,17 +95,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
 
-        <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3.5 mb-5 flex items-center gap-2">
-          <TokenBadge amount={3} size="sm" />
-          <span className="text-xs text-white/50">Tokens verdiend voor het bekijken van dit product</span>
-        </div>
+        {isLoggedIn && (
+          <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3.5 mb-5 flex items-center gap-2">
+            <TokenBadge amount={3} size="sm" />
+            <span className="text-xs text-white/50">Tokens verdiend voor het bekijken van dit product</span>
+          </div>
+        )}
 
         {ad && (
           <div className="flex gap-2 mb-4">
             <Button
               variant="secondary"
               size="md"
-              onClick={() => toggleSave(product.id, ad.id, ad.rewardRules.save)}
+              onClick={() => requireAuth() && toggleSave(product.id, ad.id, ad.rewardRules.save)}
               className="gap-1.5"
             >
               <Bookmark size={16} className={saved ? "fill-white" : ""} />
@@ -112,7 +116,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <Button variant="secondary" size="md" className="gap-1.5">
               <Share2 size={16} /> Delen
             </Button>
-            <Button variant="secondary" size="md" onClick={() => toggleFollow(company.id)}>
+            <Button variant="secondary" size="md" onClick={() => requireAuth() && toggleFollow(company.id)}>
               {followed ? "Volgend" : "Volg bedrijf"}
             </Button>
           </div>

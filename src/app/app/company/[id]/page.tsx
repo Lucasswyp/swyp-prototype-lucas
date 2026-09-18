@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { formatNumber } from "@/lib/utils";
 
 const tabs = ["Ads", "Deals", "Over"] as const;
@@ -25,10 +26,11 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
   const viewCompany = useAppStore((s) => s.viewCompany);
   const savedProductIds = useAppStore((s) => s.savedProductIds);
   const toggleSave = useAppStore((s) => s.toggleSave);
+  const { requireAuth, isLoggedIn } = useConsumerAuth();
 
   useEffect(() => {
-    viewCompany(id);
-  }, [id, viewCompany]);
+    if (isLoggedIn) viewCompany(id);
+  }, [id, isLoggedIn, viewCompany]);
 
   if (!company) {
     return (
@@ -61,7 +63,7 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
               {formatNumber(followerCount)} volgers · {company.category}
             </p>
           </div>
-          <Button size="sm" variant={followed ? "secondary" : "primary"} onClick={() => toggleFollow(company.id)}>
+          <Button size="sm" variant={followed ? "secondary" : "primary"} onClick={() => requireAuth() && toggleFollow(company.id)}>
             {followed ? "Volgend" : "Volgen"}
           </Button>
         </div>
@@ -97,7 +99,7 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
                 product={p}
                 company={company}
                 saved={!!savedProductIds[p.id]}
-                onToggleSave={() => toggleSave(p.id, `company-${p.id}`, 3)}
+                onToggleSave={() => requireAuth() && toggleSave(p.id, `company-${p.id}`, 3)}
               />
             ))}
           </div>

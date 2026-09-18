@@ -43,7 +43,8 @@ export default function FeedPage() {
   const tokenBalance = useAppStore((s) => s.tokenBalance);
 
   if (loading) {
-    return <div className="flex h-full w-full items-center justify-center text-white/40 text-sm">Feed laden...</div>;
+    // The branded SwypSplash in the layout covers this — nothing to render.
+    return null;
   }
 
   if (orderedAds.length === 0) {

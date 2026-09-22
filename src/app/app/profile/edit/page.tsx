@@ -18,6 +18,7 @@ export default function EditProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<ConsumerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,16 +32,30 @@ export default function EditProfilePage() {
     "idle"
   );
 
+  function loadProfile() {
+    setLoading(true);
+    setLoadError(false);
+    fetchMyProfile()
+      .then((p) => {
+        if (p) {
+          setProfile(p);
+          setName(p.name);
+          setUsername(p.username ?? "");
+          setAvatarPreview(p.avatarUrl);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoadError(true);
+        setLoading(false);
+      });
+  }
+
   useEffect(() => {
-    fetchMyProfile().then((p) => {
-      if (p) {
-        setProfile(p);
-        setName(p.name);
-        setUsername(p.username ?? "");
-        setAvatarPreview(p.avatarUrl);
-      }
-      setLoading(false);
-    });
+    // Initial fetch-on-mount: loadProfile() awaits the network call before
+    // touching state, so this isn't a synchronous render-time state write.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProfile();
   }, []);
 
   useEffect(() => {
@@ -79,7 +94,7 @@ export default function EditProfilePage() {
 
   async function handleSave() {
     if (!profile) return;
-    if (usernameStatus === "taken" || usernameStatus === "invalid") {
+    if (usernameStatus === "taken" || usernameStatus === "invalid" || usernameStatus === "checking") {
       setError("Kies een geldige, beschikbare gebruikersnaam.");
       return;
     }
@@ -107,6 +122,16 @@ export default function EditProfilePage() {
     return (
       <div className="min-h-full pb-28">
         <TopBar title="Profiel bewerken" back />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-full pb-28 px-4">
+        <TopBar title="Profiel bewerken" back />
+        <p className="text-sm text-red-300 mt-6 mb-3">Laden van je profiel is mislukt. Controleer je verbinding.</p>
+        <Button onClick={loadProfile}>Opnieuw proberen</Button>
       </div>
     );
   }
@@ -176,7 +201,7 @@ export default function EditProfilePage() {
         <Button
           fullWidth
           className="mt-2"
-          disabled={saving || usernameStatus === "taken" || usernameStatus === "invalid"}
+          disabled={saving || usernameStatus === "taken" || usernameStatus === "invalid" || usernameStatus === "checking"}
           onClick={handleSave}
         >
           {saving ? "Opslaan..." : "Opslaan"}

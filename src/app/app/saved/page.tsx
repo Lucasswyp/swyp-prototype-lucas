@@ -89,7 +89,7 @@ export default function SavedPage() {
                     product={p}
                     company={getCompany(p.companyId)}
                     saved
-                    onToggleSave={() => toggleSave(p.id, "")}
+                    onToggleSave={() => toggleSave(p.id, null)}
                   />
                 ))}
               </div>
@@ -108,7 +108,7 @@ export default function SavedPage() {
                       product={p}
                       company={getCompany(p.companyId)}
                       saved
-                      onToggleSave={() => toggleSave(p.id, "")}
+                      onToggleSave={() => toggleSave(p.id, null)}
                     />
                   ))}
                 </div>

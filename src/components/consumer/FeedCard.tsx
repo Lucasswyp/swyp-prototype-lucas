@@ -37,8 +37,15 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
 
   const x = useMotionValue(0);
-  const activeSinceRef = useRef<number | null>(null);
   const watch80FiredRef = useRef(false);
+  const completeFiredRef = useRef(false);
+  // Accumulated *actual playback* time (ms) while this card is active, not
+  // paused, and not being scrubbed — unlike a plain wall-clock timer since
+  // the card became active, this can't be satisfied by waiting a few seconds
+  // and then dragging the scrubber straight to 80%, since a scrub doesn't
+  // advance it at all.
+  const playedMsRef = useRef(0);
+  const lastPlayingTickRef = useRef<number | null>(null);
 
   const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike } = useWallet();
   const markWatched = useAppStore((s) => s.markWatched);
@@ -49,10 +56,10 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   useEffect(() => {
     if (isActive) {
-      activeSinceRef.current = Date.now();
       watch80FiredRef.current = false;
-    } else {
-      activeSinceRef.current = null;
+      completeFiredRef.current = false;
+      playedMsRef.current = 0;
+      lastPlayingTickRef.current = null;
     }
   }, [isActive]);
 
@@ -191,16 +198,41 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (!video || !video.duration) return;
     const pct = (video.currentTime / video.duration) * 100;
     setWatchPct(pct);
+
+    // Accumulate real playback time: only while genuinely playing forward,
+    // never while paused or mid-scrub, so dragging the progress bar straight
+    // to 80% can't substitute for actually watching.
+    const now = Date.now();
+    if (isActive && !paused && !scrubbing) {
+      if (lastPlayingTickRef.current !== null) {
+        const delta = now - lastPlayingTickRef.current;
+        // Cap a single tick's contribution so a backgrounded/throttled tab
+        // resuming after a long gap can't credit that whole gap as playback.
+        playedMsRef.current += Math.max(0, Math.min(delta, 1000));
+      }
+      lastPlayingTickRef.current = now;
+    } else {
+      lastPlayingTickRef.current = null;
+    }
+
+    if (pct >= 100 && !completeFiredRef.current) {
+      completeFiredRef.current = true;
+      logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "complete" });
+    }
+
     // Watching plays freely as a guest — earning Tokens for it requires an account.
     if (!isLoggedIn) return;
     markWatched(ad.id, pct);
     if (pct >= 80 && !watch80FiredRef.current) {
       watch80FiredRef.current = true;
-      const elapsedMs = activeSinceRef.current ? Date.now() - activeSinceRef.current : 0;
-      logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });
-      awardWatch80(ad.id, elapsedMs).then((result) => {
-        if (!result.awarded || !result.points) return;
-        flashReward(`+${result.points} SWYP`, result.streakBonus === 30);
+      awardWatch80(ad.id, playedMsRef.current).then((result) => {
+        // Only log the analytics event once the server actually confirms a
+        // new award — otherwise re-watching an already-awarded ad (no new
+        // reward, but this still runs) would keep inflating "watch80" counts
+        // relative to "impression", pushing completion rate over 100%.
+        if (!result.awarded) return;
+        logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });
+        if (result.points) flashReward(`+${result.points} SWYP`, result.streakBonus === 30);
       });
     }
   }
@@ -243,25 +275,29 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (!requireAuth()) return;
     if (liked) return; // one-time reward — already claimed, nothing more to toggle
     setOptimisticLiked(true); // instant visual feedback, reconciled from the server response below
-    logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "like" });
-    awardLike(ad.id).then((result) => {
-      if (result.awarded && result.points) {
-        flashReward(`+${result.points} SWYP`);
-      } else if (!result.awarded && result.reason !== "already_awarded") {
-        setOptimisticLiked(false); // genuine failure — revert the optimistic fill
-      }
-    });
+    awardLike(ad.id)
+      .then((result) => {
+        if (result.awarded) {
+          logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "like" });
+          if (result.points) flashReward(`+${result.points} SWYP`);
+        } else if (result.reason !== "already_awarded") {
+          setOptimisticLiked(false); // genuine failure — revert the optimistic fill
+        }
+      })
+      .catch(() => setOptimisticLiked(false));
   }
 
   function handleSave() {
     if (!requireAuth()) return;
     const wasSaved = saved;
     toggleSave(product.id, ad.id).then((result) => {
-      if (result?.awarded && result.points) flashReward(`+${result.points} SWYP`);
+      if (result?.awarded) {
+        if (!wasSaved) {
+          logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "save" });
+        }
+        if (result.points) flashReward(`+${result.points} SWYP`);
+      }
     });
-    if (!wasSaved) {
-      logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "save" });
-    }
   }
 
   function handleClickThrough() {

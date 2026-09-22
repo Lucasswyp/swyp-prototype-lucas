@@ -66,10 +66,14 @@ export default function CreateCampaignPage() {
   const [endDate, setEndDate] = useState(() =>
     new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
   );
-  const [rewardWatch, setRewardWatch] = useState(1);
-  const [rewardLike, setRewardLike] = useState(2);
-  const [rewardSave, setRewardSave] = useState(3);
-  const [rewardClick, setRewardClick] = useState(2);
+  // Matches award_interaction()'s own per-action bounds/defaults in
+  // supabase/rewards.sql — the server clamps into this same range
+  // regardless of what's set here, so showing anything outside it would
+  // just be a number the business never actually gets charged/pays out.
+  const [rewardWatch, setRewardWatch] = useState(15);
+  const [rewardLike, setRewardLike] = useState(4);
+  const [rewardSave, setRewardSave] = useState(8);
+  const [rewardClick, setRewardClick] = useState(10);
   const [published, setPublished] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
@@ -428,19 +432,22 @@ export default function CreateCampaignPage() {
         {step === 4 && (
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { label: "Watch 80%", value: rewardWatch, set: setRewardWatch },
-              { label: "Like", value: rewardLike, set: setRewardLike },
-              { label: "Save", value: rewardSave, set: setRewardSave },
-              { label: "Click", value: rewardClick, set: setRewardClick },
+              { label: "Watch 80%", value: rewardWatch, set: setRewardWatch, min: 10, max: 25 },
+              { label: "Like", value: rewardLike, set: setRewardLike, min: 1, max: 8 },
+              { label: "Save", value: rewardSave, set: setRewardSave, min: 3, max: 15 },
+              { label: "Click", value: rewardClick, set: setRewardClick, min: 5, max: 20 },
             ].map((r) => (
               <div key={r.label}>
-                <label className="block text-sm font-medium mb-2">{r.label}</label>
+                <label className="block text-sm font-medium mb-2">
+                  {r.label} <span className="text-white/40 font-normal">({r.min}-{r.max})</span>
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    min={0}
+                    min={r.min}
+                    max={r.max}
                     value={r.value}
-                    onChange={(e) => r.set(Number(e.target.value))}
+                    onChange={(e) => r.set(Math.max(r.min, Math.min(r.max, Number(e.target.value))))}
                     className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet"
                   />
                   <TokenBadge amount={r.value} size="sm" />

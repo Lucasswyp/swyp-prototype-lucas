@@ -148,12 +148,17 @@ export async function fetchMyFollowedCompanyIds(): Promise<Set<string>> {
 
 // Toggling save/follow is plain, fully-reversible user data (RLS-scoped to
 // the caller) — the one-time token award is a *separate* call the UI fires
-// alongside the first save/follow, not something these functions do.
-export async function addSave(consumerId: string, productId: string, adId: string) {
+// alongside the first save/follow, not something these functions do. adId is
+// nullable: a product with no live ad (e.g. its campaign was deleted, or it
+// was never advertised) is still saveable, it just can't earn a token.
+export async function addSave(consumerId: string, productId: string, adId: string | null) {
   const supabase = createClient();
   const { error } = await supabase
     .from("saves")
-    .upsert({ consumer_id: consumerId, product_id: productId, ad_id: adId }, { onConflict: "consumer_id,product_id" });
+    .upsert(
+      { consumer_id: consumerId, product_id: productId, ad_id: adId },
+      { onConflict: "consumer_id,product_id" }
+    );
   if (error) throw error;
 }
 
@@ -177,10 +182,9 @@ export async function removeFollow(companyId: string) {
   if (error) throw error;
 }
 
-export async function fetchMyRedemptions(): Promise<Redemption[]> {
-  const supabase = createClient();
-  const consumerId = await fetchMyConsumerId();
+export async function fetchMyRedemptions(consumerId: string | null): Promise<Redemption[]> {
   if (!consumerId) return [];
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("redemptions")
     .select("*")

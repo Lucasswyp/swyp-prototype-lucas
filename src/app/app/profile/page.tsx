@@ -14,16 +14,14 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  RotateCcw,
   Flame,
   Pencil,
 } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
-import { ProgressBar } from "@/components/ui/ProgressBar";
 import { formatTokens, formatEuro } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
 import { useWallet } from "@/contexts/WalletContext";
+import { fetchMyProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
 
 const menu = [
@@ -43,8 +41,6 @@ export default function ProfilePage() {
   const [name, setName] = useState("Swyp-gebruiker");
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const challenges = useAppStore((s) => s.challenges);
-  const resetDemo = useAppStore((s) => s.resetDemo);
   const {
     balance: tokenBalance,
     currentStreak,
@@ -56,16 +52,12 @@ export default function ProfilePage() {
   } = useWallet();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("consumers")
-      .select("name, username, avatar_url")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.name) setName(data.name);
-        setUsername(data?.username ?? null);
-        setAvatarUrl(data?.avatar_url ?? null);
-      });
+    fetchMyProfile().then((profile) => {
+      if (!profile) return;
+      setName(profile.name);
+      setUsername(profile.username);
+      setAvatarUrl(profile.avatarUrl);
+    });
   }, []);
 
   async function handleLogout() {
@@ -139,24 +131,6 @@ export default function ProfilePage() {
           <p className="font-heading text-xl font-extrabold">{formatEuro(totalSaved)}</p>
         </Card>
 
-        <h2 className="font-heading font-bold text-sm mb-2.5 text-white/50 uppercase tracking-wide">
-          Challenges
-        </h2>
-        <div className="flex flex-col gap-2 mb-6">
-          {challenges.map((c) => (
-            <Card key={c.id} className="p-3.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-sm font-medium">{c.title}</p>
-                <span className="text-xs text-white/40 tabular-nums">
-                  {c.progress}/{c.target}
-                </span>
-              </div>
-              <ProgressBar value={c.progress} max={c.target} />
-              <p className="text-[11px] text-magenta mt-1.5 font-semibold">+{c.rewardTokens} Tokens</p>
-            </Card>
-          ))}
-        </div>
-
         <div className="flex flex-col gap-1 mb-6">
           {menu.map((item) => (
             <Link
@@ -175,16 +149,6 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <button
-          onClick={() => {
-            if (confirm("Weet je zeker dat je de demo wilt resetten? Alle voortgang gaat verloren.")) {
-              resetDemo();
-            }
-          }}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/5 text-sm text-white/60"
-        >
-          <RotateCcw size={18} /> Demo Mode: reset voortgang
-        </button>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-3 hover:bg-white/5 text-sm text-red-300"

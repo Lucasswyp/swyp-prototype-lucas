@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Ticket, Copy, QrCode } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
@@ -16,8 +16,13 @@ const tabs = ["Actief", "Gebruikt", "Verlopen"] as const;
 
 export default function MyRewardsPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Actief");
-  const { redemptions, markRedemptionUsed } = useWallet();
+  const { redemptions, markRedemptionUsed, refreshRedemptions } = useWallet();
   const { rewards: rewardsList } = useData();
+
+  useEffect(() => {
+    refreshRedemptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const statusMap = { Actief: "active", Gebruikt: "used", Verlopen: "expired" } as const;
   const filtered = redemptions.filter((r) => r.status === statusMap[tab]);

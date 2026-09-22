@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { Card } from "@/components/ui/Card";
@@ -8,7 +9,14 @@ import { formatTokens, formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 
 export default function WalletPage() {
-  const { balance: tokenBalance, history: walletHistory } = useWallet();
+  const { balance: tokenBalance, history: walletHistory, refreshHistory } = useWallet();
+
+  // Awards no longer auto-refresh the history list (see WalletContext) —
+  // refresh it whenever this page is actually opened instead.
+  useEffect(() => {
+    refreshHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const now = new Date();
   const monthEarned = walletHistory
@@ -17,7 +25,8 @@ export default function WalletPage() {
 
   const savedMoney = walletHistory
     .filter((t) => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount) * 0.04, 0);
+    // 1 token = EUR 0.01, fixed platform-wide (see supabase/rewards.sql).
+    .reduce((sum, t) => sum + Math.abs(t.amount) * 0.01, 0);
 
   return (
     <div className="min-h-full pb-28">

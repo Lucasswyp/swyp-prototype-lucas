@@ -94,7 +94,7 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
                   product={p}
                   company={company}
                   saved={savedProductIds.has(p.id)}
-                  onToggleSave={() => productAd && requireAuth() && toggleSave(p.id, productAd.id)}
+                  onToggleSave={() => requireAuth() && toggleSave(p.id, productAd?.id ?? null)}
                 />
               );
             })}

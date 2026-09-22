@@ -2,7 +2,7 @@
    boundary layer that maps loosely-typed Supabase rows onto our strict
    internal types; the `any` params below are the raw row shape. */
 import { createClient } from "@/lib/supabase/client";
-import type { Company, Product, Ad, Campaign, Reward, Redemption } from "@/types";
+import type { Company, Product, Ad, Campaign, Reward } from "@/types";
 
 function mapCompany(r: any): Company {
   return {
@@ -356,36 +356,6 @@ export async function fetchInteractionsForBusiness(businessId: string): Promise<
     .eq("business_id", businessId);
   if (error) throw error;
   return data ?? [];
-}
-
-export async function insertRedemption(rewardId: string, deviceId: string, code: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("redemptions")
-    .insert({ reward_id: rewardId, device_id: deviceId, code })
-    .select("*")
-    .single();
-  if (error) throw error;
-  return data as Redemption & { device_id: string };
-}
-
-export async function fetchRedemptionsForDevice(deviceId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("redemptions").select("*").eq("device_id", deviceId);
-  if (error) throw error;
-  return (data ?? []).map((r) => ({
-    id: r.id,
-    rewardId: r.reward_id,
-    redeemedAt: r.redeemed_at,
-    status: r.status,
-    code: r.code,
-  })) as Redemption[];
-}
-
-export async function markRedemptionUsedRemote(redemptionId: string) {
-  const supabase = createClient();
-  const { error } = await supabase.from("redemptions").update({ status: "used" }).eq("id", redemptionId);
-  if (error) throw error;
 }
 
 export interface AnalyticsTotals {

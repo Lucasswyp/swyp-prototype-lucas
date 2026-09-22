@@ -1,6 +1,6 @@
 -- Swyp consumer reward economy: server-authoritative token ledger, streaks,
 -- and the real (removable) save/follow lists. Run once in the Supabase SQL
--- Editor, after schema.sql and consumers.sql.
+-- Editor, after schema.sql and consumers.sql. Safe to re-run (idempotent).
 --
 -- Design notes (see the "Swyp productieplan" doc for the full research):
 --   - 1 token = EUR 0.01, fixed forever.
@@ -107,6 +107,37 @@ drop policy if exists "consumer read own streak" on consumer_streaks;
 create policy "consumer read own streak" on consumer_streaks for select
   using (consumer_id in (select id from consumers where auth_user_id = auth.uid()));
 
+-- schema.sql opened `redemptions` all the way up (using (true)) back when it
+-- only held anonymous device_id redemptions. Now that real accounts' coupon
+-- codes live in the same table via `consumer_id`, a wide-open policy would
+-- let anyone read or "use up" anyone else's redemption. Anonymous
+-- (consumer_id is null) rows keep the original device_id-based model —
+-- narrowing that further would need real auth for guests, out of scope here
+-- — but an authenticated redemption is now private to its owner.
+drop policy if exists "public read redemptions" on redemptions;
+create policy "read own or anonymous redemptions" on redemptions for select
+  using (
+    consumer_id is null
+    or consumer_id in (select id from consumers where auth_user_id = auth.uid())
+  );
+
+drop policy if exists "public update redemptions" on redemptions;
+create policy "update own or anonymous redemptions" on redemptions for update
+  using (
+    consumer_id is null
+    or consumer_id in (select id from consumers where auth_user_id = auth.uid())
+  );
+
+-- Keep the campaigns table's own column defaults in sync with the bounds
+-- award_interaction() actually enforces (case statement below), so a row
+-- inserted without explicit reward_* values (outside the app's own wizard,
+-- which always sets them) doesn't fall back to numbers the RPC would clamp
+-- away from anyway.
+alter table campaigns alter column reward_watch set default 15;
+alter table campaigns alter column reward_like set default 4;
+alter table campaigns alter column reward_save set default 8;
+alter table campaigns alter column reward_click set default 10;
+
 -- ---------------------------------------------------------------------------
 -- award_interaction: the one entry point for watch80 / like / save / click.
 -- ---------------------------------------------------------------------------
@@ -124,11 +155,15 @@ declare
   v_max int;
   v_base_points int;
   v_points int;
-  v_today date := current_date;
+  -- NL-only product today, so a fixed zone beats UTC for "which calendar day
+  -- is this" — the streak/damping window should roll over at local midnight,
+  -- not at 01:00-02:00 CET/CEST.
+  v_today date := (now() at time zone 'Europe/Amsterdam')::date;
   v_today_watch_count int;
   v_damping numeric := 1;
   v_streak consumer_streaks%rowtype;
   v_streak_bonus int := 0;
+  v_first_activity_today boolean := false;
   v_day_in_cycle int;
   v_new_balance int;
 begin
@@ -171,9 +206,84 @@ begin
 
   -- A real device cannot legitimately reach 80% of even the shortest clip in
   -- this feed in well under 4 real seconds — a bot firing the event without
-  -- actually streaming the video will fail this floor.
+  -- actually streaming the video will fail this floor. (This is a floor on
+  -- wall-clock dwell time reported by the client, not a full defense — see
+  -- the client-side accumulated-playback-time hardening alongside this.)
   if p_action = 'watch80' and (p_watch_ms is null or p_watch_ms < 4000) then
     return jsonb_build_object('awarded', false, 'reason', 'implausible_watch_time');
+  end if;
+
+  -- Streak/day-tracking runs on every genuine watch80 attempt, independent of
+  -- whether THIS specific ad's reward has already been claimed before. The
+  -- feed order is deterministic, so a returning user's first watch of the day
+  -- is very often an ad they already earned from — gating "was I active
+  -- today" on a NEW token_events row (as before) meant their streak almost
+  -- never advanced. The advisory lock is taken up front, before reading any
+  -- streak state, so two concurrent first-watches-of-the-day can't both
+  -- observe "not active yet" and both pay the daily bonus.
+  if p_action = 'watch80' then
+    perform pg_advisory_xact_lock(hashtext(v_consumer_id::text));
+
+    select * into v_streak from consumer_streaks where consumer_id = v_consumer_id;
+
+    if v_streak.consumer_id is null then
+      insert into consumer_streaks (consumer_id, current_streak, longest_streak, freezes_available, last_active_date, last_freeze_grant)
+      values (v_consumer_id, 1, 1, 1, v_today, v_today)
+      returning * into v_streak;
+      v_first_activity_today := true;
+    elsif v_streak.last_active_date = v_today then
+      v_first_activity_today := false;
+    elsif v_streak.last_active_date = v_today - 1 then
+      update consumer_streaks set
+        current_streak = current_streak + 1,
+        longest_streak = greatest(longest_streak, current_streak + 1),
+        last_active_date = v_today,
+        updated_at = now()
+      where consumer_id = v_consumer_id
+      returning * into v_streak;
+      v_first_activity_today := true;
+    elsif v_streak.last_active_date = v_today - 2 and v_streak.freezes_available > 0 then
+      update consumer_streaks set
+        current_streak = current_streak + 1,
+        longest_streak = greatest(longest_streak, current_streak + 1),
+        freezes_available = freezes_available - 1,
+        last_active_date = v_today,
+        updated_at = now()
+      where consumer_id = v_consumer_id
+      returning * into v_streak;
+      v_first_activity_today := true;
+    else
+      update consumer_streaks set
+        current_streak = 1,
+        last_active_date = v_today,
+        updated_at = now()
+      where consumer_id = v_consumer_id
+      returning * into v_streak;
+      v_first_activity_today := true;
+    end if;
+
+    -- Refill one free freeze per rolling week.
+    if v_streak.last_freeze_grant is null or v_streak.last_freeze_grant <= v_today - 7 then
+      update consumer_streaks set
+        freezes_available = least(1, freezes_available + 1),
+        last_freeze_grant = v_today
+      where consumer_id = v_consumer_id
+      returning * into v_streak;
+    end if;
+
+    -- Pay the daily bonus at most once per day — only on the transition into
+    -- "active today", never on a later watch80 the same day. Bonus recurs on
+    -- a 7-day cycle rather than growing forever, so payouts stay bounded no
+    -- matter how long a streak gets: day 1 of each cycle is routine, days 2-6
+    -- add a small bonus, day 7 is the milestone.
+    if v_first_activity_today then
+      v_day_in_cycle := ((v_streak.current_streak - 1) % 7) + 1;
+      v_streak_bonus := case when v_day_in_cycle = 7 then 30 when v_day_in_cycle = 1 then 0 else 5 end;
+
+      if v_streak_bonus > 0 then
+        insert into token_events (consumer_id, action, points) values (v_consumer_id, 'streak_daily', v_streak_bonus);
+      end if;
+    end if;
   end if;
 
   -- Daily damping curve, applied to watch80 only: first 20 videos/day at full
@@ -192,73 +302,43 @@ begin
     v_points := floor(v_points * v_damping);
   end if;
 
+  if v_points <= 0 then
+    -- Nothing left to pay for THIS ad today (fully damped), but the ad's
+    -- one-time claim must not be burned for a reward that was never actually
+    -- paid — leave the per-ad unique slot unclaimed so it can still pay out
+    -- once the daily cap resets tomorrow. Any streak credit above still
+    -- stands and is applied to the wallet here.
+    update consumer_wallets set balance = balance + v_streak_bonus, updated_at = now()
+    where consumer_id = v_consumer_id
+    returning balance into v_new_balance;
+    if not found then
+      insert into consumer_wallets (consumer_id, balance) values (v_consumer_id, v_streak_bonus)
+      returning balance into v_new_balance;
+    end if;
+    return jsonb_build_object(
+      'awarded', false, 'reason', 'daily_cap',
+      'streak_bonus', v_streak_bonus, 'balance', v_new_balance, 'streak', v_streak.current_streak
+    );
+  end if;
+
   begin
     insert into token_events (consumer_id, ad_id, company_id, action, points)
     values (v_consumer_id, p_ad_id, v_business_id, p_action, v_points);
   exception when unique_violation then
-    return jsonb_build_object('awarded', false, 'reason', 'already_awarded');
+    -- Already claimed this ad's reward on a previous day. Any streak credit
+    -- from this call (above) still happened and must still reach the wallet.
+    update consumer_wallets set balance = balance + v_streak_bonus, updated_at = now()
+    where consumer_id = v_consumer_id
+    returning balance into v_new_balance;
+    if not found then
+      insert into consumer_wallets (consumer_id, balance) values (v_consumer_id, v_streak_bonus)
+      returning balance into v_new_balance;
+    end if;
+    return jsonb_build_object(
+      'awarded', false, 'reason', 'already_awarded',
+      'streak_bonus', v_streak_bonus, 'balance', v_new_balance, 'streak', v_streak.current_streak
+    );
   end;
-
-  -- Streak bookkeeping runs off the first watch80 of the calendar day. A
-  -- missed single day is covered by an automatic, free streak freeze — never
-  -- a purchasable "repair", and breaking the streak entirely only resets the
-  -- *counter*: no points or badges already earned are ever taken away.
-  if p_action = 'watch80' and v_today_watch_count = 0 then
-    perform pg_advisory_xact_lock(hashtext(v_consumer_id::text));
-
-    select * into v_streak from consumer_streaks where consumer_id = v_consumer_id;
-
-    if v_streak.consumer_id is null then
-      insert into consumer_streaks (consumer_id, current_streak, longest_streak, freezes_available, last_active_date, last_freeze_grant)
-      values (v_consumer_id, 1, 1, 1, v_today, v_today)
-      returning * into v_streak;
-    elsif v_streak.last_active_date = v_today then
-      null; -- already counted today
-    elsif v_streak.last_active_date = v_today - 1 then
-      update consumer_streaks set
-        current_streak = current_streak + 1,
-        longest_streak = greatest(longest_streak, current_streak + 1),
-        last_active_date = v_today,
-        updated_at = now()
-      where consumer_id = v_consumer_id
-      returning * into v_streak;
-    elsif v_streak.last_active_date = v_today - 2 and v_streak.freezes_available > 0 then
-      update consumer_streaks set
-        current_streak = current_streak + 1,
-        longest_streak = greatest(longest_streak, current_streak + 1),
-        freezes_available = freezes_available - 1,
-        last_active_date = v_today,
-        updated_at = now()
-      where consumer_id = v_consumer_id
-      returning * into v_streak;
-    else
-      update consumer_streaks set
-        current_streak = 1,
-        last_active_date = v_today,
-        updated_at = now()
-      where consumer_id = v_consumer_id
-      returning * into v_streak;
-    end if;
-
-    -- Refill one free freeze per rolling week.
-    if v_streak.last_freeze_grant is null or v_streak.last_freeze_grant <= v_today - 7 then
-      update consumer_streaks set
-        freezes_available = least(1, freezes_available + 1),
-        last_freeze_grant = v_today
-      where consumer_id = v_consumer_id
-      returning * into v_streak;
-    end if;
-
-    -- Bonus recurs on a 7-day cycle rather than growing forever, so payouts
-    -- stay bounded no matter how long a streak gets: day 1 of each cycle is
-    -- the routine day, days 2-6 add a small bonus, day 7 is the milestone.
-    v_day_in_cycle := ((v_streak.current_streak - 1) % 7) + 1;
-    v_streak_bonus := case when v_day_in_cycle = 7 then 30 when v_day_in_cycle = 1 then 0 else 5 end;
-
-    if v_streak_bonus > 0 then
-      insert into token_events (consumer_id, action, points) values (v_consumer_id, 'streak_daily', v_streak_bonus);
-    end if;
-  end if;
 
   update consumer_wallets set balance = balance + v_points + v_streak_bonus, updated_at = now()
   where consumer_id = v_consumer_id
@@ -274,7 +354,7 @@ begin
     'points', v_points,
     'streak_bonus', v_streak_bonus,
     'balance', v_new_balance,
-    'streak', coalesce(v_streak.current_streak, null)
+    'streak', v_streak.current_streak
   );
 end;
 $$;
@@ -294,10 +374,23 @@ declare
   v_consumer_id uuid;
   v_points int := 25;
   v_new_balance int;
+  v_company_exists boolean;
 begin
+  -- A null company_id would otherwise mint unlimited tokens: NULL is never
+  -- equal to NULL, so a plain unique index on (consumer_id, company_id)
+  -- lets the same consumer insert unbounded (consumer_id, null) rows.
+  if p_company_id is null then
+    return jsonb_build_object('awarded', false, 'reason', 'invalid_company');
+  end if;
+
   select id into v_consumer_id from consumers where auth_user_id = auth.uid();
   if v_consumer_id is null then
     return jsonb_build_object('awarded', false, 'reason', 'not_a_consumer');
+  end if;
+
+  select exists(select 1 from businesses where id = p_company_id) into v_company_exists;
+  if not v_company_exists then
+    return jsonb_build_object('awarded', false, 'reason', 'company_not_found');
   end if;
 
   begin

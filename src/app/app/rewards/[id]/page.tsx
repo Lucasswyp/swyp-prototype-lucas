@@ -25,6 +25,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redeeming, setRedeeming] = useState(false);
 
   if (!reward) {
     return (
@@ -45,7 +46,10 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   };
 
   async function handleConfirm() {
+    if (redeeming) return; // already in flight — a double-tap must not fire a second redemption
+    setRedeeming(true);
     const result = await redeem(reward!);
+    setRedeeming(false);
     if (!result.ok) {
       setError(REASON_LABELS[result.reason ?? ""] ?? "Er ging iets mis");
       setConfirmOpen(false);
@@ -112,11 +116,11 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
           <strong className="text-white">{reward.tokenCost} Swyp Tokens</strong>. Dit kan niet ongedaan worden gemaakt.
         </p>
         <div className="flex gap-3">
-          <Button variant="secondary" fullWidth onClick={() => setConfirmOpen(false)}>
+          <Button variant="secondary" fullWidth onClick={() => setConfirmOpen(false)} disabled={redeeming}>
             Annuleren
           </Button>
-          <Button fullWidth onClick={handleConfirm}>
-            Bevestigen
+          <Button fullWidth onClick={handleConfirm} disabled={redeeming}>
+            {redeeming ? "Bezig..." : "Bevestigen"}
           </Button>
         </div>
       </Modal>

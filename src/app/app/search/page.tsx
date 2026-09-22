@@ -113,7 +113,7 @@ export default function SearchPage() {
                   product={p}
                   company={getCompany(p.companyId)}
                   saved={savedProductIds.has(p.id)}
-                  onToggleSave={() => productAd && requireAuth() && toggleSave(p.id, productAd.id)}
+                  onToggleSave={() => requireAuth() && toggleSave(p.id, productAd?.id ?? null)}
                 />
               );
             })}

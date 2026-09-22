@@ -36,11 +36,12 @@ interface WalletValue {
   awardWatch80: (adId: string, watchMs: number) => Promise<AwardResult>;
   awardLike: (adId: string) => Promise<AwardResult>;
   awardClick: (adId: string) => Promise<AwardResult>;
-  toggleSave: (productId: string, adId: string) => Promise<AwardResult | null>;
+  toggleSave: (productId: string, adId: string | null) => Promise<AwardResult | null>;
   toggleFollow: (companyId: string) => Promise<void>;
   redeem: (reward: Reward) => Promise<{ ok: boolean; reason?: string; code?: string }>;
   markRedemptionUsed: (redemptionId: string) => Promise<void>;
   refreshHistory: () => Promise<void>;
+  refreshRedemptions: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletValue | null>(null);
@@ -71,8 +72,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshRedemptions = useCallback(async () => {
-    setRedemptions(await fetchMyRedemptions());
-  }, []);
+    if (!consumerId) return;
+    setRedemptions(await fetchMyRedemptions(consumerId));
+  }, [consumerId]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -94,14 +96,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
     (async () => {
-      const [id, wallet, likes, saves, follows, hist, reds] = await Promise.all([
-        fetchMyConsumerId(),
+      const id = await fetchMyConsumerId();
+      const [wallet, likes, saves, follows, hist, reds] = await Promise.all([
         fetchWallet(),
         fetchMyLikedAdIds(),
         fetchMySavedProductIds(),
         fetchMyFollowedCompanyIds(),
         fetchWalletHistory(),
-        fetchMyRedemptions(),
+        id ? fetchMyRedemptions(id) : Promise.resolve([]),
       ]);
       if (cancelled) return;
       setConsumerId(id);
@@ -121,18 +123,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, [isLoggedIn]);
 
+  // Awards update balance/streak straight from the RPC response — they don't
+  // need a full history refetch every single time (that's ~1 extra request
+  // per like/save/watch/follow, for data only ever shown on the wallet and
+  // profile pages). Those pages refresh history/redemptions themselves on
+  // mount instead.
   function applyAward(result: AwardResult) {
-    if (!result.awarded) return;
     if (typeof result.balance === "number") setBalance(result.balance);
     if (typeof result.streak === "number") setCurrentStreak(result.streak);
-    refreshHistory();
   }
 
   const awardWatch80 = useCallback(async (adId: string, watchMs: number) => {
     const result = await awardInteraction(adId, "watch80", watchMs);
     applyAward(result);
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const awardLike = useCallback(async (adId: string) => {
@@ -140,18 +144,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (result.awarded) setLikedAdIds((s) => new Set(s).add(adId));
     applyAward(result);
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const awardClick = useCallback(async (adId: string) => {
     const result = await awardInteraction(adId, "click");
     applyAward(result);
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleSave = useCallback(
-    async (productId: string, adId: string) => {
+    async (productId: string, adId: string | null) => {
       if (!consumerId) return null;
       const isSaved = savedProductIds.has(productId);
       if (isSaved) {
@@ -160,16 +162,32 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           next.delete(productId);
           return next;
         });
-        await removeSave(productId);
+        try {
+          await removeSave(productId);
+        } catch {
+          // Revert — the remove never actually happened server-side.
+          setSavedProductIds((s) => new Set(s).add(productId));
+        }
         return null;
       }
       setSavedProductIds((s) => new Set(s).add(productId));
-      await addSave(consumerId, productId, adId);
+      try {
+        await addSave(consumerId, productId, adId);
+      } catch {
+        setSavedProductIds((s) => {
+          const next = new Set(s);
+          next.delete(productId);
+          return next;
+        });
+        return null;
+      }
+      // No ad context (e.g. a product with no live campaign) — still save
+      // it, just nothing to award a token for.
+      if (!adId) return null;
       const result = await awardInteraction(adId, "save");
       applyAward(result);
       return result;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [consumerId, savedProductIds]
   );
 
@@ -183,15 +201,27 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           next.delete(companyId);
           return next;
         });
-        await removeFollow(companyId);
+        try {
+          await removeFollow(companyId);
+        } catch {
+          setFollowedCompanyIds((s) => new Set(s).add(companyId));
+        }
         return;
       }
       setFollowedCompanyIds((s) => new Set(s).add(companyId));
-      await addFollow(consumerId, companyId);
+      try {
+        await addFollow(consumerId, companyId);
+      } catch {
+        setFollowedCompanyIds((s) => {
+          const next = new Set(s);
+          next.delete(companyId);
+          return next;
+        });
+        return;
+      }
       const result = await awardFollow(companyId);
       applyAward(result);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [consumerId, followedCompanyIds]
   );
 
@@ -235,6 +265,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         redeem,
         markRedemptionUsed,
         refreshHistory,
+        refreshRedemptions,
       }}
     >
       {children}

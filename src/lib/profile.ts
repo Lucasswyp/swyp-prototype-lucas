@@ -43,11 +43,16 @@ export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
 
 export async function uploadAvatar(authUserId: string, file: File): Promise<string> {
   const supabase = createClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  // Fixed filename (not a random one, unlike ad-videos) so re-uploading
-  // replaces the old photo instead of leaking storage forever.
-  const path = `${authUserId}/avatar.${ext}`;
-  const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+  // Fixed, extension-less path (not a random one, unlike ad-videos) so
+  // re-uploading always replaces the old photo — including switching from a
+  // .jpg to a .png, which would otherwise leave the old file behind forever
+  // under a different name. contentType is passed explicitly since the path
+  // itself no longer carries the file's actual type.
+  const path = `${authUserId}/avatar`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    upsert: true,
+    contentType: file.type || "image/jpeg",
+  });
   if (error) throw error;
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
   // Cache-bust so the new photo shows immediately instead of the browser

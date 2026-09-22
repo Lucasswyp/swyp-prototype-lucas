@@ -52,20 +52,21 @@ begin
   if v_is_email_signup then
     v_name := new.raw_user_meta_data->>'name';
     v_username_base := new.raw_user_meta_data->>'username';
+    v_username := v_username_base;
   else
     v_name := coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1));
     v_username_base := lower(regexp_replace(split_part(new.email, '@', 1), '[^a-z0-9_]', '', 'g'));
     if length(v_username_base) < 3 then
       v_username_base := v_username_base || '_user';
     end if;
+    -- Google gives no handle at all, so derive one from the email local-part
+    -- plus a short id fragment to make a first-try collision unlikely. Only
+    -- this synthetic branch is truncated to 14 chars to leave room for the
+    -- suffix — a real chosen username (email-signup branch) keeps its full,
+    -- already-validated length (up to 20 chars).
+    v_username_base := left(v_username_base, 14);
+    v_username := v_username_base || '_' || left(replace(new.id::text, '-', ''), 5);
   end if;
-  v_username_base := left(v_username_base, 14);
-  -- Google gives no handle at all, so derive one from the email local-part
-  -- plus a short id fragment to make a first-try collision unlikely.
-  v_username := case when v_is_google_signup
-    then v_username_base || '_' || left(replace(new.id::text, '-', ''), 5)
-    else v_username_base
-  end;
 
   begin
     insert into public.consumers (auth_user_id, name, username, gender, birthdate, ethnicity)
@@ -109,7 +110,14 @@ begin
 end;
 $$;
 
+-- Fires on insert AND whenever raw_app_meta_data/raw_user_meta_data change,
+-- not just on the very first row. Google sign-in metadata isn't always
+-- present in the exact same statement that creates the auth.users row (it
+-- can land moments later as an update) — an insert-only trigger would look
+-- like it does nothing for those accounts. handle_new_consumer()'s own
+-- `on conflict (auth_user_id) do nothing` makes re-firing safe, so no
+-- duplicate row or second welcome bonus is possible.
 drop trigger if exists on_auth_user_created_consumer on auth.users;
 create trigger on_auth_user_created_consumer
-  after insert on auth.users
+  after insert or update of raw_app_meta_data, raw_user_meta_data on auth.users
   for each row execute function public.handle_new_consumer();

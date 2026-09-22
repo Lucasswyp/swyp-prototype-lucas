@@ -16,6 +16,7 @@ import {
   LogOut,
   RotateCcw,
   Flame,
+  Pencil,
 } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -40,6 +41,8 @@ const menu = [
 export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("Swyp-gebruiker");
+  const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const challenges = useAppStore((s) => s.challenges);
   const resetDemo = useAppStore((s) => s.resetDemo);
   const {
@@ -56,10 +59,12 @@ export default function ProfilePage() {
     const supabase = createClient();
     supabase
       .from("consumers")
-      .select("name")
+      .select("name, username, avatar_url")
       .maybeSingle()
       .then(({ data }) => {
         if (data?.name) setName(data.name);
+        setUsername(data?.username ?? null);
+        setAvatarUrl(data?.avatar_url ?? null);
       });
   }, []);
 
@@ -80,13 +85,25 @@ export default function ProfilePage() {
 
       <div className="px-4">
         <Card className="p-5 mb-4 flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet to-magenta flex items-center justify-center font-heading text-xl font-extrabold shrink-0">
-            {name.charAt(0).toUpperCase()}
+          <div className="relative h-16 w-16 rounded-full overflow-hidden bg-gradient-to-br from-violet to-magenta flex items-center justify-center font-heading text-xl font-extrabold shrink-0">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              name.charAt(0).toUpperCase()
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-heading font-bold text-lg truncate">{name}</p>
-            <p className="text-xs text-white/40">Swyp-lid</p>
+            <p className="text-xs text-white/40">{username ? `@${username}` : "Swyp-lid"}</p>
           </div>
+          <Link
+            href="/app/profile/edit"
+            aria-label="Profiel bewerken"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/10 shrink-0"
+          >
+            <Pencil size={15} />
+          </Link>
         </Card>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">

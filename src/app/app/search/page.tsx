@@ -7,17 +7,16 @@ import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import Link from "next/link";
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
-  const savedProductIds = useAppStore((s) => s.savedProductIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
+  const { savedProductIds, toggleSave } = useWallet();
   const { requireAuth } = useConsumerAuth();
-  const { products, companies, rewards } = useData();
+  const { products, companies, rewards, ads } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
   const query = q.trim().toLowerCase();
@@ -106,15 +105,18 @@ export default function SearchPage() {
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Producten</h2>
           <div className="grid grid-cols-2 gap-3">
-            {results.products.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                company={getCompany(p.companyId)}
-                saved={!!savedProductIds[p.id]}
-                onToggleSave={() => requireAuth() && toggleSave(p.id, `search-${p.id}`, 3)}
-              />
-            ))}
+            {results.products.map((p) => {
+              const productAd = ads.find((a) => a.productId === p.id);
+              return (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  company={getCompany(p.companyId)}
+                  saved={savedProductIds.has(p.id)}
+                  onToggleSave={() => productAd && requireAuth() && toggleSave(p.id, productAd.id)}
+                />
+              );
+            })}
           </div>
         </section>
       )}

@@ -35,7 +35,23 @@ function mapProduct(r: any): Product {
   };
 }
 
+// Platform guardrails (must match supabase/rewards.sql's award_interaction):
+// keeps watch >= click >= save >= like no matter what a business sets on its
+// own campaign, so the UI never shows a number the server won't actually pay.
+const REWARD_BOUNDS = {
+  watch80: { min: 10, max: 25, default: 15 },
+  click: { min: 5, max: 20, default: 10 },
+  save: { min: 3, max: 15, default: 8 },
+  like: { min: 1, max: 8, default: 4 },
+};
+
+function clampReward(action: keyof typeof REWARD_BOUNDS, value: number | null | undefined) {
+  const { min, max, default: fallback } = REWARD_BOUNDS[action];
+  return Math.min(max, Math.max(min, value ?? fallback));
+}
+
 function mapAd(r: any): Ad {
+  const campaign = Array.isArray(r.campaigns) ? r.campaigns[0] : r.campaigns;
   return {
     id: r.id,
     companyId: r.business_id,
@@ -46,7 +62,12 @@ function mapAd(r: any): Ad {
     caption: r.caption,
     category: r.category,
     ctaLabel: r.cta_label,
-    rewardRules: { watch80: 1, like: 2, save: 3, click: 2 },
+    rewardRules: {
+      watch80: clampReward("watch80", campaign?.reward_watch),
+      like: clampReward("like", campaign?.reward_like),
+      save: clampReward("save", campaign?.reward_save),
+      click: clampReward("click", campaign?.reward_click),
+    },
   };
 }
 
@@ -127,7 +148,10 @@ export async function fetchProducts(): Promise<Product[]> {
 
 export async function fetchAds(): Promise<Ad[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("ads").select("*").order("created_at");
+  const { data, error } = await supabase
+    .from("ads")
+    .select("*, campaigns(reward_watch, reward_like, reward_save, reward_click)")
+    .order("created_at");
   if (error) throw error;
   return (data ?? []).map(mapAd);
 }
@@ -267,10 +291,10 @@ export async function createCampaign(
       start_date: c.startDate,
       end_date: c.endDate,
       targeting: c.targeting,
-      reward_watch: c.rewardRules.watch80,
-      reward_like: c.rewardRules.like,
-      reward_save: c.rewardRules.save,
-      reward_click: c.rewardRules.click,
+      reward_watch: clampReward("watch80", c.rewardRules.watch80),
+      reward_like: clampReward("like", c.rewardRules.like),
+      reward_save: clampReward("save", c.rewardRules.save),
+      reward_click: clampReward("click", c.rewardRules.click),
     })
     .select("id")
     .single();

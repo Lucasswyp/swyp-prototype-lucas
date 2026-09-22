@@ -9,26 +9,24 @@ import { ProductCard } from "@/components/consumer/ProductCard";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 
 const tabs = ["Alles", "Producten", "Deals", "Bedrijven"] as const;
 
 export default function SavedPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Alles");
-  const savedProductIds = useAppStore((s) => s.savedProductIds);
-  const followedCompanyIds = useAppStore((s) => s.followedCompanyIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
+  const { savedProductIds, followedCompanyIds, toggleSave } = useWallet();
   const { products, companies } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
   const savedProducts = useMemo(
-    () => products.filter((p) => savedProductIds[p.id]),
+    () => products.filter((p) => savedProductIds.has(p.id)),
     [savedProductIds, products]
   );
   const savedDeals = savedProducts.filter((p) => p.oldPrice);
   const savedCompanies = useMemo(
-    () => companies.filter((c) => followedCompanyIds[c.id]),
+    () => companies.filter((c) => followedCompanyIds.has(c.id)),
     [followedCompanyIds, companies]
   );
 
@@ -91,7 +89,7 @@ export default function SavedPage() {
                     product={p}
                     company={getCompany(p.companyId)}
                     saved
-                    onToggleSave={() => toggleSave(p.id, `saved-${p.id}`, 0)}
+                    onToggleSave={() => toggleSave(p.id, "")}
                   />
                 ))}
               </div>
@@ -110,7 +108,7 @@ export default function SavedPage() {
                       product={p}
                       company={getCompany(p.companyId)}
                       saved
-                      onToggleSave={() => toggleSave(p.id, `saved-${p.id}`, 0)}
+                      onToggleSave={() => toggleSave(p.id, "")}
                     />
                   ))}
                 </div>

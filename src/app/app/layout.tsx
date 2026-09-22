@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/consumer/BottomNav";
 import { SwypSplash } from "@/components/consumer/SwypSplash";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { ConsumerAuthProvider } from "@/contexts/ConsumerAuthContext";
+import { WalletProvider } from "@/contexts/WalletContext";
 import { LoginPromptModal } from "@/components/consumer/LoginPromptModal";
 
 // /app/interests is still reachable from the profile menu for people who
@@ -20,14 +21,16 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
 
   return (
     <ConsumerAuthProvider>
-      <MobileFrame>
-        <div className="relative h-full w-full overflow-y-auto no-scrollbar">
-          {children}
-        </div>
-        {showNav && <BottomNav />}
-        <AnimatePresence>{loading && <SwypSplash />}</AnimatePresence>
-      </MobileFrame>
-      <LoginPromptModal />
+      <WalletProvider>
+        <MobileFrame>
+          <div className="relative h-full w-full overflow-y-auto no-scrollbar">
+            {children}
+          </div>
+          {showNav && <BottomNav />}
+          <AnimatePresence>{loading && <SwypSplash />}</AnimatePresence>
+        </MobileFrame>
+        <LoginPromptModal />
+      </WalletProvider>
     </ConsumerAuthProvider>
   );
 }

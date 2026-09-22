@@ -5,11 +5,10 @@ import { SwypToken } from "@/components/ui/SwypToken";
 import { Card } from "@/components/ui/Card";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { formatTokens, formatEuro, cn } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 
 export default function WalletPage() {
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
-  const walletHistory = useAppStore((s) => s.walletHistory);
+  const { balance: tokenBalance, history: walletHistory } = useWallet();
 
   const now = new Date();
   const monthEarned = walletHistory

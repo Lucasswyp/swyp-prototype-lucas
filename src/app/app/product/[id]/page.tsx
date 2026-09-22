@@ -1,15 +1,14 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, Bookmark, Share2 } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
-import { TokenBadge } from "@/components/ui/TokenBadge";
 import { formatEuro } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
@@ -21,16 +20,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const product = products.find((p) => p.id === id);
   const company = product ? companies.find((c) => c.id === product.companyId) : undefined;
 
-  const saved = useAppStore((s) => !!s.savedProductIds[id]);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const followed = useAppStore((s) => (company ? !!s.followedCompanyIds[company.id] : false));
-  const toggleFollow = useAppStore((s) => s.toggleFollow);
-  const viewProduct = useAppStore((s) => s.viewProduct);
-  const { requireAuth, isLoggedIn } = useConsumerAuth();
-
-  useEffect(() => {
-    if (product && isLoggedIn) viewProduct(product.id, 3);
-  }, [product, isLoggedIn, viewProduct]);
+  const { savedProductIds, followedCompanyIds, toggleSave, toggleFollow, awardClick } = useWallet();
+  const saved = savedProductIds.has(id);
+  const followed = company ? followedCompanyIds.has(company.id) : false;
+  const { requireAuth } = useConsumerAuth();
 
   if (!product || !company) {
     return (
@@ -45,6 +38,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   function handleShopClick() {
     logInteraction({ deviceId: getDeviceId(), businessId: company!.id, adId: ad?.id, productId: product!.id, eventName: "click" });
+    // The click reward lives here — the actual tap through to the merchant —
+    // rather than on the feed's internal "meer info" navigation, since this
+    // is the genuine purchase-intent signal the reward is meant to capture.
+    if (ad) awardClick(ad.id);
   }
 
   return (
@@ -95,19 +92,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
 
-        {isLoggedIn && (
-          <div className="rounded-xl bg-white/[0.04] border border-white/10 p-3.5 mb-5 flex items-center gap-2">
-            <TokenBadge amount={3} size="sm" />
-            <span className="text-xs text-white/50">Tokens verdiend voor het bekijken van dit product</span>
-          </div>
-        )}
-
         {ad && (
           <div className="flex gap-2 mb-4">
             <Button
               variant="secondary"
               size="md"
-              onClick={() => requireAuth() && toggleSave(product.id, ad.id, ad.rewardRules.save)}
+              onClick={() => requireAuth() && toggleSave(product.id, ad.id)}
               className="gap-1.5"
             >
               <Bookmark size={16} className={saved ? "fill-white" : ""} />

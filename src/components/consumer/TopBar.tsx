@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, Bell } from "lucide-react";
+import { ChevronLeft, Bell, Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { LogoMark } from "@/components/ui/Logo";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 
 export function TopBar({
   title,
@@ -17,7 +17,7 @@ export function TopBar({
   transparent?: boolean;
 }) {
   const router = useRouter();
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
+  const { balance, currentStreak } = useWallet();
 
   return (
     <header
@@ -37,8 +37,18 @@ export function TopBar({
       {!back && <LogoMark size={26} />}
       {title && <h1 className="font-heading font-bold text-lg truncate">{title}</h1>}
       <div className="ml-auto flex items-center gap-2">
+        {currentStreak > 1 && (
+          <Link
+            href="/app/profile"
+            aria-label={`Streak: ${currentStreak} dagen`}
+            className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold tabular-nums"
+          >
+            <Flame size={13} className="text-orange-400" />
+            {currentStreak}
+          </Link>
+        )}
         <Link href="/app/wallet">
-          <TokenBadge amount={tokenBalance} size="sm" />
+          <TokenBadge amount={balance} size="sm" />
         </Link>
         <button aria-label="Meldingen" className="rounded-full p-1.5 hover:bg-white/10">
           <Bell size={20} />

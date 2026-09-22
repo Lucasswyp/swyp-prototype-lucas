@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { formatTokens, formatEuro } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { createClient } from "@/lib/supabase/client";
 
 const menu = [
@@ -39,16 +40,17 @@ const menu = [
 export default function ProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("Swyp-gebruiker");
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
-  const xp = useAppStore((s) => s.xp);
-  const level = useAppStore((s) => s.level());
-  const streakDays = useAppStore((s) => s.streakDays);
   const challenges = useAppStore((s) => s.challenges);
-  const redemptions = useAppStore((s) => s.redemptions);
-  const walletHistory = useAppStore((s) => s.walletHistory);
   const resetDemo = useAppStore((s) => s.resetDemo);
-  const followedCompanyIds = useAppStore((s) => s.followedCompanyIds);
-  const savedProductIds = useAppStore((s) => s.savedProductIds);
+  const {
+    balance: tokenBalance,
+    currentStreak,
+    freezesAvailable,
+    history: walletHistory,
+    redemptions,
+    followedCompanyIds,
+    savedProductIds,
+  } = useWallet();
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,10 +70,9 @@ export default function ProfilePage() {
     router.refresh();
   }
 
-  const xpIntoLevel = xp % 1000;
   const totalSaved = walletHistory
     .filter((t) => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount) * 0.04, 0);
+    .reduce((sum, t) => sum + Math.abs(t.amount) * 0.01, 0);
 
   return (
     <div className="min-h-full pb-28">
@@ -84,9 +85,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-heading font-bold text-lg truncate">{name}</p>
-            <p className="text-xs text-white/40 mb-2">Swyp Level {level}</p>
-            <ProgressBar value={xpIntoLevel} max={1000} />
-            <p className="text-[11px] text-white/35 mt-1">{xpIntoLevel} / 1.000 XP</p>
+            <p className="text-xs text-white/40">Swyp-lid</p>
           </div>
         </Card>
 
@@ -96,7 +95,7 @@ export default function ProfilePage() {
             <p className="text-[10px] text-white/40 mt-0.5">Tokens</p>
           </Card>
           <Card className="p-3 text-center">
-            <p className="font-heading font-bold text-lg">{Object.keys(savedProductIds).filter((k) => savedProductIds[k]).length}</p>
+            <p className="font-heading font-bold text-lg">{savedProductIds.size}</p>
             <p className="text-[10px] text-white/40 mt-0.5">Saved</p>
           </Card>
           <Card className="p-3 text-center">
@@ -110,10 +109,12 @@ export default function ProfilePage() {
             <Flame size={20} className="text-orange-400" />
             <div>
               <p className="text-sm font-semibold">Streak</p>
-              <p className="text-xs text-white/40">Blijf swipen om &apos;m te behouden</p>
+              <p className="text-xs text-white/40">
+                {freezesAvailable > 0 ? "1 gratis freeze beschikbaar bij een gemiste dag" : "Blijf swipen om 'm te behouden"}
+              </p>
             </div>
           </div>
-          <span className="font-heading font-extrabold text-lg">{streakDays}d</span>
+          <span className="font-heading font-extrabold text-lg">{currentStreak}d</span>
         </Card>
 
         <Card className="p-4 mb-4">
@@ -150,7 +151,7 @@ export default function ProfilePage() {
               {item.label}
               {item.label === "Following" && (
                 <span className="ml-auto text-xs text-white/30">
-                  {Object.keys(followedCompanyIds).filter((k) => followedCompanyIds[k]).length}
+                  {followedCompanyIds.size}
                 </span>
               )}
             </Link>

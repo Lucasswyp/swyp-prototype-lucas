@@ -9,15 +9,14 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 
 const tabs = ["Actief", "Gebruikt", "Verlopen"] as const;
 
 export default function MyRewardsPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Actief");
-  const redemptions = useAppStore((s) => s.redemptions);
-  const markRedemptionUsed = useAppStore((s) => s.markRedemptionUsed);
+  const { redemptions, markRedemptionUsed } = useWallet();
   const { rewards: rewardsList } = useData();
 
   const statusMap = { Actief: "active", Gebruikt: "used", Verlopen: "expired" } as const;

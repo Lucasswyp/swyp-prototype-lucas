@@ -8,6 +8,7 @@ import { TokenBadge } from "@/components/ui/TokenBadge";
 import { Logo } from "@/components/ui/Logo";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
+import { useWallet } from "@/contexts/WalletContext";
 
 export default function FeedPage() {
   const interests = useAppStore((s) => s.interests);
@@ -41,7 +42,7 @@ export default function FeedPage() {
     }
   }
 
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
+  const { balance: tokenBalance } = useWallet();
 
   if (loading) {
     // The branded SwypSplash in the layout covers this — nothing to render.

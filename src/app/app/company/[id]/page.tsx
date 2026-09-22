@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 import Image from "next/image";
 import { MapPin, Globe } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
@@ -8,7 +8,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
-import { useAppStore } from "@/store/useAppStore";
+import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { formatNumber } from "@/lib/utils";
@@ -17,20 +17,13 @@ const tabs = ["Ads", "Deals", "Over"] as const;
 
 export default function CompanyProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { companies, products: allProducts, rewards: allRewards } = useData();
+  const { companies, products: allProducts, rewards: allRewards, ads } = useData();
   const company = companies.find((c) => c.id === id);
   const [tab, setTab] = useState<(typeof tabs)[number]>("Ads");
 
-  const followed = useAppStore((s) => !!s.followedCompanyIds[id]);
-  const toggleFollow = useAppStore((s) => s.toggleFollow);
-  const viewCompany = useAppStore((s) => s.viewCompany);
-  const savedProductIds = useAppStore((s) => s.savedProductIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const { requireAuth, isLoggedIn } = useConsumerAuth();
-
-  useEffect(() => {
-    if (isLoggedIn) viewCompany(id);
-  }, [id, isLoggedIn, viewCompany]);
+  const { followedCompanyIds, toggleFollow, savedProductIds, toggleSave } = useWallet();
+  const followed = followedCompanyIds.has(id);
+  const { requireAuth } = useConsumerAuth();
 
   if (!company) {
     return (
@@ -93,15 +86,18 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
 
         {tab === "Ads" && (
           <div className="grid grid-cols-2 gap-3">
-            {products.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                company={company}
-                saved={!!savedProductIds[p.id]}
-                onToggleSave={() => requireAuth() && toggleSave(p.id, `company-${p.id}`, 3)}
-              />
-            ))}
+            {products.map((p) => {
+              const productAd = ads.find((a) => a.productId === p.id);
+              return (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  company={company}
+                  saved={savedProductIds.has(p.id)}
+                  onToggleSave={() => productAd && requireAuth() && toggleSave(p.id, productAd.id)}
+                />
+              );
+            })}
           </div>
         )}
 

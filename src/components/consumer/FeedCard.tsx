@@ -7,6 +7,7 @@ import { Heart, Bookmark, Share2, Info, Play, Pause } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { formatEuro, cn } from "@/lib/utils";
+import { useWallet } from "@/contexts/WalletContext";
 import { useAppStore } from "@/store/useAppStore";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
@@ -29,24 +30,40 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
-  const [floatingReward, setFloatingReward] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [watchPct, setWatchPct] = useState(0);
   const [scrubbing, setScrubbing] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
 
   const x = useMotionValue(0);
+  const activeSinceRef = useRef<number | null>(null);
+  const watch80FiredRef = useRef(false);
 
-  const liked = useAppStore((s) => !!s.likedAds[ad.id]);
-  const saved = useAppStore((s) => !!s.savedProductIds[product.id]);
-  const toggleLike = useAppStore((s) => s.toggleLike);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const recordWatchProgress = useAppStore((s) => s.recordWatchProgress);
+  const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike } = useWallet();
+  const markWatched = useAppStore((s) => s.markWatched);
+  const [optimisticLiked, setOptimisticLiked] = useState(false);
+  const liked = optimisticLiked || likedAdIds.has(ad.id);
+  const saved = savedProductIds.has(product.id);
   const { requireAuth, isLoggedIn } = useConsumerAuth();
 
-  const flashReward = useCallback((label: string) => {
-    setFloatingReward(label);
-    window.setTimeout(() => setFloatingReward(null), 900);
+  useEffect(() => {
+    if (isActive) {
+      activeSinceRef.current = Date.now();
+      watch80FiredRef.current = false;
+    } else {
+      activeSinceRef.current = null;
+    }
+  }, [isActive]);
+
+  // Routine rewards get a quick, modest pop (~350ms) — reserving the bigger
+  // celebration for genuine milestones (a streak week, a new-account bonus)
+  // keeps celebratory feedback honest instead of dressing up a 3-token like
+  // as if it were a real win (the "losses disguised as wins" slot-machine
+  // pattern research flagged as the line not to cross).
+  const flashReward = useCallback((label: string, big = false) => {
+    setCelebration({ label, big });
+    window.setTimeout(() => setCelebration(null), big ? 1100 : 350);
   }, []);
 
   const flashToast = useCallback((label: string) => {
@@ -176,12 +193,15 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     setWatchPct(pct);
     // Watching plays freely as a guest — earning Tokens for it requires an account.
     if (!isLoggedIn) return;
-    const [crossedWatch80, crossedComplete] = recordWatchProgress(ad.id, pct, ad.rewardRules);
-    if (crossedWatch80) {
+    markWatched(ad.id, pct);
+    if (pct >= 80 && !watch80FiredRef.current) {
+      watch80FiredRef.current = true;
+      const elapsedMs = activeSinceRef.current ? Date.now() - activeSinceRef.current : 0;
       logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });
-    }
-    if (crossedComplete) {
-      logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "complete" });
+      awardWatch80(ad.id, elapsedMs).then((result) => {
+        if (!result.awarded || !result.points) return;
+        flashReward(`+${result.points} SWYP`, result.streakBonus === 30);
+      });
     }
   }
 
@@ -221,18 +241,25 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   function handleLike() {
     if (!requireAuth()) return;
-    const rewarded = toggleLike(ad.id, ad.rewardRules.like);
-    if (rewarded) {
-      flashReward(`+${ad.rewardRules.like} SWYP`);
-      logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "like" });
-    }
+    if (liked) return; // one-time reward — already claimed, nothing more to toggle
+    setOptimisticLiked(true); // instant visual feedback, reconciled from the server response below
+    logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "like" });
+    awardLike(ad.id).then((result) => {
+      if (result.awarded && result.points) {
+        flashReward(`+${result.points} SWYP`);
+      } else if (!result.awarded && result.reason !== "already_awarded") {
+        setOptimisticLiked(false); // genuine failure — revert the optimistic fill
+      }
+    });
   }
 
   function handleSave() {
     if (!requireAuth()) return;
-    const rewarded = toggleSave(product.id, ad.id, ad.rewardRules.save);
-    if (rewarded) {
-      flashReward(`+${ad.rewardRules.save} SWYP`);
+    const wasSaved = saved;
+    toggleSave(product.id, ad.id).then((result) => {
+      if (result?.awarded && result.points) flashReward(`+${result.points} SWYP`);
+    });
+    if (!wasSaved) {
       logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "save" });
     }
   }
@@ -339,15 +366,18 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       </AnimatePresence>
 
       <AnimatePresence>
-        {floatingReward && (
+        {celebration && (
           <motion.div
             initial={{ opacity: 0, y: 0, scale: 0.8 }}
-            animate={{ opacity: 1, y: -60, scale: 1.05 }}
+            animate={{ opacity: 1, y: celebration.big ? -80 : -60, scale: celebration.big ? 1.15 : 1.05 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="pointer-events-none absolute right-8 top-1/3 flex items-center gap-1 rounded-full bg-gradient-to-r from-violet to-magenta px-3 py-1.5 text-sm font-bold shadow-lg"
+            transition={{ duration: celebration.big ? 0.5 : 0.25, ease: "easeOut" }}
+            className={cn(
+              "pointer-events-none absolute right-8 top-1/3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet to-magenta font-bold shadow-lg",
+              celebration.big ? "px-4 py-2.5 text-base" : "px-3 py-1.5 text-sm"
+            )}
           >
-            <SwypToken size={14} /> {floatingReward}
+            <SwypToken size={celebration.big ? 18 : 14} /> {celebration.big ? `🔥 Week compleet! ${celebration.label}` : celebration.label}
           </motion.div>
         )}
       </AnimatePresence>

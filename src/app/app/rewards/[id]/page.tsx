@@ -11,9 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { formatDate } from "@/lib/utils";
 import { useData } from "@/contexts/DataContext";
-import { useAppStore } from "@/store/useAppStore";
-import { insertRedemption } from "@/lib/data";
-import { getDeviceId } from "@/lib/deviceId";
+import { useWallet } from "@/contexts/WalletContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 
 export default function RewardDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,8 +19,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const { rewards, companies } = useData();
   const reward = rewards.find((r) => r.id === id);
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
-  const redeemReward = useAppStore((s) => s.redeemReward);
+  const { balance: tokenBalance, redeem } = useWallet();
   const { requireAuth } = useConsumerAuth();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -41,18 +38,21 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   const company = companies.find((c) => c.id === reward.companyId);
   const canAfford = tokenBalance >= reward.tokenCost;
 
-  function handleConfirm() {
-    const result = redeemReward(reward!);
+  const REASON_LABELS: Record<string, string> = {
+    insufficient_balance: "Onvoldoende Swyp Tokens",
+    reward_not_found: "Deze reward bestaat niet (meer)",
+    not_a_consumer: "Log opnieuw in en probeer het nogmaals",
+  };
+
+  async function handleConfirm() {
+    const result = await redeem(reward!);
     if (!result.ok) {
-      setError(result.reason ?? "Er ging iets mis");
+      setError(REASON_LABELS[result.reason ?? ""] ?? "Er ging iets mis");
       setConfirmOpen(false);
       return;
     }
     setConfirmOpen(false);
     setSuccessOpen(true);
-    if (result.redemption) {
-      insertRedemption(reward!.id, getDeviceId(), result.redemption.code).catch(() => {});
-    }
   }
 
   return (

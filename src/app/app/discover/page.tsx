@@ -8,6 +8,7 @@ import { FeedTabs } from "@/components/consumer/FeedTabs";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
+import { useWallet } from "@/contexts/WalletContext";
 
 // Discover is a second swipeable feed, distinct from For You's interest
 // ranking: it surfaces ads this device hasn't watched any of yet, so it
@@ -45,7 +46,7 @@ export default function DiscoverPage() {
     }
   }
 
-  const tokenBalance = useAppStore((s) => s.tokenBalance);
+  const { balance: tokenBalance } = useWallet();
 
   if (loading) {
     // The branded SwypSplash in the layout covers this — nothing to render.

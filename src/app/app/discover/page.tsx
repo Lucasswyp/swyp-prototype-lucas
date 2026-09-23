@@ -11,7 +11,8 @@ import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
-import { shuffle } from "@/lib/shuffle";
+import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
+import type { Ad } from "@/types";
 
 // Discover is a second swipeable feed, distinct from For You's interest
 // ranking: it surfaces ads this device hasn't watched any of yet, so it
@@ -26,15 +27,17 @@ export default function DiscoverPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const orderedAds = useMemo(() => {
-    const visible = ads.filter(
-      (a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)
-    );
-    const unseen = visible.filter((a) => !adWatchProgress[a.id]);
-    const seen = visible.filter((a) => adWatchProgress[a.id]);
-    return [...shuffle(unseen), ...shuffle(seen)];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ads, adWatchProgress, blockedCompanyIds, refreshKey]);
+  const visible = useMemo(
+    () => ads.filter((a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)),
+    [ads, blockedCompanyIds]
+  );
+  const getAdId = useCallback((a: Ad) => a.id, []);
+  // adWatchProgress ticks continuously while a video plays (see FeedCard's
+  // playback-progress tracking) — reading it here only to decide each ad's
+  // group at reshuffle time, never as a useStableFeedOrder input directly,
+  // is what stops every progress tick from re-shuffling the whole feed.
+  const groupKey = useCallback((a: Ad) => (adWatchProgress[a.id] ? 1 : 0), [adWatchProgress]);
+  const orderedAds = useStableFeedOrder(visible, getAdId, groupKey, refreshKey);
 
   function handleScroll() {
     const el = containerRef.current;

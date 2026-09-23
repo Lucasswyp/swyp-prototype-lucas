@@ -11,7 +11,8 @@ import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
-import { shuffle } from "@/lib/shuffle";
+import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
+import type { Ad } from "@/types";
 
 export default function FeedPage() {
   const interests = useAppStore((s) => s.interests);
@@ -21,22 +22,16 @@ export default function FeedPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const orderedAds = useMemo(() => {
-    // Ads a business just submitted stay 'pending' until reviewed — see
-    // supabase/moderation.sql — and a blocked business's ads must never
-    // resurface no matter how the rest of the feed is ranked.
-    const visible = ads.filter(
-      (a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)
-    );
-    if (interests.length === 0) return shuffle(visible);
-    const matching = visible.filter((a) => interests.includes(a.category));
-    const rest = visible.filter((a) => !interests.includes(a.category));
-    return [...shuffle(matching), ...shuffle(rest)];
-    // refreshKey isn't read in the body — it's the trigger to reshuffle on
-    // every pull-to-refresh / tap-active-tab, since the ad data itself often
-    // comes back unchanged from the DB and would otherwise look like nothing happened.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interests, ads, blockedCompanyIds, refreshKey]);
+  // Ads a business just submitted stay 'pending' until reviewed — see
+  // supabase/moderation.sql — and a blocked business's ads must never
+  // resurface no matter how the rest of the feed is ranked.
+  const visible = useMemo(
+    () => ads.filter((a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)),
+    [ads, blockedCompanyIds]
+  );
+  const getAdId = useCallback((a: Ad) => a.id, []);
+  const groupKey = useCallback((a: Ad) => (interests.length === 0 || interests.includes(a.category) ? 0 : 1), [interests]);
+  const orderedAds = useStableFeedOrder(visible, getAdId, groupKey, refreshKey);
 
   function handleScroll() {
     const el = containerRef.current;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Search as SearchIcon, X, PlayCircle } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { ProductCard } from "@/components/consumer/ProductCard";
@@ -14,12 +14,42 @@ import Link from "next/link";
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
+  const [inputFocused, setInputFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { savedProductIds, toggleSave } = useWallet();
   const { requireAuth } = useConsumerAuth();
   const { products, companies, rewards, ads } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 
   const query = q.trim().toLowerCase();
+
+  // Google-style autocomplete: matches against names/categories already in
+  // memory (no separate suggestions API), ranked so a prefix match ("nor")
+  // beats a mid-string one ("apenoren") before the cap kicks in.
+  const suggestions = useMemo(() => {
+    if (!query) return [];
+    const seen = new Set<string>();
+    const matches: string[] = [];
+    function add(label: string | undefined) {
+      if (!label) return;
+      const key = label.toLowerCase();
+      if (key.includes(query) && !seen.has(key)) {
+        seen.add(key);
+        matches.push(label);
+      }
+    }
+    companies.forEach((c) => add(c.name));
+    products.forEach((p) => add(p.name));
+    companies.forEach((c) => add(c.category));
+    return matches
+      .sort((a, b) => Number(!a.toLowerCase().startsWith(query)) - Number(!b.toLowerCase().startsWith(query)))
+      .slice(0, 6);
+  }, [query, companies, products]);
+
+  function pickSuggestion(s: string) {
+    setQ(s);
+    inputRef.current?.blur();
+  }
 
   const results = useMemo(() => {
     if (!query) return null;
@@ -47,7 +77,6 @@ export default function SearchPage() {
     };
   }, [query, products, companies, rewards, ads]);
 
-  const suggestions = ["Nike", "Pizza", "Amsterdam", "Hotel", "Sneakers", "Fitness", "Festival"];
   const noResults =
     results &&
     results.companies.length === 0 &&
@@ -58,46 +87,51 @@ export default function SearchPage() {
   return (
     <div className="min-h-full pb-28">
       <TopBar back />
-      <div className="px-4 -mt-1 pb-4">
+      <div className="relative px-4 -mt-1 pb-4">
         <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/15 px-3 py-2.5">
           <SearchIcon size={18} className="text-white/40" />
           <input
+            ref={inputRef}
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") inputRef.current?.blur();
+            }}
             placeholder="Zoek merken, producten, deals..."
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-white/30"
           />
           {q && (
-            <button onClick={() => setQ("")} aria-label="Wissen">
+            <button onMouseDown={(e) => e.preventDefault()} onClick={() => setQ("")} aria-label="Wissen">
               <X size={16} className="text-white/40" />
             </button>
           )}
         </div>
-      </div>
 
-      {!results && (
-        <div className="px-4">
-          <p className="text-xs font-semibold text-white/40 mb-2 uppercase tracking-wide">Suggesties</p>
-          <div className="flex flex-wrap gap-2">
+        {inputFocused && suggestions.length > 0 && (
+          <div className="absolute left-4 right-4 top-full z-20 mt-1 overflow-hidden rounded-xl border border-white/10 bg-slate shadow-xl">
             {suggestions.map((s) => (
               <button
                 key={s}
-                onClick={() => setQ(s)}
-                className="rounded-full bg-white/5 border border-white/10 px-3.5 py-1.5 text-sm text-white/70"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pickSuggestion(s)}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm hover:bg-white/5"
               >
-                {s}
+                <SearchIcon size={14} className="shrink-0 text-white/30" />
+                <span className="truncate">{s}</span>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {noResults && (
         <EmptyState
           icon={SearchIcon}
           title={`Geen resultaten voor "${q}"`}
-          description="Probeer een andere zoekterm of bekijk onze suggesties."
+          description="Probeer een andere zoekterm."
         />
       )}
 

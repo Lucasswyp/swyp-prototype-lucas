@@ -5,6 +5,7 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { NativeAppRefresh } from "@/components/NativeAppRefresh";
 import { NativeOAuthListener } from "@/components/NativeOAuthListener";
 import { ReferralCapture } from "@/components/ReferralCapture";
+import { NativePushRegistration } from "@/components/NativePushRegistration";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <NativeAppRefresh />
         <NativeOAuthListener />
         <ReferralCapture />
+        <NativePushRegistration />
         {children}
       </body>
     </html>

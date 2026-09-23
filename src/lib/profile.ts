@@ -21,6 +21,7 @@ export interface ConsumerProfile {
   name: string;
   username: string | null;
   avatarUrl: string | null;
+  profileCompleted: boolean;
 }
 
 export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
@@ -29,7 +30,7 @@ export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
   if (!userData.user) return null;
   const { data, error } = await supabase
     .from("consumers")
-    .select("name, username, avatar_url")
+    .select("name, username, avatar_url, profile_completed")
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
@@ -38,6 +39,7 @@ export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
     name: data.name,
     username: data.username,
     avatarUrl: data.avatar_url,
+    profileCompleted: data.profile_completed,
   };
 }
 
@@ -60,12 +62,18 @@ export async function uploadAvatar(authUserId: string, file: File): Promise<stri
   return `${data.publicUrl}?v=${Date.now()}`;
 }
 
-export async function updateProfile(fields: { name?: string; username?: string; avatarUrl?: string }) {
+export async function updateProfile(fields: {
+  name?: string;
+  username?: string;
+  avatarUrl?: string;
+  profileCompleted?: boolean;
+}) {
   const supabase = createClient();
-  const update: Record<string, string> = {};
+  const update: Record<string, string | boolean> = {};
   if (fields.name !== undefined) update.name = fields.name;
   if (fields.username !== undefined) update.username = fields.username;
   if (fields.avatarUrl !== undefined) update.avatar_url = fields.avatarUrl;
+  if (fields.profileCompleted !== undefined) update.profile_completed = fields.profileCompleted;
   const { error } = await supabase.from("consumers").update(update).eq(
     "auth_user_id",
     (await supabase.auth.getUser()).data.user?.id

@@ -7,6 +7,8 @@ interface ConsumerAuthValue {
   isLoggedIn: boolean;
   loading: boolean;
   promptOpen: boolean;
+  profileIncomplete: boolean;
+  markProfileComplete: () => void;
   requireAuth: () => boolean;
   closePrompt: () => void;
 }
@@ -17,11 +19,22 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [promptOpen, setPromptOpen] = useState(false);
+  // Google sign-ins skip the username/photo step email signup collects
+  // up front, so consumers.profile_completed starts false for them — this
+  // drives a one-time redirect to /app/complete-profile (see AppLayout).
+  const [profileIncomplete, setProfileIncomplete] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       setIsLoggedIn(!!data.user);
+      if (data.user) {
+        const { data: consumer } = await supabase
+          .from("consumers")
+          .select("profile_completed")
+          .maybeSingle();
+        setProfileIncomplete(consumer ? !consumer.profile_completed : false);
+      }
       setLoading(false);
       // Show the login/signup sheet once per session for guests, a beat
       // after the feed itself has loaded — never block the first video.
@@ -44,7 +57,15 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConsumerAuthContext.Provider
-      value={{ isLoggedIn, loading, promptOpen, requireAuth, closePrompt: () => setPromptOpen(false) }}
+      value={{
+        isLoggedIn,
+        loading,
+        promptOpen,
+        profileIncomplete,
+        markProfileComplete: () => setProfileIncomplete(false),
+        requireAuth,
+        closePrompt: () => setPromptOpen(false),
+      }}
     >
       {children}
     </ConsumerAuthContext.Provider>

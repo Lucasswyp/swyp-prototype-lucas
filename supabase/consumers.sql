@@ -9,6 +9,12 @@ alter table consumers add column if not exists username text;
 alter table consumers add column if not exists gender text;
 alter table consumers add column if not exists birthdate date;
 alter table consumers add column if not exists ethnicity text;
+-- Email signups already chose their own username (and can add a photo any
+-- time via edit-profile), but Google signups only ever get an auto-generated
+-- handle and no photo — this flags those accounts so the client can send
+-- them to /app/complete-profile once, before the feed, instead of leaving
+-- them stuck with a "lucas_c4cd0"-style handle they never chose.
+alter table consumers add column if not exists profile_completed boolean not null default true;
 
 alter table consumers enable row level security;
 
@@ -44,6 +50,7 @@ declare
   v_name text;
   v_username_base text;
   v_username text;
+  v_avatar_url text;
 begin
   if not (v_is_email_signup or v_is_google_signup) then
     return new;
@@ -55,6 +62,9 @@ begin
     v_username := v_username_base;
   else
     v_name := coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1));
+    -- Google's own picture, pre-filled as a starting point — the consumer
+    -- can still change it on the forced complete-profile step.
+    v_avatar_url := coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture');
     v_username_base := lower(regexp_replace(split_part(new.email, '@', 1), '[^a-z0-9_]', '', 'g'));
     if length(v_username_base) < 3 then
       v_username_base := v_username_base || '_user';
@@ -69,12 +79,14 @@ begin
   end if;
 
   begin
-    insert into public.consumers (auth_user_id, name, username, gender, birthdate, ethnicity)
+    insert into public.consumers (auth_user_id, name, username, gender, birthdate, ethnicity, avatar_url, profile_completed)
     values (
       new.id, v_name, v_username,
       new.raw_user_meta_data->>'gender',
       nullif(new.raw_user_meta_data->>'birthdate', '')::date,
-      new.raw_user_meta_data->>'ethnicity'
+      new.raw_user_meta_data->>'ethnicity',
+      v_avatar_url,
+      not v_is_google_signup
     )
     on conflict (auth_user_id) do nothing
     returning id into v_consumer_id;
@@ -86,12 +98,14 @@ begin
     -- previously surfaced to the user as an opaque "Database error saving
     -- new user" with no way to recover or pick a different name.
     v_username := v_username_base || '_' || left(replace(gen_random_uuid()::text, '-', ''), 5);
-    insert into public.consumers (auth_user_id, name, username, gender, birthdate, ethnicity)
+    insert into public.consumers (auth_user_id, name, username, gender, birthdate, ethnicity, avatar_url, profile_completed)
     values (
       new.id, v_name, v_username,
       new.raw_user_meta_data->>'gender',
       nullif(new.raw_user_meta_data->>'birthdate', '')::date,
-      new.raw_user_meta_data->>'ethnicity'
+      new.raw_user_meta_data->>'ethnicity',
+      v_avatar_url,
+      not v_is_google_signup
     )
     on conflict (auth_user_id) do nothing
     returning id into v_consumer_id;

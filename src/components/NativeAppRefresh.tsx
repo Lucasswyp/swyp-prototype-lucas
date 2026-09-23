@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { OAUTH_PENDING_KEY } from "@/lib/googleAuth";
 
 // Capacitor loads this app from a remote URL into a long-lived WebView. On a
 // normal website every open is a fresh network request, but resuming a
@@ -18,7 +19,13 @@ export function NativeAppRefresh() {
       if (!Capacitor.isNativePlatform()) return;
       const { App } = await import("@capacitor/app");
       const listener = await App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive) window.location.href = "/app";
+        // Presenting the system browser for Google sign-in (see
+        // src/lib/googleAuth.ts) also fires this resume event once the user
+        // finishes there — forcing /app here would race NativeOAuthListener's
+        // own navigation and could clobber the in-flight code exchange.
+        if (isActive && !window.sessionStorage.getItem(OAUTH_PENDING_KEY)) {
+          window.location.href = "/app";
+        }
       });
       listenerHandle = listener;
     });

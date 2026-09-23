@@ -8,6 +8,7 @@ import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { validateUsernameFormat, isUsernameTaken } from "@/lib/profile";
+import { signInWithGoogle } from "@/lib/googleAuth";
 
 const GENDERS = ["Man", "Vrouw", "Non-binair", "Zeg ik liever niet"];
 const ETHNICITIES = [
@@ -39,6 +40,15 @@ export default function UserAuthPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const authError = new URLSearchParams(window.location.search).get("authError");
+    if (authError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setError(`Inloggen met Google is mislukt: ${authError}`);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">(
     "idle"
@@ -119,11 +129,7 @@ export default function UserAuthPage() {
   }
 
   async function handleGoogle() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/confirm` },
-    });
+    await signInWithGoogle();
   }
 
   if (checkEmail) {

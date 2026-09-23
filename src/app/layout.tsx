@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { StoreHydrator } from "@/components/StoreHydrator";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { NativeAppRefresh } from "@/components/NativeAppRefresh";
+import { NativeOAuthListener } from "@/components/NativeOAuthListener";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <StoreHydrator />
         <ServiceWorkerRegister />
         <NativeAppRefresh />
+        <NativeOAuthListener />
         {children}
       </body>
     </html>

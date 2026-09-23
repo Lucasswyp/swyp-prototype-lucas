@@ -4,18 +4,14 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithGoogle } from "@/lib/googleAuth";
 import { LogoMark } from "@/components/ui/Logo";
 
 export function LoginPromptModal() {
   const { promptOpen, closePrompt } = useConsumerAuth();
 
   async function handleGoogle() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/confirm` },
-    });
+    await signInWithGoogle();
   }
 
   return (

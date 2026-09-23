@@ -160,8 +160,8 @@ export default function LandingPage() {
           <Logo size="sm" />
           <div className="flex gap-6">
             <Link href="/for-business" className="hover:text-white/70">Voor bedrijven</Link>
-            <a href="#" className="hover:text-white/70">Privacy</a>
-            <a href="#" className="hover:text-white/70">Voorwaarden</a>
+            <Link href="/privacy" className="hover:text-white/70">Privacy</Link>
+            <Link href="/terms" className="hover:text-white/70">Voorwaarden</Link>
           </div>
           <span>© 2026 Swyp. Swipe. Spaar. Profiteer.</span>
         </div>

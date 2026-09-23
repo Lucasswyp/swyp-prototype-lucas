@@ -16,6 +16,8 @@ import {
   LogOut,
   Flame,
   Pencil,
+  Gift,
+  ChevronRight,
 } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +27,7 @@ import { fetchMyProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
 
 const menu = [
+  { icon: Gift, label: "Nodig vrienden uit", href: "/app/referral" },
   { icon: Heart, label: "Mijn interesses", href: "/app/interests" },
   { icon: Ticket, label: "Mijn rewards", href: "/app/my-rewards" },
   { icon: Wallet, label: "Wallet", href: "/app/wallet" },
@@ -97,6 +100,19 @@ export default function ProfilePage() {
             <Pencil size={15} />
           </Link>
         </Card>
+
+        <Link href="/app/referral">
+          <Card className="p-4 mb-4 flex items-center gap-3 bg-gradient-to-r from-violet/25 to-magenta/15 border-white/15">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet to-magenta glow-violet">
+              <Gift size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold">Nodig vrienden uit</p>
+              <p className="text-xs text-white/60">Geef 50, krijg 50 Swyp Tokens</p>
+            </div>
+            <ChevronRight size={18} className="text-white/40 shrink-0" />
+          </Card>
+        </Link>
 
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           <Card className="p-3 text-center">

@@ -35,6 +35,10 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const [scrubbing, setScrubbing] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
+  const [hearts, setHearts] = useState<{ id: number; x: number; y: number; rotate: number }[]>([]);
+  const heartIdRef = useRef(0);
+  const tapTimeoutRef = useRef<number | null>(null);
+  const lastTapAtRef = useRef(0);
 
   const x = useMotionValue(0);
   const watch80FiredRef = useRef(false);
@@ -271,6 +275,50 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     window.setTimeout(() => setShowPauseIcon(false), 500);
   }
 
+  // Two hearts at random offsets from the tap point, not one centered one —
+  // reads as a livelier "double-tap to like" burst than the single Instagram-
+  // style heart everyone's already seen a thousand times.
+  function spawnHeartBurst(clientX: number, clientY: number) {
+    const rect = videoRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const baseX = ((clientX - rect.left) / rect.width) * 100;
+    const baseY = ((clientY - rect.top) / rect.height) * 100;
+    const newHearts = [0, 1].map(() => ({
+      id: heartIdRef.current++,
+      x: Math.min(88, Math.max(12, baseX + (Math.random() * 36 - 18))),
+      y: Math.min(82, Math.max(18, baseY + (Math.random() * 36 - 18))),
+      rotate: Math.random() * 30 - 15,
+    }));
+    setHearts((h) => [...h, ...newHearts]);
+    window.setTimeout(() => {
+      setHearts((h) => h.filter((existing) => !newHearts.some((n) => n.id === existing.id)));
+    }, 800);
+  }
+
+  // Standard double-tap detection: a single tap waits out the window in case
+  // a second one follows, so it can be cancelled instead of toggling
+  // play/pause underneath the like burst.
+  function handleVideoClick(e: React.MouseEvent<HTMLVideoElement>) {
+    const now = Date.now();
+    const { clientX, clientY } = e;
+    if (now - lastTapAtRef.current < 300) {
+      if (tapTimeoutRef.current !== null) {
+        window.clearTimeout(tapTimeoutRef.current);
+        tapTimeoutRef.current = null;
+      }
+      lastTapAtRef.current = 0;
+      spawnHeartBurst(clientX, clientY);
+      handleLike();
+      return;
+    }
+    lastTapAtRef.current = now;
+    tapTimeoutRef.current = window.setTimeout(() => {
+      handleTap();
+      lastTapAtRef.current = 0;
+      tapTimeoutRef.current = null;
+    }, 300);
+  }
+
   function handleLike() {
     if (!requireAuth()) return;
     if (liked) return; // one-time reward — already claimed, nothing more to toggle
@@ -336,7 +384,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           playsInline
           preload={isActive || isNear ? "auto" : "none"}
           onTimeUpdate={handleTimeUpdate}
-          onClick={handleTap}
+          onClick={handleVideoClick}
           className="h-full w-full object-cover"
         />
       </motion.div>
@@ -400,6 +448,19 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           </motion.div>
         )}
       </AnimatePresence>
+
+      {hearts.map((h) => (
+        <div key={h.id} className="pointer-events-none absolute z-20" style={{ left: `${h.x}%`, top: `${h.y}%` }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.3, y: 0, rotate: h.rotate }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.3, 1.3, 1, 0.9], y: -30 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="-translate-x-1/2 -translate-y-1/2"
+          >
+            <Heart size={64} className="fill-magenta text-magenta drop-shadow-lg" />
+          </motion.div>
+        </div>
+      ))}
 
       <AnimatePresence>
         {celebration && (

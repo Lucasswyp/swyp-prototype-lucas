@@ -67,9 +67,12 @@ export default function DiscoverPage() {
       onScroll={handleScroll}
       className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
     >
-      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 flex items-center justify-between px-4">
-        <FeedTabs active="discover" />
-        <div className="pointer-events-auto flex items-center gap-2">
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
+        <div />
+        <div className="flex justify-center">
+          <FeedTabs active="discover" />
+        </div>
+        <div className="pointer-events-auto flex items-center gap-2 justify-self-end">
           <Link
             href="/app/search"
             aria-label="Zoeken"

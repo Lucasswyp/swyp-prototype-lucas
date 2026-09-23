@@ -19,7 +19,7 @@ export default function PrivacyPage() {
 
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200 mb-10">
             Concepttekst — nog niet juridisch gecontroleerd. Vul de placeholders (bedrijfsgegevens, KVK-nummer,
-            adres) aan en laat deze tekst nakijken voordat je 'm als definitief privacybeleid gebruikt.
+            adres) aan en laat deze tekst nakijken voordat je &apos;m als definitief privacybeleid gebruikt.
           </div>
 
           <div className="flex flex-col gap-8 text-white/70 leading-relaxed text-sm sm:text-base">

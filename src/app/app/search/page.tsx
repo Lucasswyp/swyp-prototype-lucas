@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search as SearchIcon, X } from "lucide-react";
+import { Search as SearchIcon, X, PlayCircle } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
@@ -31,12 +31,29 @@ export default function SearchPage() {
         (p) => p.name.toLowerCase().includes(query) || p.description.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)
       ),
       rewards: rewards.filter((r) => r.title.toLowerCase().includes(query) || r.category.toLowerCase().includes(query)),
+      // Ads matching the search term too — not just their own product/company,
+      // since the point is surfacing *video content* people might find
+      // interesting for a keyword, the same way the products/rewards above do.
+      ads: ads.filter((a) => {
+        const p = products.find((pr) => pr.id === a.productId);
+        const c = companies.find((co) => co.id === a.companyId);
+        return (
+          a.caption.toLowerCase().includes(query) ||
+          a.category.toLowerCase().includes(query) ||
+          Boolean(p && (p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query))) ||
+          Boolean(c && c.name.toLowerCase().includes(query))
+        );
+      }),
     };
-  }, [query, products, companies, rewards]);
+  }, [query, products, companies, rewards, ads]);
 
   const suggestions = ["Nike", "Pizza", "Amsterdam", "Hotel", "Sneakers", "Fitness", "Festival"];
   const noResults =
-    results && results.companies.length === 0 && results.products.length === 0 && results.rewards.length === 0;
+    results &&
+    results.companies.length === 0 &&
+    results.products.length === 0 &&
+    results.rewards.length === 0 &&
+    results.ads.length === 0;
 
   return (
     <div className="min-h-full pb-28">
@@ -82,6 +99,33 @@ export default function SearchPage() {
           title={`Geen resultaten voor "${q}"`}
           description="Probeer een andere zoekterm of bekijk onze suggesties."
         />
+      )}
+
+      {results && results.ads.length > 0 && (
+        <section className="px-4 mb-6">
+          <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Video&apos;s</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {results.ads.map((a) => {
+              const c = getCompany(a.companyId);
+              return (
+                <Link
+                  key={a.id}
+                  href={`/app/product/${a.productId}`}
+                  className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white/[0.03] border border-white/10"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={a.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                  <PlayCircle size={26} className="absolute top-2 right-2 text-white/80" />
+                  <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                    {c && <p className="text-[11px] font-semibold text-white/70 mb-0.5">{c.name}</p>}
+                    <p className="text-xs font-medium line-clamp-2">{a.caption}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {results && results.companies.length > 0 && (

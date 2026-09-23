@@ -64,9 +64,12 @@ export default function FeedPage() {
       onScroll={handleScroll}
       className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
     >
-      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 flex items-center justify-between px-4">
-        <FeedTabs active="for-you" />
-        <Link href="/app/wallet" className="pointer-events-auto">
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
+        <div />
+        <div className="flex justify-center">
+          <FeedTabs active="for-you" />
+        </div>
+        <Link href="/app/wallet" className="pointer-events-auto justify-self-end">
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
         </Link>
       </div>

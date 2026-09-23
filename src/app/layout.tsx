@@ -4,6 +4,7 @@ import { StoreHydrator } from "@/components/StoreHydrator";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { NativeAppRefresh } from "@/components/NativeAppRefresh";
 import { NativeOAuthListener } from "@/components/NativeOAuthListener";
+import { ReferralCapture } from "@/components/ReferralCapture";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ServiceWorkerRegister />
         <NativeAppRefresh />
         <NativeOAuthListener />
+        <ReferralCapture />
         {children}
       </body>
     </html>

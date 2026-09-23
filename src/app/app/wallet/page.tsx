@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { Gift, ChevronRight } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { Card } from "@/components/ui/Card";
@@ -50,6 +52,19 @@ export default function WalletPage() {
             </div>
           </div>
         </Card>
+
+        <Link href="/app/referral">
+          <Card className="p-4 mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet to-magenta">
+              <Gift size={19} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold">Nodig vrienden uit</p>
+              <p className="text-xs text-white/50">Geef 50, krijg 50 Swyp Tokens</p>
+            </div>
+            <ChevronRight size={18} className="text-white/40 shrink-0" />
+          </Card>
+        </Link>
 
         <h2 className="font-heading font-bold text-sm mb-3 text-white/50 uppercase tracking-wide">
           Token history

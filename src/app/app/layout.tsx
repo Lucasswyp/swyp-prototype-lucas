@@ -10,6 +10,7 @@ import { DataProvider, useData } from "@/contexts/DataContext";
 import { ConsumerAuthProvider, useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LoginPromptModal } from "@/components/consumer/LoginPromptModal";
+import { ReferralAwardToast } from "@/components/consumer/ReferralAwardToast";
 
 // /app/interests is still reachable from the profile menu for people who
 // want to tune what they see, but it's opt-in — nobody is forced through an
@@ -45,6 +46,7 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
           </div>
           {showNav && <BottomNav />}
           <AnimatePresence>{loading && <SwypSplash />}</AnimatePresence>
+          <ReferralAwardToast />
         </MobileFrame>
         <LoginPromptModal />
       </WalletProvider>

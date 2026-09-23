@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { consumePendingReferral } from "@/lib/referral";
 
 interface ConsumerAuthValue {
   isLoggedIn: boolean;
@@ -11,6 +12,8 @@ interface ConsumerAuthValue {
   markProfileComplete: () => void;
   requireAuth: () => boolean;
   closePrompt: () => void;
+  referralAward: number | null;
+  dismissReferralAward: () => void;
 }
 
 const ConsumerAuthContext = createContext<ConsumerAuthValue | null>(null);
@@ -23,6 +26,7 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
   // up front, so consumers.profile_completed starts false for them — this
   // drives a one-time redirect to /app/complete-profile (see AppLayout).
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [referralAward, setReferralAward] = useState<number | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -34,6 +38,10 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
           .select("profile_completed")
           .maybeSingle();
         setProfileIncomplete(consumer ? !consumer.profile_completed : false);
+        // Only meaningful once a session exists — apply_referral resolves
+        // the referrer from auth.uid() server-side (see referrals.sql).
+        const referral = await consumePendingReferral();
+        if (referral?.awarded && referral.points) setReferralAward(referral.points);
       }
       setLoading(false);
       // Show the login/signup sheet once per session for guests, a beat
@@ -65,6 +73,8 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
         markProfileComplete: () => setProfileIncomplete(false),
         requireAuth,
         closePrompt: () => setPromptOpen(false),
+        referralAward,
+        dismissReferralAward: () => setReferralAward(null),
       }}
     >
       {children}

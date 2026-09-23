@@ -19,7 +19,7 @@ export default function TermsPage() {
 
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200 mb-10">
             Concepttekst — nog niet juridisch gecontroleerd. Vul de placeholders (bedrijfsgegevens, minimumleeftijd)
-            aan en laat deze tekst nakijken voordat je 'm als definitieve voorwaarden gebruikt.
+            aan en laat deze tekst nakijken voordat je &apos;m als definitieve voorwaarden gebruikt.
           </div>
 
           <div className="flex flex-col gap-8 text-white/70 leading-relaxed text-sm sm:text-base">

@@ -107,12 +107,14 @@ export default function DiscoverPage() {
 
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
 
-      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
-        <div />
-        <div className="flex justify-center">
+      {/* See src/app/app/page.tsx — absolute-centering instead of a 3-column
+          grid, which squeezed "For You"/"Discover" into a column too narrow
+          for the text and wrapped it onto two lines. */}
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 h-7">
+        <div className="pointer-events-auto absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap">
           <FeedTabs active="discover" onActiveTap={refreshFeed} />
         </div>
-        <div className="pointer-events-auto flex items-center gap-2 justify-self-end">
+        <div className="pointer-events-auto absolute right-4 top-0 flex items-center gap-2">
           <Link
             href="/app/search"
             aria-label="Zoeken"

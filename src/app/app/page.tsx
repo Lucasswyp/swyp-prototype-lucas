@@ -113,12 +113,16 @@ export default function FeedPage() {
 
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
 
-      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
-        <div />
-        <div className="flex justify-center">
+      {/* Centering this with a 3-column grid (each column an equal 1/3 of the
+          width) squeezed "For You" + "Discover" into a column too narrow for
+          both words side by side, wrapping "For You" onto two lines. Free-
+          floating absolute positioning instead lets the tab group be exactly
+          as wide as its content while still landing dead-center. */}
+      <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 h-7">
+        <div className="pointer-events-auto absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap">
           <FeedTabs active="for-you" onActiveTap={refreshFeed} />
         </div>
-        <Link href="/app/wallet" className="pointer-events-auto justify-self-end">
+        <Link href="/app/wallet" className="pointer-events-auto absolute right-4 top-0">
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
         </Link>
       </div>

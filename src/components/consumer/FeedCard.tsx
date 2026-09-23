@@ -37,8 +37,13 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const [buffering, setBuffering] = useState(false);
   const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number; rotate: number }[]>([]);
+  // True when the video is fully buffered and ready but still paused —
+  // iOS Low Power Mode blocks ALL programmatic video autoplay (muted or
+  // not) as a battery-saving measure, so attemptPlay() below can retry
+  // forever and never succeed. This surfaces a real, tappable affordance
+  // instead of a frozen first frame that looks broken.
+  const [needsTapToPlay, setNeedsTapToPlay] = useState(false);
   const heartIdRef = useRef(0);
-  const tapTimeoutRef = useRef<number | null>(null);
   const lastTapAtRef = useRef(0);
 
   const x = useMotionValue(0);
@@ -90,6 +95,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (!isActive || paused) {
       video.pause();
       setBuffering(false);
+      setNeedsTapToPlay(false);
       return;
     }
 
@@ -107,6 +113,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
     function attemptPlay() {
       if (cancelled || !video || video.paused === false) return;
+      video.muted = true;
       video.play().catch(() => {
         // Ignored — the next readiness/timer tick will try again.
       });
@@ -114,6 +121,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
     function onPlaying() {
       setBuffering(false);
+      setNeedsTapToPlay(false);
     }
     function onWaiting() {
       setBuffering(true);
@@ -163,6 +171,17 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       }
     }, 800);
 
+    // If the video is fully buffered (readyState >= 3, HAVE_FUTURE_DATA —
+    // genuinely ready, not just "still loading") but still paused after a
+    // beat, every retry above has already failed silently: this is a real
+    // policy block (Low Power Mode), not a slow connection, and no amount
+    // of further retrying will fix it without a direct tap.
+    const tapToPlayTimeout = window.setTimeout(() => {
+      if (!cancelled && video.paused && video.readyState >= 3) {
+        setNeedsTapToPlay(true);
+      }
+    }, 1200);
+
     return () => {
       cancelled = true;
       video.removeEventListener("canplay", attemptPlay);
@@ -172,6 +191,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       video.removeEventListener("error", onError);
       video.removeEventListener("stalled", onError);
       window.clearInterval(retryInterval);
+      window.clearTimeout(tapToPlayTimeout);
     };
   }, [isActive, paused]);
 
@@ -270,8 +290,26 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     setScrubbing(false);
   }
 
+  // Runs the play()/pause() call synchronously inside the tap's own event
+  // handler rather than through React state + a useEffect reacting to it a
+  // tick later — iOS ties its "was this genuinely user-initiated" check to
+  // the gesture's own call stack, and a deferred call loses that standing.
+  // Under Low Power Mode specifically, iOS blocks ALL video autoplay outside
+  // a direct gesture (muted or not), so this is the only reliable way a tap
+  // can un-stick a video that autoplay never managed to start.
   function handleTap() {
-    setPaused((p) => !p);
+    const video = videoRef.current;
+    if (video) {
+      if (video.paused) {
+        video.muted = true;
+        video.play().catch(() => {});
+        setPaused(false);
+        setNeedsTapToPlay(false);
+      } else {
+        video.pause();
+        setPaused(true);
+      }
+    }
     setShowPauseIcon(true);
     window.setTimeout(() => setShowPauseIcon(false), 500);
   }
@@ -296,28 +334,24 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     }, 800);
   }
 
-  // Standard double-tap detection: a single tap waits out the window in case
-  // a second one follows, so it can be cancelled instead of toggling
-  // play/pause underneath the like burst.
+  // Every tap toggles play/pause immediately (see handleTap) — deferring it
+  // behind a "wait, is a second tap coming?" timeout, like standard
+  // double-tap detection does, would push the play() call outside the
+  // gesture's own call stack and break iOS's autoplay-gesture check. A
+  // second tap within the window additionally likes; toggling play/pause
+  // twice in quick succession nets out to no visible change, same as
+  // TikTok/Instagram's own double-tap behavior.
   function handleVideoClick(e: React.MouseEvent<HTMLVideoElement>) {
     const now = Date.now();
     const { clientX, clientY } = e;
+    handleTap();
     if (now - lastTapAtRef.current < 300) {
-      if (tapTimeoutRef.current !== null) {
-        window.clearTimeout(tapTimeoutRef.current);
-        tapTimeoutRef.current = null;
-      }
       lastTapAtRef.current = 0;
       spawnHeartBurst(clientX, clientY);
       handleLike();
-      return;
+    } else {
+      lastTapAtRef.current = now;
     }
-    lastTapAtRef.current = now;
-    tapTimeoutRef.current = window.setTimeout(() => {
-      handleTap();
-      lastTapAtRef.current = 0;
-      tapTimeoutRef.current = null;
-    }, 300);
   }
 
   function handleLike() {
@@ -401,7 +435,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
 
       <AnimatePresence>
-        {isActive && buffering && (
+        {isActive && buffering && !needsTapToPlay && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -411,6 +445,27 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           >
             <div className="h-9 w-9 rounded-full border-2 border-white/25 border-t-white animate-spin" />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Not auto-hiding, unlike showPauseIcon below — this only appears once
+          autoplay has been silently blocked for a while (typically iOS Low
+          Power Mode), so it needs to stay put until the user actually taps it. */}
+      <AnimatePresence>
+        {isActive && needsTapToPlay && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleTap}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+            aria-label="Video afspelen"
+          >
+            <div className="rounded-full bg-black/50 p-5">
+              <Play size={32} fill="white" />
+            </div>
+            <span className="rounded-full bg-black/50 px-3 py-1 text-xs font-medium">Tik om af te spelen</span>
+          </motion.button>
         )}
       </AnimatePresence>
 

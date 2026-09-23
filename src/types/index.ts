@@ -52,6 +52,7 @@ export interface Ad {
   caption: string;
   category: Category;
   ctaLabel: string;
+  moderationStatus: "pending" | "approved" | "rejected";
   rewardRules: {
     watch80: number;
     like: number;

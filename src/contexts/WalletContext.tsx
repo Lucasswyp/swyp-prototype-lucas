@@ -20,6 +20,14 @@ import {
   type AwardResult,
 } from "@/lib/rewards";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import {
+  submitReport,
+  fetchMyBlockedBusinessIds,
+  blockBusiness as blockBusinessRemote,
+  unblockBusiness as unblockBusinessRemote,
+  type ReportTargetType,
+  type ReportReason,
+} from "@/lib/safety";
 import type { WalletTransaction, Reward, Redemption } from "@/types";
 
 interface WalletValue {
@@ -32,12 +40,15 @@ interface WalletValue {
   likedAdIds: Set<string>;
   savedProductIds: Set<string>;
   followedCompanyIds: Set<string>;
+  blockedCompanyIds: Set<string>;
   redemptions: Redemption[];
   awardWatch80: (adId: string, watchMs: number) => Promise<AwardResult>;
   awardLike: (adId: string) => Promise<AwardResult>;
   awardClick: (adId: string) => Promise<AwardResult>;
   toggleSave: (productId: string, adId: string | null) => Promise<AwardResult | null>;
   toggleFollow: (companyId: string) => Promise<void>;
+  toggleBlock: (companyId: string) => Promise<void>;
+  report: (targetType: ReportTargetType, targetId: string, reason: ReportReason, details?: string) => Promise<void>;
   redeem: (reward: Reward) => Promise<{ ok: boolean; reason?: string; code?: string }>;
   markRedemptionUsed: (redemptionId: string) => Promise<void>;
   refreshHistory: () => Promise<void>;
@@ -65,6 +76,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [likedAdIds, setLikedAdIds] = useState<Set<string>>(new Set());
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
   const [followedCompanyIds, setFollowedCompanyIds] = useState<Set<string>>(new Set());
+  const [blockedCompanyIds, setBlockedCompanyIds] = useState<Set<string>>(new Set());
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   // A fast double-tap on the same save/follow button used to be able to fire
   // two requests before the first one's state update landed — these track
@@ -72,6 +84,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // instead of racing the first.
   const pendingSaves = useRef<Set<string>>(new Set());
   const pendingFollows = useRef<Set<string>>(new Set());
+  const pendingBlocks = useRef<Set<string>>(new Set());
 
   const refreshHistory = useCallback(async () => {
     setHistory(await fetchWalletHistory());
@@ -97,17 +110,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setLikedAdIds(new Set());
       setSavedProductIds(new Set());
       setFollowedCompanyIds(new Set());
+      setBlockedCompanyIds(new Set());
       setRedemptions([]);
       return;
     }
     let cancelled = false;
     (async () => {
       const id = await fetchMyConsumerId();
-      const [wallet, likes, saves, follows, hist, reds] = await Promise.all([
+      const [wallet, likes, saves, follows, blocks, hist, reds] = await Promise.all([
         fetchWallet(),
         fetchMyLikedAdIds(),
         fetchMySavedProductIds(),
         fetchMyFollowedCompanyIds(),
+        fetchMyBlockedBusinessIds(),
         fetchWalletHistory(),
         id ? fetchMyRedemptions(id) : Promise.resolve([]),
       ]);
@@ -120,6 +135,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setLikedAdIds(likes);
       setSavedProductIds(saves);
       setFollowedCompanyIds(follows);
+      setBlockedCompanyIds(blocks);
       setHistory(hist);
       setRedemptions(reds);
       setLoading(false);
@@ -243,6 +259,51 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [consumerId, followedCompanyIds]
   );
 
+  const toggleBlock = useCallback(
+    async (companyId: string) => {
+      if (!consumerId) return;
+      if (pendingBlocks.current.has(companyId)) return;
+      pendingBlocks.current.add(companyId);
+      try {
+        const isBlocked = blockedCompanyIds.has(companyId);
+        if (isBlocked) {
+          setBlockedCompanyIds((s) => {
+            const next = new Set(s);
+            next.delete(companyId);
+            return next;
+          });
+          try {
+            await unblockBusinessRemote(companyId);
+          } catch {
+            setBlockedCompanyIds((s) => new Set(s).add(companyId));
+          }
+          return;
+        }
+        setBlockedCompanyIds((s) => new Set(s).add(companyId));
+        try {
+          await blockBusinessRemote(consumerId, companyId);
+        } catch {
+          setBlockedCompanyIds((s) => {
+            const next = new Set(s);
+            next.delete(companyId);
+            return next;
+          });
+        }
+      } finally {
+        pendingBlocks.current.delete(companyId);
+      }
+    },
+    [consumerId, blockedCompanyIds]
+  );
+
+  const report = useCallback(
+    async (targetType: ReportTargetType, targetId: string, reason: ReportReason, details?: string) => {
+      if (!consumerId) return;
+      await submitReport(consumerId, targetType, targetId, reason, details);
+    },
+    [consumerId]
+  );
+
   const redeem = useCallback(
     async (reward: Reward) => {
       const code = genCode();
@@ -274,12 +335,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         likedAdIds,
         savedProductIds,
         followedCompanyIds,
+        blockedCompanyIds,
         redemptions,
         awardWatch80,
         awardLike,
         awardClick,
         toggleSave,
         toggleFollow,
+        toggleBlock,
+        report,
         redeem,
         markRedemptionUsed,
         refreshHistory,

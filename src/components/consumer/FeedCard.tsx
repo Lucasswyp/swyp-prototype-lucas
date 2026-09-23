@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, AnimatePresence } from "framer-motion";
-import { Heart, Bookmark, Share2, Info, Play, Pause } from "lucide-react";
+import { Heart, Bookmark, Share2, Info, Play, Pause, MoreVertical } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SwypToken } from "@/components/ui/SwypToken";
+import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useAppStore } from "@/store/useAppStore";
@@ -13,6 +14,7 @@ import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { shareLink } from "@/lib/share";
+import type { ReportReason } from "@/lib/safety";
 import type { Ad, Company, Product } from "@/types";
 
 interface FeedCardProps {
@@ -57,12 +59,21 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const playedMsRef = useRef(0);
   const lastPlayingTickRef = useRef<number | null>(null);
 
-  const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike } = useWallet();
+  const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike, toggleBlock, report } = useWallet();
   const markWatched = useAppStore((s) => s.markWatched);
   const [optimisticLiked, setOptimisticLiked] = useState(false);
   const liked = optimisticLiked || likedAdIds.has(ad.id);
   const saved = savedProductIds.has(product.id);
   const { requireAuth, isLoggedIn } = useConsumerAuth();
+  const [safetySheetOpen, setSafetySheetOpen] = useState(false);
+
+  function handleReport(reason: ReportReason) {
+    return report("ad", ad.id, reason);
+  }
+
+  function handleBlock() {
+    return toggleBlock(company.id).then(() => onSkip());
+  }
 
   useEffect(() => {
     if (isActive) {
@@ -587,7 +598,24 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
             <Info size={21} className="text-white" />
           </span>
         </Link>
+        <button
+          onClick={() => (requireAuth() ? setSafetySheetOpen(true) : undefined)}
+          className="flex flex-col items-center gap-1"
+          aria-label="Meer opties"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
+            <MoreVertical size={21} className="text-white" />
+          </span>
+        </button>
       </div>
+
+      <ReportBlockSheet
+        open={safetySheetOpen}
+        onClose={() => setSafetySheetOpen(false)}
+        companyName={company.name}
+        onReport={handleReport}
+        onBlock={handleBlock}
+      />
 
       {/* bottom info */}
       <div className="absolute left-3 right-20 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-10 text-white">

@@ -22,6 +22,7 @@ export interface ConsumerProfile {
   username: string | null;
   avatarUrl: string | null;
   profileCompleted: boolean;
+  birthdate: string | null;
 }
 
 export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
@@ -30,7 +31,7 @@ export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
   if (!userData.user) return null;
   const { data, error } = await supabase
     .from("consumers")
-    .select("name, username, avatar_url, profile_completed")
+    .select("name, username, avatar_url, profile_completed, birthdate")
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
@@ -40,6 +41,7 @@ export async function fetchMyProfile(): Promise<ConsumerProfile | null> {
     username: data.username,
     avatarUrl: data.avatar_url,
     profileCompleted: data.profile_completed,
+    birthdate: data.birthdate,
   };
 }
 
@@ -67,6 +69,7 @@ export async function updateProfile(fields: {
   username?: string;
   avatarUrl?: string;
   profileCompleted?: boolean;
+  birthdate?: string;
 }) {
   const supabase = createClient();
   const update: Record<string, string | boolean> = {};
@@ -74,6 +77,7 @@ export async function updateProfile(fields: {
   if (fields.username !== undefined) update.username = fields.username;
   if (fields.avatarUrl !== undefined) update.avatar_url = fields.avatarUrl;
   if (fields.profileCompleted !== undefined) update.profile_completed = fields.profileCompleted;
+  if (fields.birthdate !== undefined) update.birthdate = fields.birthdate;
   const { error } = await supabase.from("consumers").update(update).eq(
     "auth_user_id",
     (await supabase.auth.getUser()).data.user?.id

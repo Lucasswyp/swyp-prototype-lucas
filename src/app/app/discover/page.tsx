@@ -21,16 +21,20 @@ import { shuffle } from "@/lib/shuffle";
 export default function DiscoverPage() {
   const adWatchProgress = useAppStore((s) => s.adWatchProgress);
   const { ads, companies, products, loading, refresh } = useData();
+  const { blockedCompanyIds } = useWallet();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const orderedAds = useMemo(() => {
-    const unseen = ads.filter((a) => !adWatchProgress[a.id]);
-    const seen = ads.filter((a) => adWatchProgress[a.id]);
+    const visible = ads.filter(
+      (a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)
+    );
+    const unseen = visible.filter((a) => !adWatchProgress[a.id]);
+    const seen = visible.filter((a) => adWatchProgress[a.id]);
     return [...shuffle(unseen), ...shuffle(seen)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ads, adWatchProgress, refreshKey]);
+  }, [ads, adWatchProgress, blockedCompanyIds, refreshKey]);
 
   function handleScroll() {
     const el = containerRef.current;

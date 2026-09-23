@@ -268,6 +268,7 @@ export const ads: Ad[] = [
     caption: "Gemaakt om in weg te zakken. Essential Hoodie, nu -20%.",
     category: "Fashion",
     ctaLabel: "Bekijk product",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -280,6 +281,7 @@ export const ads: Ad[] = [
     caption: "Cloudstep. Lopen op wolken, letterlijk.",
     category: "Fashion",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -292,6 +294,7 @@ export const ads: Ad[] = [
     caption: "Gerecycled canvas. Nul compromis op stijl.",
     category: "Fashion",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -304,6 +307,7 @@ export const ads: Ad[] = [
     caption: "Vers gebrand, direct van de kweker naar jouw bus.",
     category: "Food",
     ctaLabel: "Bekijk product",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -316,6 +320,7 @@ export const ads: Ad[] = [
     caption: "Wakker worden met uitzicht op de gracht.",
     category: "Travel",
     ctaLabel: "Bekijk aanbieder",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -328,6 +333,7 @@ export const ads: Ad[] = [
     caption: "Twee dagen, zes podia, één zomer om nooit te vergeten.",
     category: "Events",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -340,6 +346,7 @@ export const ads: Ad[] = [
     caption: "24g eiwit, elke shake. Bouw door.",
     category: "Fitness",
     ctaLabel: "Bekijk product",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -352,6 +359,7 @@ export const ads: Ad[] = [
     caption: "Stilte, op je eigen voorwaarden. Nova Buds Pro.",
     category: "Tech",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -364,6 +372,7 @@ export const ads: Ad[] = [
     caption: "32 uur batterij. Eén keer laden, hele week luisteren.",
     category: "Tech",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -376,6 +385,7 @@ export const ads: Ad[] = [
     caption: "Egale huid begint bij de juiste actieve ingrediënten.",
     category: "Beauty",
     ctaLabel: "Bekijk product",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -388,6 +398,7 @@ export const ads: Ad[] = [
     caption: "Achtbanen, zeelucht en een dag zonder schema.",
     category: "Days Out",
     ctaLabel: "Shop nu",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
   {
@@ -400,6 +411,7 @@ export const ads: Ad[] = [
     caption: "5 gangen, huisgemaakte pasta, één onvergetelijke avond.",
     category: "Restaurants",
     ctaLabel: "Bekijk product",
+    moderationStatus: "approved" as const,
     rewardRules: defaultRewardRules,
   },
 ];

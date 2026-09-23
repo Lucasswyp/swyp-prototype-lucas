@@ -62,6 +62,7 @@ function mapAd(r: any): Ad {
     caption: r.caption,
     category: r.category,
     ctaLabel: r.cta_label,
+    moderationStatus: r.moderation_status ?? "approved",
     rewardRules: {
       watch80: clampReward("watch80", campaign?.reward_watch),
       like: clampReward("like", campaign?.reward_like),

@@ -2,13 +2,15 @@
 
 import { use, useState } from "react";
 import Image from "next/image";
-import { MapPin, Globe } from "lucide-react";
+import { MapPin, Globe, MoreVertical } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
+import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { useWallet } from "@/contexts/WalletContext";
+import type { ReportReason } from "@/lib/safety";
 import { useData } from "@/contexts/DataContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { formatNumber } from "@/lib/utils";
@@ -20,8 +22,9 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
   const { companies, products: allProducts, rewards: allRewards, ads } = useData();
   const company = companies.find((c) => c.id === id);
   const [tab, setTab] = useState<(typeof tabs)[number]>("Ads");
+  const [safetySheetOpen, setSafetySheetOpen] = useState(false);
 
-  const { followedCompanyIds, toggleFollow, savedProductIds, toggleSave } = useWallet();
+  const { followedCompanyIds, toggleFollow, savedProductIds, toggleSave, toggleBlock, report } = useWallet();
   const followed = followedCompanyIds.has(id);
   const { requireAuth } = useConsumerAuth();
 
@@ -56,9 +59,18 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
               {formatNumber(followerCount)} volgers · {company.category}
             </p>
           </div>
-          <Button size="sm" variant={followed ? "secondary" : "primary"} onClick={() => requireAuth() && toggleFollow(company.id)}>
-            {followed ? "Volgend" : "Volgen"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant={followed ? "secondary" : "primary"} onClick={() => requireAuth() && toggleFollow(company.id)}>
+              {followed ? "Volgend" : "Volgen"}
+            </Button>
+            <button
+              onClick={() => requireAuth() && setSafetySheetOpen(true)}
+              aria-label="Meer opties"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5"
+            >
+              <MoreVertical size={16} className="text-white/70" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs text-white/50 mb-4">
@@ -115,6 +127,14 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
           <p className="text-sm text-white/60 leading-relaxed">{company.description}</p>
         )}
       </div>
+
+      <ReportBlockSheet
+        open={safetySheetOpen}
+        onClose={() => setSafetySheetOpen(false)}
+        companyName={company.name}
+        onReport={(reason: ReportReason) => report("business", company.id, reason)}
+        onBlock={() => toggleBlock(company.id)}
+      />
     </div>
   );
 }

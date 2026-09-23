@@ -14,6 +14,7 @@ import {
   isUsernameTaken,
   type ConsumerProfile,
 } from "@/lib/profile";
+import { isOldEnough, MIN_AGE } from "@/lib/age";
 
 // Forced, one-time step for Google sign-ins: they land here instead of the
 // feed because Google never gives us a chosen username or an uploaded
@@ -28,6 +29,7 @@ export default function CompleteProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
+  const [birthdate, setBirthdate] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,10 +90,16 @@ export default function CompleteProfilePage() {
     setAvatarPreview(URL.createObjectURL(file));
   }
 
+  const needsBirthdate = !profile?.birthdate;
+
   async function handleContinue() {
     if (!profile) return;
     if (usernameStatus !== "available") {
       setError("Kies een geldige, beschikbare gebruikersnaam.");
+      return;
+    }
+    if (needsBirthdate && (!birthdate || !isOldEnough(birthdate))) {
+      setError(`Je moet minimaal ${MIN_AGE} jaar oud zijn om Swyp te gebruiken.`);
       return;
     }
     setSaving(true);
@@ -105,6 +113,7 @@ export default function CompleteProfilePage() {
         username,
         profileCompleted: true,
         ...(avatarUrl ? { avatarUrl } : {}),
+        ...(needsBirthdate ? { birthdate } : {}),
       });
       markProfileComplete();
       router.replace("/app");
@@ -174,12 +183,26 @@ export default function CompleteProfilePage() {
           )}
         </div>
 
+        {needsBirthdate && (
+          <div>
+            <label className="block text-xs font-medium mb-1.5 text-white/60">Geboortedatum</label>
+            <input
+              required
+              type="date"
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet [color-scheme:dark]"
+            />
+          </div>
+        )}
+
         {error && <p className="text-sm text-red-300">{error}</p>}
 
         <Button
           fullWidth
           className="mt-2"
-          disabled={saving || usernameStatus !== "available"}
+          disabled={saving || usernameStatus !== "available" || (needsBirthdate && !birthdate)}
           onClick={handleContinue}
         >
           {saving ? "Opslaan..." : "Doorgaan naar Swyp"}

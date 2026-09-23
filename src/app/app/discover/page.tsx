@@ -62,11 +62,34 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      onScroll={handleScroll}
-      className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
-    >
+    <div className="relative h-full w-full overflow-hidden">
+      {/* See src/app/app/page.tsx for why this header lives outside the
+          scroller as a sibling instead of an absolutely-positioned child of
+          it — nested inside, it scrolled away with the videos. */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+      >
+        {orderedAds.map((ad, i) => {
+          const company = companies.find((c) => c.id === ad.companyId);
+          const product = products.find((p) => p.id === ad.productId);
+          if (!company || !product) return null;
+          return (
+            <div key={ad.id} className="h-full w-full snap-start">
+              <FeedCard
+                ad={ad}
+                company={company}
+                product={product}
+                isActive={i === activeIndex}
+                isNear={Math.abs(i - activeIndex) === 1}
+                onSkip={() => skip(i)}
+              />
+            </div>
+          );
+        })}
+      </div>
+
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
         <div />
         <div className="flex justify-center">
@@ -85,23 +108,6 @@ export default function DiscoverPage() {
           </Link>
         </div>
       </div>
-      {orderedAds.map((ad, i) => {
-        const company = companies.find((c) => c.id === ad.companyId);
-        const product = products.find((p) => p.id === ad.productId);
-        if (!company || !product) return null;
-        return (
-          <div key={ad.id} className="h-full w-full snap-start">
-            <FeedCard
-              ad={ad}
-              company={company}
-              product={product}
-              isActive={i === activeIndex}
-              isNear={Math.abs(i - activeIndex) === 1}
-              onSkip={() => skip(i)}
-            />
-          </div>
-        );
-      })}
     </div>
   );
 }

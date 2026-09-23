@@ -59,11 +59,37 @@ export default function FeedPage() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      onScroll={handleScroll}
-      className="relative h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
-    >
+    <div className="relative h-full w-full overflow-hidden">
+      {/* A sibling of the scroller, not a child of it — position: absolute only
+          decouples an element from normal layout flow, not from its containing
+          block's scroll offset. Nested inside the (position: relative) scroll
+          container, this header used to scroll away with the videos exactly
+          like they did. Anchoring it to this outer, non-scrolling wrapper
+          instead keeps it visually fixed regardless of swipe position. */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+      >
+        {orderedAds.map((ad, i) => {
+          const company = companies.find((c) => c.id === ad.companyId);
+          const product = products.find((p) => p.id === ad.productId);
+          if (!company || !product) return null;
+          return (
+            <div key={ad.id} className="h-full w-full snap-start">
+              <FeedCard
+                ad={ad}
+                company={company}
+                product={product}
+                isActive={i === activeIndex}
+                isNear={Math.abs(i - activeIndex) === 1}
+                onSkip={() => skip(i)}
+              />
+            </div>
+          );
+        })}
+      </div>
+
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
         <div />
         <div className="flex justify-center">
@@ -73,23 +99,6 @@ export default function FeedPage() {
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
         </Link>
       </div>
-      {orderedAds.map((ad, i) => {
-        const company = companies.find((c) => c.id === ad.companyId);
-        const product = products.find((p) => p.id === ad.productId);
-        if (!company || !product) return null;
-        return (
-          <div key={ad.id} className="h-full w-full snap-start">
-            <FeedCard
-              ad={ad}
-              company={company}
-              product={product}
-              isActive={i === activeIndex}
-              isNear={Math.abs(i - activeIndex) === 1}
-              onSkip={() => skip(i)}
-            />
-          </div>
-        );
-      })}
     </div>
   );
 }

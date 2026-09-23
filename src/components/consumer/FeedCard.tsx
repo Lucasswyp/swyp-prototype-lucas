@@ -12,6 +12,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import { shareLink } from "@/lib/share";
 import type { Ad, Company, Product } from "@/types";
 
 interface FeedCardProps {
@@ -352,6 +353,14 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "click" });
   }
 
+  async function handleShare() {
+    const result = await shareLink(
+      `${window.location.origin}/app/product/${product.id}`,
+      `Bekijk ${product.name} op Swyp`
+    );
+    if (result === "copied") flashToast("Link gekopieerd naar klembord");
+  }
+
   function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
     if (info.offset.x > 110) {
       handleLike();
@@ -505,7 +514,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           </motion.span>
         </button>
         <button
-          onClick={() => flashToast("Link gekopieerd naar klembord")}
+          onClick={handleShare}
           className="flex flex-col items-center gap-1"
           aria-label="Delen"
         >

@@ -50,9 +50,9 @@ export function TopBar({
         <Link href="/app/wallet">
           <TokenBadge amount={balance} size="sm" />
         </Link>
-        <button aria-label="Meldingen" className="rounded-full p-1.5 hover:bg-white/10">
+        <Link href="/app/settings" aria-label="Meldingen" className="rounded-full p-1.5 hover:bg-white/10">
           <Bell size={20} />
-        </button>
+        </Link>
       </div>
     </header>
   );

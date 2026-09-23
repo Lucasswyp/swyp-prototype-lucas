@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import {
   fetchWallet,
   fetchWalletHistory,
@@ -66,6 +66,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [savedProductIds, setSavedProductIds] = useState<Set<string>>(new Set());
   const [followedCompanyIds, setFollowedCompanyIds] = useState<Set<string>>(new Set());
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  // A fast double-tap on the same save/follow button used to be able to fire
+  // two requests before the first one's state update landed — these track
+  // which ids currently have a request in flight so the second tap no-ops
+  // instead of racing the first.
+  const pendingSaves = useRef<Set<string>>(new Set());
+  const pendingFollows = useRef<Set<string>>(new Set());
 
   const refreshHistory = useCallback(async () => {
     setHistory(await fetchWalletHistory());
@@ -155,38 +161,44 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const toggleSave = useCallback(
     async (productId: string, adId: string | null) => {
       if (!consumerId) return null;
-      const isSaved = savedProductIds.has(productId);
-      if (isSaved) {
-        setSavedProductIds((s) => {
-          const next = new Set(s);
-          next.delete(productId);
-          return next;
-        });
-        try {
-          await removeSave(productId);
-        } catch {
-          // Revert — the remove never actually happened server-side.
-          setSavedProductIds((s) => new Set(s).add(productId));
-        }
-        return null;
-      }
-      setSavedProductIds((s) => new Set(s).add(productId));
+      if (pendingSaves.current.has(productId)) return null;
+      pendingSaves.current.add(productId);
       try {
-        await addSave(consumerId, productId, adId);
-      } catch {
-        setSavedProductIds((s) => {
-          const next = new Set(s);
-          next.delete(productId);
-          return next;
-        });
-        return null;
+        const isSaved = savedProductIds.has(productId);
+        if (isSaved) {
+          setSavedProductIds((s) => {
+            const next = new Set(s);
+            next.delete(productId);
+            return next;
+          });
+          try {
+            await removeSave(productId);
+          } catch {
+            // Revert — the remove never actually happened server-side.
+            setSavedProductIds((s) => new Set(s).add(productId));
+          }
+          return null;
+        }
+        setSavedProductIds((s) => new Set(s).add(productId));
+        try {
+          await addSave(consumerId, productId, adId);
+        } catch {
+          setSavedProductIds((s) => {
+            const next = new Set(s);
+            next.delete(productId);
+            return next;
+          });
+          return null;
+        }
+        // No ad context (e.g. a product with no live campaign) — still save
+        // it, just nothing to award a token for.
+        if (!adId) return null;
+        const result = await awardInteraction(adId, "save");
+        applyAward(result);
+        return result;
+      } finally {
+        pendingSaves.current.delete(productId);
       }
-      // No ad context (e.g. a product with no live campaign) — still save
-      // it, just nothing to award a token for.
-      if (!adId) return null;
-      const result = await awardInteraction(adId, "save");
-      applyAward(result);
-      return result;
     },
     [consumerId, savedProductIds]
   );
@@ -194,33 +206,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const toggleFollow = useCallback(
     async (companyId: string) => {
       if (!consumerId) return;
-      const isFollowed = followedCompanyIds.has(companyId);
-      if (isFollowed) {
-        setFollowedCompanyIds((s) => {
-          const next = new Set(s);
-          next.delete(companyId);
-          return next;
-        });
-        try {
-          await removeFollow(companyId);
-        } catch {
-          setFollowedCompanyIds((s) => new Set(s).add(companyId));
-        }
-        return;
-      }
-      setFollowedCompanyIds((s) => new Set(s).add(companyId));
+      if (pendingFollows.current.has(companyId)) return;
+      pendingFollows.current.add(companyId);
       try {
-        await addFollow(consumerId, companyId);
-      } catch {
-        setFollowedCompanyIds((s) => {
-          const next = new Set(s);
-          next.delete(companyId);
-          return next;
-        });
-        return;
+        const isFollowed = followedCompanyIds.has(companyId);
+        if (isFollowed) {
+          setFollowedCompanyIds((s) => {
+            const next = new Set(s);
+            next.delete(companyId);
+            return next;
+          });
+          try {
+            await removeFollow(companyId);
+          } catch {
+            setFollowedCompanyIds((s) => new Set(s).add(companyId));
+          }
+          return;
+        }
+        setFollowedCompanyIds((s) => new Set(s).add(companyId));
+        try {
+          await addFollow(consumerId, companyId);
+        } catch {
+          setFollowedCompanyIds((s) => {
+            const next = new Set(s);
+            next.delete(companyId);
+            return next;
+          });
+          return;
+        }
+        const result = await awardFollow(companyId);
+        applyAward(result);
+      } finally {
+        pendingFollows.current.delete(companyId);
       }
-      const result = await awardFollow(companyId);
-      applyAward(result);
     },
     [consumerId, followedCompanyIds]
   );

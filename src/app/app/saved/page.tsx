@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bookmark } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
@@ -17,6 +17,17 @@ const tabs = ["Alles", "Producten", "Deals", "Bedrijven"] as const;
 export default function SavedPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Alles");
   const { savedProductIds, followedCompanyIds, toggleSave } = useWallet();
+
+  // Profile's "Following" menu item deep-links here with ?tab=Bedrijven
+  // instead of duplicating this whole page for what's really just a filter.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if ((tabs as readonly string[]).includes(requested ?? "")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab(requested as (typeof tabs)[number]);
+    }
+  }, []);
+
   const { products, companies } = useData();
   const getCompany = (id: string) => companies.find((c) => c.id === id);
 

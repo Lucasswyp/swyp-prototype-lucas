@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Ticket, Copy, QrCode } from "lucide-react";
+import { Ticket, Copy, Check, QrCode } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Chip } from "@/components/ui/Chip";
 import { Card } from "@/components/ui/Card";
@@ -16,8 +16,15 @@ const tabs = ["Actief", "Gebruikt", "Verlopen"] as const;
 
 export default function MyRewardsPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Actief");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { redemptions, markRedemptionUsed, refreshRedemptions } = useWallet();
   const { rewards: rewardsList } = useData();
+
+  function handleCopy(redemptionId: string, code: string) {
+    navigator.clipboard?.writeText(code);
+    setCopiedId(redemptionId);
+    window.setTimeout(() => setCopiedId((id) => (id === redemptionId ? null : id)), 1800);
+  }
 
   useEffect(() => {
     refreshRedemptions();
@@ -74,10 +81,16 @@ export default function MyRewardsPage() {
                     <div className="rounded-lg bg-white/5 border border-dashed border-white/20 px-3 py-2.5 mb-3 flex items-center justify-between">
                       <span className="font-mono text-sm tracking-widest">{redemption.code}</span>
                       <button
-                        onClick={() => navigator.clipboard?.writeText(redemption.code)}
-                        className="text-xs text-magenta font-semibold"
+                        onClick={() => handleCopy(redemption.id, redemption.code)}
+                        className="flex items-center gap-1 text-xs text-magenta font-semibold"
                       >
-                        Kopieer
+                        {copiedId === redemption.id ? (
+                          <>
+                            <Check size={13} /> Gekopieerd
+                          </>
+                        ) : (
+                          "Kopieer"
+                        )}
                       </button>
                     </div>
                     <p className="text-xs text-white/40 mb-3">

@@ -4,11 +4,27 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export function FeedTabs({ active }: { active: "for-you" | "discover" }) {
+interface FeedTabsProps {
+  active: "for-you" | "discover";
+  // Tapping the tab you're already on doesn't navigate anywhere (same
+  // route), so — matching TikTok/Instagram — it refreshes the feed and
+  // scrolls back to the top instead of doing nothing.
+  onActiveTap?: () => void;
+}
+
+export function FeedTabs({ active, onActiveTap }: FeedTabsProps) {
+  function handleClick(tab: "for-you" | "discover", e: React.MouseEvent) {
+    if (tab === active && onActiveTap) {
+      e.preventDefault();
+      onActiveTap();
+    }
+  }
+
   return (
     <div className="pointer-events-auto flex items-center gap-5">
       <Link
         href="/app"
+        onClick={(e) => handleClick("for-you", e)}
         className={cn(
           "relative font-heading text-[15px] font-bold pb-1 transition-colors",
           active === "for-you" ? "text-white" : "text-white/50"
@@ -25,6 +41,7 @@ export function FeedTabs({ active }: { active: "for-you" | "discover" }) {
       </Link>
       <Link
         href="/app/discover"
+        onClick={(e) => handleClick("discover", e)}
         className={cn(
           "relative font-heading text-[15px] font-bold pb-1 transition-colors",
           active === "discover" ? "text-white" : "text-white/50"

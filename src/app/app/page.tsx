@@ -1,27 +1,35 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FeedCard } from "@/components/consumer/FeedCard";
 import { FeedTabs } from "@/components/consumer/FeedTabs";
+import { PullToRefreshIndicator } from "@/components/consumer/PullToRefreshIndicator";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { Logo } from "@/components/ui/Logo";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import { shuffle } from "@/lib/shuffle";
 
 export default function FeedPage() {
   const interests = useAppStore((s) => s.interests);
-  const { ads, companies, products, loading } = useData();
+  const { ads, companies, products, loading, refresh } = useData();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const orderedAds = useMemo(() => {
-    if (interests.length === 0) return ads;
+    if (interests.length === 0) return shuffle(ads);
     const matching = ads.filter((a) => interests.includes(a.category));
     const rest = ads.filter((a) => !interests.includes(a.category));
-    return [...matching, ...rest];
-  }, [interests, ads]);
+    return [...shuffle(matching), ...shuffle(rest)];
+    // refreshKey isn't read in the body — it's the trigger to reshuffle on
+    // every pull-to-refresh / tap-active-tab, since the ad data itself often
+    // comes back unchanged from the DB and would otherwise look like nothing happened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interests, ads, refreshKey]);
 
   function handleScroll() {
     const el = containerRef.current;
@@ -41,6 +49,19 @@ export default function FeedPage() {
       scrollToIndex(index + 1);
     }
   }
+
+  // Shared by the pull-down-at-top gesture and tapping the already-active
+  // "For You" tab — matching TikTok/Instagram, both are the same "give me a
+  // fresh feed" action, just triggered two different ways.
+  const refreshFeed = useCallback(async () => {
+    refresh();
+    setRefreshKey((k) => k + 1);
+    setActiveIndex(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    await new Promise((r) => setTimeout(r, 500));
+  }, [refresh]);
+
+  const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
 
   const { balance: tokenBalance } = useWallet();
 
@@ -90,10 +111,12 @@ export default function FeedPage() {
         })}
       </div>
 
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
+
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
         <div />
         <div className="flex justify-center">
-          <FeedTabs active="for-you" />
+          <FeedTabs active="for-you" onActiveTap={refreshFeed} />
         </div>
         <Link href="/app/wallet" className="pointer-events-auto justify-self-end">
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />

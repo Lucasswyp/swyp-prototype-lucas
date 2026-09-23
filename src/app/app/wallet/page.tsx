@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Gift, ChevronRight } from "lucide-react";
+import { Gift, ChevronRight, History } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { Card } from "@/components/ui/Card";
 import { TimeAgo } from "@/components/ui/TimeAgo";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatTokens, formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 
@@ -69,6 +70,13 @@ export default function WalletPage() {
         <h2 className="font-heading font-bold text-sm mb-3 text-white/50 uppercase tracking-wide">
           Token history
         </h2>
+        {walletHistory.length === 0 ? (
+          <EmptyState
+            icon={History}
+            title="Nog geen geschiedenis"
+            description="Swipe, like en bewaar advertenties om je eerste Swyp Tokens te verdienen."
+          />
+        ) : (
         <div className="flex flex-col gap-2">
           {walletHistory.map((t) => (
             <div
@@ -93,6 +101,7 @@ export default function WalletPage() {
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ interface DataState {
   campaigns: Campaign[];
   rewards: Reward[];
   loading: boolean;
+  error: boolean;
   refresh: () => void;
 }
 
@@ -25,12 +26,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     campaigns: [],
     rewards: [],
     loading: true,
+    error: false,
   });
   const debounceRef = useRef<number | null>(null);
 
+  // Previously unguarded: a thrown fetchAll() (network error, RLS failure)
+  // left `loading: true` forever with no way out — every page gated on it
+  // would sit on the branded splash indefinitely with no error or retry.
   const load = useCallback(async () => {
-    const data = await fetchAll();
-    setState((s) => ({ ...s, ...data, loading: false }));
+    try {
+      const data = await fetchAll();
+      setState((s) => ({ ...s, ...data, loading: false, error: false }));
+    } catch {
+      setState((s) => ({ ...s, loading: false, error: true }));
+    }
   }, []);
 
   const refresh = useCallback(() => {

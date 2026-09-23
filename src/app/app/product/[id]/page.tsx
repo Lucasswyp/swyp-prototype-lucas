@@ -1,9 +1,9 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Bookmark, Share2 } from "lucide-react";
+import { Star, Bookmark, Share2, Check } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,7 @@ import { useData } from "@/contexts/DataContext";
 import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import { shareLink } from "@/lib/share";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -24,6 +25,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const saved = savedProductIds.has(id);
   const followed = company ? followedCompanyIds.has(company.id) : false;
   const { requireAuth } = useConsumerAuth();
+  const [shared, setShared] = useState(false);
+
+  async function handleShare() {
+    const result = await shareLink(
+      `${window.location.origin}/app/product/${id}`,
+      product ? `Bekijk ${product.name} op Swyp` : undefined
+    );
+    if (result === "copied") {
+      setShared(true);
+      window.setTimeout(() => setShared(false), 1800);
+    }
+  }
 
   if (!product || !company) {
     return (
@@ -92,25 +105,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
 
-        {ad && (
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => requireAuth() && toggleSave(product.id, ad.id)}
-              className="gap-1.5"
-            >
-              <Bookmark size={16} className={saved ? "fill-white" : ""} />
-              {saved ? "Opgeslagen" : "Opslaan"}
-            </Button>
-            <Button variant="secondary" size="md" className="gap-1.5">
-              <Share2 size={16} /> Delen
-            </Button>
-            <Button variant="secondary" size="md" onClick={() => requireAuth() && toggleFollow(company.id)}>
-              {followed ? "Volgend" : "Volg bedrijf"}
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => requireAuth() && toggleSave(product.id, ad?.id ?? null)}
+            className="gap-1.5"
+          >
+            <Bookmark size={16} className={saved ? "fill-white" : ""} />
+            {saved ? "Opgeslagen" : "Opslaan"}
+          </Button>
+          <Button variant="secondary" size="md" onClick={handleShare} className="gap-1.5">
+            {shared ? <Check size={16} /> : <Share2 size={16} />} Delen
+          </Button>
+          <Button variant="secondary" size="md" onClick={() => requireAuth() && toggleFollow(company.id)}>
+            {followed ? "Volgend" : "Volg bedrijf"}
+          </Button>
+        </div>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pt-4 bg-gradient-to-t from-indigo via-indigo to-transparent pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">

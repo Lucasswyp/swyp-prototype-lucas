@@ -9,7 +9,6 @@ import {
   Wallet,
   Bookmark,
   Users,
-  Bell,
   Lock,
   Settings,
   HelpCircle,
@@ -32,11 +31,10 @@ const menu = [
   { icon: Ticket, label: "Mijn rewards", href: "/app/my-rewards" },
   { icon: Wallet, label: "Wallet", href: "/app/wallet" },
   { icon: Bookmark, label: "Saved", href: "/app/saved" },
-  { icon: Users, label: "Following", href: "/app/saved" },
-  { icon: Bell, label: "Meldingen", href: "#" },
-  { icon: Lock, label: "Privacy", href: "#" },
-  { icon: Settings, label: "Instellingen", href: "#" },
-  { icon: HelpCircle, label: "Help", href: "#" },
+  { icon: Users, label: "Following", href: "/app/saved?tab=Bedrijven" },
+  { icon: Settings, label: "Instellingen", href: "/app/settings" },
+  { icon: Lock, label: "Privacy", href: "/privacy" },
+  { icon: HelpCircle, label: "Help", href: "mailto:lucas@swyp.it?subject=Swyp%20support" },
 ];
 
 export default function ProfilePage() {

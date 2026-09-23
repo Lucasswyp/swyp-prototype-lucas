@@ -11,13 +11,14 @@ import { ConsumerAuthProvider, useConsumerAuth } from "@/contexts/ConsumerAuthCo
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LoginPromptModal } from "@/components/consumer/LoginPromptModal";
 import { ReferralAwardToast } from "@/components/consumer/ReferralAwardToast";
+import { Button } from "@/components/ui/Button";
 
 // /app/interests is still reachable from the profile menu for people who
 // want to tune what they see, but it's opt-in — nobody is forced through an
 // intro flow before reaching the feed anymore. /app/complete-profile is the
 // one exception: Google sign-ins skip choosing a username/photo, so that
 // step is mandatory once, right after login (see ProfileGate below).
-const NO_NAV_ROUTES = ["/app/interests", "/app/complete-profile"];
+const NO_NAV_ROUTES = ["/app/interests", "/app/complete-profile", "/app/onboarding"];
 
 function ProfileGate() {
   const { loading, profileIncomplete } = useConsumerAuth();
@@ -34,7 +35,7 @@ function ProfileGate() {
 }
 
 function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean }) {
-  const { loading } = useData();
+  const { loading, error, refresh } = useData();
 
   return (
     <ConsumerAuthProvider>
@@ -46,6 +47,12 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
           </div>
           {showNav && <BottomNav />}
           <AnimatePresence>{loading && <SwypSplash />}</AnimatePresence>
+          {!loading && error && (
+            <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-indigo px-8 text-center">
+              <p className="text-sm text-white/60">Laden is mislukt. Controleer je verbinding.</p>
+              <Button onClick={refresh}>Opnieuw proberen</Button>
+            </div>
+          )}
           <ReferralAwardToast />
         </MobileFrame>
         <LoginPromptModal />

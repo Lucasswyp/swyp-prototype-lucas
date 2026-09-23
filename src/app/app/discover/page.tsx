@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { FeedCard } from "@/components/consumer/FeedCard";
 import { FeedTabs } from "@/components/consumer/FeedTabs";
+import { PullToRefreshIndicator } from "@/components/consumer/PullToRefreshIndicator";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import { shuffle } from "@/lib/shuffle";
 
 // Discover is a second swipeable feed, distinct from For You's interest
 // ranking: it surfaces ads this device hasn't watched any of yet, so it
@@ -17,15 +20,17 @@ import { useWallet } from "@/contexts/WalletContext";
 // full catalog so the feed never runs dry.
 export default function DiscoverPage() {
   const adWatchProgress = useAppStore((s) => s.adWatchProgress);
-  const { ads, companies, products, loading } = useData();
+  const { ads, companies, products, loading, refresh } = useData();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const orderedAds = useMemo(() => {
     const unseen = ads.filter((a) => !adWatchProgress[a.id]);
     const seen = ads.filter((a) => adWatchProgress[a.id]);
-    return [...unseen, ...seen];
-  }, [ads, adWatchProgress]);
+    return [...shuffle(unseen), ...shuffle(seen)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ads, adWatchProgress, refreshKey]);
 
   function handleScroll() {
     const el = containerRef.current;
@@ -45,6 +50,16 @@ export default function DiscoverPage() {
       scrollToIndex(index + 1);
     }
   }
+
+  const refreshFeed = useCallback(async () => {
+    refresh();
+    setRefreshKey((k) => k + 1);
+    setActiveIndex(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    await new Promise((r) => setTimeout(r, 500));
+  }, [refresh]);
+
+  const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
 
   const { balance: tokenBalance } = useWallet();
 
@@ -90,10 +105,12 @@ export default function DiscoverPage() {
         })}
       </div>
 
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
+
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 grid grid-cols-3 items-center px-4">
         <div />
         <div className="flex justify-center">
-          <FeedTabs active="discover" />
+          <FeedTabs active="discover" onActiveTap={refreshFeed} />
         </div>
         <div className="pointer-events-auto flex items-center gap-2 justify-self-end">
           <Link

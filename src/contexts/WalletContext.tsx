@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import posthog from "posthog-js";
 import {
   fetchWallet,
   fetchWalletHistory,
@@ -158,6 +159,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const awardWatch80 = useCallback(async (adId: string, watchMs: number) => {
     const result = await awardInteraction(adId, "watch80", watchMs);
     applyAward(result);
+    posthog.capture("ad_watched_80", { adId, watchMs });
     return result;
   }, []);
 
@@ -165,6 +167,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const result = await awardInteraction(adId, "like");
     if (result.awarded) setLikedAdIds((s) => new Set(s).add(adId));
     applyAward(result);
+    posthog.capture("ad_liked", { adId });
     return result;
   }, []);
 
@@ -206,6 +209,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           });
           return null;
         }
+        posthog.capture("product_saved", { productId, adId });
         // No ad context (e.g. a product with no live campaign) — still save
         // it, just nothing to award a token for.
         if (!adId) return null;
@@ -250,6 +254,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           });
           return;
         }
+        posthog.capture("company_followed", { companyId });
         const result = await awardFollow(companyId);
         applyAward(result);
       } finally {
@@ -300,6 +305,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     async (targetType: ReportTargetType, targetId: string, reason: ReportReason, details?: string) => {
       if (!consumerId) return;
       await submitReport(consumerId, targetType, targetId, reason, details);
+      posthog.capture("content_reported", { targetType, targetId, reason });
     },
     [consumerId]
   );
@@ -312,6 +318,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setBalance(result.balance);
         refreshHistory();
         refreshRedemptions();
+        posthog.capture("reward_redeemed", { rewardId: reward.id, tokenCost: reward.tokenCost });
       }
       return { ok: result.ok, reason: result.reason, code: result.ok ? code : undefined };
     },

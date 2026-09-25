@@ -6,6 +6,7 @@ import { NativeAppRefresh } from "@/components/NativeAppRefresh";
 import { NativeOAuthListener } from "@/components/NativeOAuthListener";
 import { ReferralCapture } from "@/components/ReferralCapture";
 import { NativePushRegistration } from "@/components/NativePushRegistration";
+import { PostHogProvider } from "@/components/PostHogProvider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -47,13 +48,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${plusJakarta.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-indigo text-white">
-        <StoreHydrator />
-        <ServiceWorkerRegister />
-        <NativeAppRefresh />
-        <NativeOAuthListener />
-        <ReferralCapture />
-        <NativePushRegistration />
-        {children}
+        <PostHogProvider>
+          <StoreHydrator />
+          <ServiceWorkerRegister />
+          <NativeAppRefresh />
+          <NativeOAuthListener />
+          <ReferralCapture />
+          <NativePushRegistration />
+          {children}
+        </PostHogProvider>
       </body>
     </html>
   );

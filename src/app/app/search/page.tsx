@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Search as SearchIcon, X, PlayCircle } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { ProductCard } from "@/components/consumer/ProductCard";
@@ -8,9 +9,92 @@ import { RewardCard } from "@/components/consumer/RewardCard";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useWallet } from "@/contexts/WalletContext";
-import { useData } from "@/contexts/DataContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
-import Link from "next/link";
+import { createAlgoliaSearchClient, SEARCH_INDEX_NAME, type SearchRecord } from "@/lib/algolia";
+import type { Company, Product, Reward, Category, RewardCategory } from "@/types";
+
+interface AdHit {
+  id: string;
+  productId: string;
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string;
+  posterUrl: string;
+  caption: string;
+}
+
+function idFromObjectID(objectID: string) {
+  // "product-<uuid>" -> "<uuid>" — the type prefix is only there to keep
+  // objectIDs unique across a combined index, not part of the real id.
+  return objectID.slice(objectID.indexOf("-") + 1);
+}
+
+function hitToCompany(hit: Extract<SearchRecord, { type: "company" }>): Company {
+  return {
+    id: idFromObjectID(hit.objectID),
+    name: hit.name,
+    logoUrl: hit.logoUrl,
+    bannerUrl: hit.bannerUrl,
+    verified: hit.verified,
+    category: hit.category as Category,
+    location: hit.location,
+    website: "",
+    description: hit.description,
+    followers: hit.followers,
+  };
+}
+
+function hitToProduct(hit: Extract<SearchRecord, { type: "product" }>): Product {
+  return {
+    id: idFromObjectID(hit.objectID),
+    companyId: hit.companyId,
+    name: hit.name,
+    description: hit.description,
+    imageUrl: hit.imageUrl,
+    price: hit.price,
+    oldPrice: hit.oldPrice,
+    category: hit.category as Category,
+    url: hit.url ?? "",
+    rating: hit.rating,
+    highlights: hit.highlights,
+  };
+}
+
+function hitToCompanyStub(companyId: string, name: string, logoUrl: string, verified: boolean): Company {
+  // A minimal stand-in for the product/reward/ad's own company, built from
+  // the fields denormalized onto that hit — not a real Company record, but
+  // ProductCard/RewardCard only ever read name/logoUrl/verified from it.
+  return {
+    id: companyId,
+    name,
+    logoUrl,
+    bannerUrl: "",
+    verified,
+    category: "Fashion",
+    location: "",
+    website: "",
+    description: "",
+    followers: 0,
+  };
+}
+
+function hitToReward(hit: Extract<SearchRecord, { type: "reward" }>): Reward {
+  return {
+    id: idFromObjectID(hit.objectID),
+    companyId: hit.companyId,
+    title: hit.title,
+    description: hit.description ?? "",
+    imageUrl: hit.imageUrl,
+    category: hit.category as RewardCategory,
+    tokenCost: hit.tokenCost,
+    moneyValue: hit.moneyValue,
+    terms: "",
+    stock: 0,
+    startDate: "",
+    endDate: "",
+    redemptionMethod: "code",
+  };
+}
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
@@ -18,67 +102,80 @@ export default function SearchPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { savedProductIds, toggleSave } = useWallet();
   const { requireAuth } = useConsumerAuth();
-  const { products, companies, rewards, ads } = useData();
-  const getCompany = (id: string) => companies.find((c) => c.id === id);
 
-  const query = q.trim().toLowerCase();
+  const [hits, setHits] = useState<SearchRecord[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Google-style autocomplete: matches against names/categories already in
-  // memory (no separate suggestions API), ranked so a prefix match ("nor")
-  // beats a mid-string one ("apenoren") before the cap kicks in.
-  const suggestions = useMemo(() => {
-    if (!query) return [];
-    const seen = new Set<string>();
-    const matches: string[] = [];
-    function add(label: string | undefined) {
-      if (!label) return;
-      const key = label.toLowerCase();
-      if (key.includes(query) && !seen.has(key)) {
-        seen.add(key);
-        matches.push(label);
-      }
+  const query = q.trim();
+
+  useEffect(() => {
+    if (!query) {
+      // Clearing the query resets to the empty state — an external reset,
+      // not a value derived from this render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHits(null);
+      return;
     }
-    companies.forEach((c) => add(c.name));
-    products.forEach((p) => add(p.name));
-    companies.forEach((c) => add(c.category));
-    return matches
-      .sort((a, b) => Number(!a.toLowerCase().startsWith(query)) - Number(!b.toLowerCase().startsWith(query)))
-      .slice(0, 6);
-  }, [query, companies, products]);
+    let cancelled = false;
+    setLoading(true);
+    const client = createAlgoliaSearchClient();
+    const timeout = window.setTimeout(async () => {
+      try {
+        const { hits: results } = await client.searchSingleIndex<SearchRecord>({
+          indexName: SEARCH_INDEX_NAME,
+          searchParams: { query, hitsPerPage: 40 },
+        });
+        if (!cancelled) setHits(results);
+      } catch {
+        if (!cancelled) setHits([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+      // A short debounce — Algolia is fast, but this avoids firing a search
+      // request on every single keystroke while someone's still typing.
+    }, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [query]);
+
+  const results = useMemo(() => {
+    if (!hits) return null;
+    const companies = hits.filter((h): h is Extract<SearchRecord, { type: "company" }> => h.type === "company");
+    const products = hits.filter((h): h is Extract<SearchRecord, { type: "product" }> => h.type === "product");
+    const rewards = hits.filter((h): h is Extract<SearchRecord, { type: "reward" }> => h.type === "reward");
+    const ads = hits.filter((h): h is Extract<SearchRecord, { type: "ad" }> => h.type === "ad");
+    return { companies, products, rewards, ads };
+  }, [hits]);
+
+  // Google-style autocomplete, sourced from the same query's hits instead of
+  // a second Algolia call — each hit's primary display field, deduped.
+  const suggestions = useMemo(() => {
+    if (!hits) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const hit of hits) {
+      const label = hit.type === "product" ? hit.name : hit.type === "reward" ? hit.title : hit.type === "ad" ? hit.companyName : hit.name;
+      if (!label) continue;
+      const key = label.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(label);
+      }
+      if (out.length >= 6) break;
+    }
+    return out;
+  }, [hits]);
 
   function pickSuggestion(s: string) {
     setQ(s);
     inputRef.current?.blur();
   }
 
-  const results = useMemo(() => {
-    if (!query) return null;
-    return {
-      companies: companies.filter(
-        (c) => c.name.toLowerCase().includes(query) || c.location.toLowerCase().includes(query) || c.category.toLowerCase().includes(query)
-      ),
-      products: products.filter(
-        (p) => p.name.toLowerCase().includes(query) || p.description.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)
-      ),
-      rewards: rewards.filter((r) => r.title.toLowerCase().includes(query) || r.category.toLowerCase().includes(query)),
-      // Ads matching the search term too — not just their own product/company,
-      // since the point is surfacing *video content* people might find
-      // interesting for a keyword, the same way the products/rewards above do.
-      ads: ads.filter((a) => {
-        const p = products.find((pr) => pr.id === a.productId);
-        const c = companies.find((co) => co.id === a.companyId);
-        return (
-          a.caption.toLowerCase().includes(query) ||
-          a.category.toLowerCase().includes(query) ||
-          Boolean(p && (p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query))) ||
-          Boolean(c && c.name.toLowerCase().includes(query))
-        );
-      }),
-    };
-  }, [query, products, companies, rewards, ads]);
-
   const noResults =
     results &&
+    !loading &&
     results.companies.length === 0 &&
     results.products.length === 0 &&
     results.rewards.length === 0 &&
@@ -139,21 +236,29 @@ export default function SearchPage() {
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Video&apos;s</h2>
           <div className="grid grid-cols-2 gap-3">
-            {results.ads.map((a) => {
-              const c = getCompany(a.companyId);
+            {results.ads.map((hit) => {
+              const ad: AdHit = {
+                id: idFromObjectID(hit.objectID),
+                productId: hit.productId,
+                companyId: hit.companyId,
+                companyName: hit.companyName,
+                companyLogoUrl: hit.companyLogoUrl,
+                posterUrl: hit.posterUrl,
+                caption: hit.caption,
+              };
               return (
                 <Link
-                  key={a.id}
-                  href={`/app/product/${a.productId}`}
+                  key={ad.id}
+                  href={`/app/product/${ad.productId}`}
                   className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white/[0.03] border border-white/10"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={a.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  <img src={ad.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
                   <PlayCircle size={26} className="absolute top-2 right-2 text-white/80" />
                   <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                    {c && <p className="text-[11px] font-semibold text-white/70 mb-0.5">{c.name}</p>}
-                    <p className="text-xs font-medium line-clamp-2">{a.caption}</p>
+                    {ad.companyName && <p className="text-[11px] font-semibold text-white/70 mb-0.5">{ad.companyName}</p>}
+                    <p className="text-xs font-medium line-clamp-2">{ad.caption}</p>
                   </div>
                 </Link>
               );
@@ -166,15 +271,18 @@ export default function SearchPage() {
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Bedrijven</h2>
           <div className="flex flex-col gap-2">
-            {results.companies.map((c) => (
-              <Link key={c.id} href={`/app/company/${c.id}`} className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/10 p-2.5">
-                <CompanyAvatar src={c.logoUrl} name={c.name} verified={c.verified} size={38} />
-                <div>
-                  <p className="text-sm font-semibold">{c.name}</p>
-                  <p className="text-xs text-white/40">{c.category} · {c.location}</p>
-                </div>
-              </Link>
-            ))}
+            {results.companies.map((hit) => {
+              const c = hitToCompany(hit);
+              return (
+                <Link key={c.id} href={`/app/company/${c.id}`} className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/10 p-2.5">
+                  <CompanyAvatar src={c.logoUrl} name={c.name} verified={c.verified} size={38} />
+                  <div>
+                    <p className="text-sm font-semibold">{c.name}</p>
+                    <p className="text-xs text-white/40">{c.category} · {c.location}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -183,15 +291,17 @@ export default function SearchPage() {
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Producten</h2>
           <div className="grid grid-cols-2 gap-3">
-            {results.products.map((p) => {
-              const productAd = ads.find((a) => a.productId === p.id);
+            {results.products.map((hit) => {
+              const product = hitToProduct(hit);
+              const company = hitToCompanyStub(hit.companyId, hit.companyName, hit.companyLogoUrl, hit.companyVerified);
+              const productAd = results.ads.find((a) => a.productId === product.id);
               return (
                 <ProductCard
-                  key={p.id}
-                  product={p}
-                  company={getCompany(p.companyId)}
-                  saved={savedProductIds.has(p.id)}
-                  onToggleSave={() => requireAuth() && toggleSave(p.id, productAd?.id ?? null)}
+                  key={product.id}
+                  product={product}
+                  company={company}
+                  saved={savedProductIds.has(product.id)}
+                  onToggleSave={() => requireAuth() && toggleSave(product.id, productAd ? idFromObjectID(productAd.objectID) : null)}
                 />
               );
             })}
@@ -203,9 +313,11 @@ export default function SearchPage() {
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Rewards</h2>
           <div className="grid grid-cols-2 gap-3">
-            {results.rewards.map((r) => (
-              <RewardCard key={r.id} reward={r} company={getCompany(r.companyId)} />
-            ))}
+            {results.rewards.map((hit) => {
+              const reward = hitToReward(hit);
+              const company = hitToCompanyStub(hit.companyId, hit.companyName, hit.companyLogoUrl, false);
+              return <RewardCard key={reward.id} reward={reward} company={company} />;
+            })}
           </div>
         </section>
       )}

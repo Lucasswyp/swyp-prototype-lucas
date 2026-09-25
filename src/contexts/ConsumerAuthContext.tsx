@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import { consumePendingReferral } from "@/lib/referral";
 
@@ -33,6 +34,7 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getUser().then(async ({ data }) => {
       setIsLoggedIn(!!data.user);
       if (data.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
         const { data: consumer } = await supabase
           .from("consumers")
           .select("profile_completed")
@@ -51,8 +53,14 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
         window.setTimeout(() => setPromptOpen(true), 1200);
       }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session?.user);
+      if (event === "SIGNED_IN" && session?.user) {
+        posthog.identify(session.user.id, { email: session.user.email });
+      }
+      if (event === "SIGNED_OUT") {
+        posthog.reset();
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);

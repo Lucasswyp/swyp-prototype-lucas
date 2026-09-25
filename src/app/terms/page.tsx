@@ -18,16 +18,17 @@ export default function TermsPage() {
           <p className="text-white/40 text-sm mb-10">Laatst bijgewerkt: 23 september 2026</p>
 
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200 mb-10">
-            Concepttekst — nog niet juridisch gecontroleerd. Vul de placeholders (bedrijfsgegevens, minimumleeftijd)
-            aan en laat deze tekst nakijken voordat je &apos;m als definitieve voorwaarden gebruikt.
+            Concepttekst — nog niet juridisch gecontroleerd door een jurist. De bedrijfsgegevens hieronder kloppen,
+            maar laat de tekst zelf nog nakijken voordat je &apos;m als definitieve voorwaarden gebruikt.
           </div>
 
           <div className="flex flex-col gap-8 text-white/70 leading-relaxed text-sm sm:text-base">
             <div>
               <h2 className="font-heading text-lg font-bold text-white mb-2">1. Over deze voorwaarden</h2>
               <p>
-                Deze voorwaarden gelden voor het gebruik van Swyp, aangeboden door [bedrijfsnaam], KVK [KVK-nummer].
-                Door een account aan te maken of Swyp te gebruiken, ga je akkoord met deze voorwaarden.
+                Deze voorwaarden gelden voor het gebruik van Swyp, aangeboden door Swyp V.O.F. (KVK 42132440,
+                Sparresholm 145, 2133 BL Hoofddorp). Door een account aan te maken of Swyp te gebruiken, ga je akkoord
+                met deze voorwaarden.
               </p>
             </div>
 
@@ -36,7 +37,7 @@ export default function TermsPage() {
               <ul className="list-disc pl-5 flex flex-col gap-1.5">
                 <li>Je bent zelf verantwoordelijk voor het geheimhouden van je inloggegevens.</li>
                 <li>Je gebruikersnaam en profielgegevens moeten kloppen en mogen niemand anders misleiden.</li>
-                <li>Je moet minimaal [leeftijd] jaar oud zijn om een Swyp-account aan te maken.</li>
+                <li>Je moet minimaal 16 jaar oud zijn om een Swyp-account aan te maken.</li>
               </ul>
             </div>
 
@@ -64,8 +65,8 @@ export default function TermsPage() {
             <div>
               <h2 className="font-heading text-lg font-bold text-white mb-2">5. Intellectueel eigendom</h2>
               <p>
-                Alle rechten op de Swyp-app, het merk en de content die wij plaatsen, blijven bij [bedrijfsnaam]. Je
-                mag Swyp niet kopiëren, namaken of reverse-engineeren zonder onze toestemming.
+                Alle rechten op de Swyp-app, het merk en de content die wij plaatsen, blijven bij Swyp V.O.F. Je mag
+                Swyp niet kopiëren, namaken of reverse-engineeren zonder onze toestemming.
               </p>
             </div>
 

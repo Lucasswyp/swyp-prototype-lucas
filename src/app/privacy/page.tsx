@@ -18,8 +18,8 @@ export default function PrivacyPage() {
           <p className="text-white/40 text-sm mb-10">Laatst bijgewerkt: 23 september 2026</p>
 
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200 mb-10">
-            Concepttekst — nog niet juridisch gecontroleerd. Vul de placeholders (bedrijfsgegevens, KVK-nummer,
-            adres) aan en laat deze tekst nakijken voordat je &apos;m als definitief privacybeleid gebruikt.
+            Concepttekst — nog niet juridisch gecontroleerd door een jurist. De bedrijfsgegevens hieronder kloppen,
+            maar laat de tekst zelf nog nakijken voordat je &apos;m als definitief privacybeleid gebruikt.
           </div>
 
           <div className="flex flex-col gap-8 text-white/70 leading-relaxed text-sm sm:text-base">
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
                 dat doen, en welke rechten je hebt.
               </p>
               <p className="mt-2 text-white/50">
-                Aanbieder: [bedrijfsnaam] · KVK: [KVK-nummer] · Adres: [adres] · Contact:{" "}
+                Aanbieder: Swyp V.O.F. · KVK: 42132440 · Adres: Sparresholm 145, 2133 BL Hoofddorp · Contact:{" "}
                 <a href="mailto:lucas@swyp.it" className="text-white/70 underline">lucas@swyp.it</a>
               </p>
             </div>
@@ -42,8 +42,9 @@ export default function PrivacyPage() {
                 <li>Accountgegevens: naam, gebruikersnaam, e-mailadres, profielfoto.</li>
                 <li>Optionele profielgegevens: geslacht, geboortedatum, achtergrond — je kiest zelf of je deze invult.</li>
                 <li>
-                  Bij inloggen met Google: je naam, e-mailadres en profielfoto zoals bekend bij je Google-account.
-                  Swyp krijgt geen toegang tot je Google-wachtwoord of andere Google-diensten.
+                  Bij inloggen met Google of Apple: je naam en e-mailadres (en bij Google ook je profielfoto) zoals
+                  bekend bij dat account. Swyp krijgt geen toegang tot je wachtwoord of andere diensten van Google of
+                  Apple.
                 </li>
                 <li>
                   Gebruiksgegevens: welke advertenties je bekijkt, liket, bewaart of aanklikt, je Swyp Tokens-saldo,
@@ -80,7 +81,9 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-5 flex flex-col gap-1.5 mt-2">
                 <li><strong className="text-white/80">Supabase</strong> — database, authenticatie en bestandsopslag.</li>
                 <li><strong className="text-white/80">Vercel</strong> — hosting van de website en app.</li>
-                <li><strong className="text-white/80">Google</strong> — alleen wanneer je zelf kiest om met je Google-account in te loggen.</li>
+                <li><strong className="text-white/80">Google / Apple</strong> — alleen wanneer je zelf kiest om met dat account in te loggen.</li>
+                <li><strong className="text-white/80">Sentry</strong> — foutregistratie, zodat we technische problemen kunnen opsporen en oplossen.</li>
+                <li><strong className="text-white/80">PostHog</strong> — productanalyse (welke schermen en knoppen gebruikt worden), zodat we Swyp kunnen verbeteren.</li>
               </ul>
               <p className="mt-2">
                 We verkopen je gegevens nooit aan derden. Bedrijven die op Swyp adverteren zien alleen geaggregeerde,

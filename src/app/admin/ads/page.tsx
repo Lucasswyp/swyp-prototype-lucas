@@ -61,7 +61,13 @@ export default function AdminAdsPage() {
       p_status: decision,
     });
     setBusyId(null);
-    if (!error) setAds((prev) => prev.filter((a) => a.id !== adId));
+    if (!error) {
+      setAds((prev) => prev.filter((a) => a.id !== adId));
+      // Fire-and-forget — the daily cron (Hobby plan's cron ceiling) would
+      // otherwise leave this decision invisible to search for up to 24h.
+      // The route re-checks is_admin() itself rather than trusting this call.
+      fetch("/api/algolia/reindex").catch(() => {});
+    }
   }
 
   if (status === "checking") {

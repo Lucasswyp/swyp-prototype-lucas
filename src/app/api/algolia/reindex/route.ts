@@ -1,20 +1,28 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createAlgoliaWriteClient, SEARCH_INDEX_NAME, type SearchRecord } from "@/lib/algolia";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Same CRON_SECRET pattern as streak-reminder — this endpoint rebuilds the
-// entire public search index, so it can't be left open to the internet.
-function isAuthorized(request: Request) {
+// Two ways in: Vercel's daily cron (Hobby plan caps cron frequency at once a
+// day, so relying on that alone means a just-approved ad can take up to 24h
+// to become searchable) signs requests with CRON_SECRET; the admin ads-review
+// page instead calls this with the browser's own session cookie right after
+// approving/rejecting an ad, so search catches up within seconds — that path
+// re-checks is_admin() server-side rather than trusting the client.
+async function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  if (secret && request.headers.get("authorization") === `Bearer ${secret}`) return true;
+
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.rpc("is_admin");
+  return !error && data === true;
 }
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!(await isAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

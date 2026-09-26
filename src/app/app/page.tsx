@@ -12,21 +12,28 @@ import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
+import { usePaginatedAds } from "@/lib/usePaginatedAds";
 import type { Ad } from "@/types";
+
+// Fetch the next page once the viewer is this close to the end of what's
+// currently loaded — far enough ahead that the fetch (a couple hundred ms)
+// finishes before they'd actually swipe past the last loaded card.
+const LOAD_MORE_THRESHOLD = 5;
 
 export default function FeedPage() {
   const interests = useAppStore((s) => s.interests);
-  const { ads, companies, products, loading, refresh } = useData();
+  const { companies, products, loading: catalogLoading } = useData();
+  const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds } = usePaginatedAds();
   const { blockedCompanyIds } = useWallet();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const loading = catalogLoading || adsLoading;
 
-  // Ads a business just submitted stay 'pending' until reviewed — see
-  // supabase/moderation.sql — and a blocked business's ads must never
-  // resurface no matter how the rest of the feed is ranked.
+  // A blocked business's ads must never resurface no matter how the rest
+  // of the feed is ranked (fetchAdsPage already only returns approved ones).
   const visible = useMemo(
-    () => ads.filter((a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)),
+    () => ads.filter((a) => !blockedCompanyIds.has(a.companyId)),
     [ads, blockedCompanyIds]
   );
   const getAdId = useCallback((a: Ad) => a.id, []);
@@ -38,6 +45,7 @@ export default function FeedPage() {
     if (!el) return;
     const index = Math.round(el.scrollTop / el.clientHeight);
     if (index !== activeIndex) setActiveIndex(index);
+    if (hasMore && index >= orderedAds.length - LOAD_MORE_THRESHOLD) loadMore();
   }
 
   function scrollToIndex(index: number) {
@@ -56,12 +64,11 @@ export default function FeedPage() {
   // "For You" tab — matching TikTok/Instagram, both are the same "give me a
   // fresh feed" action, just triggered two different ways.
   const refreshFeed = useCallback(async () => {
-    refresh();
+    await refreshAds();
     setRefreshKey((k) => k + 1);
     setActiveIndex(0);
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    await new Promise((r) => setTimeout(r, 500));
-  }, [refresh]);
+  }, [refreshAds]);
 
   const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
 

@@ -12,23 +12,32 @@ import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
+import { usePaginatedAds } from "@/lib/usePaginatedAds";
 import type { Ad } from "@/types";
+
+// Fetch the next page once the viewer is this close to the end of what's
+// currently loaded — far enough ahead that the fetch (a couple hundred ms)
+// finishes before they'd actually swipe past the last loaded card.
+const LOAD_MORE_THRESHOLD = 5;
 
 // Discover is a second swipeable feed, distinct from For You's interest
 // ranking: it surfaces ads this device hasn't watched any of yet, so it
 // stays a way to stumble onto something new rather than re-ranking the same
-// pool. Once everything's been seen at least once, it falls back to the
-// full catalog so the feed never runs dry.
+// pool. Once everything loaded so far has been seen, it falls back to the
+// rest of what's been fetched (and keeps fetching more) so the feed
+// doesn't run dry.
 export default function DiscoverPage() {
   const adWatchProgress = useAppStore((s) => s.adWatchProgress);
-  const { ads, companies, products, loading, refresh } = useData();
+  const { companies, products, loading: catalogLoading } = useData();
+  const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds } = usePaginatedAds();
   const { blockedCompanyIds } = useWallet();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const loading = catalogLoading || adsLoading;
 
   const visible = useMemo(
-    () => ads.filter((a) => a.moderationStatus === "approved" && !blockedCompanyIds.has(a.companyId)),
+    () => ads.filter((a) => !blockedCompanyIds.has(a.companyId)),
     [ads, blockedCompanyIds]
   );
   const getAdId = useCallback((a: Ad) => a.id, []);
@@ -44,6 +53,7 @@ export default function DiscoverPage() {
     if (!el) return;
     const index = Math.round(el.scrollTop / el.clientHeight);
     if (index !== activeIndex) setActiveIndex(index);
+    if (hasMore && index >= orderedAds.length - LOAD_MORE_THRESHOLD) loadMore();
   }
 
   function scrollToIndex(index: number) {
@@ -59,12 +69,11 @@ export default function DiscoverPage() {
   }
 
   const refreshFeed = useCallback(async () => {
-    refresh();
+    await refreshAds();
     setRefreshKey((k) => k + 1);
     setActiveIndex(0);
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    await new Promise((r) => setTimeout(r, 500));
-  }, [refresh]);
+  }, [refreshAds]);
 
   const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
 

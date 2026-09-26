@@ -157,6 +157,30 @@ export async function fetchAds(): Promise<Ad[]> {
   return (data ?? []).map(mapAd);
 }
 
+// The consumer feed (src/app/app/page.tsx, src/app/app/discover/page.tsx)
+// used to load every ad in the table via fetchAds() above — fine at a few
+// dozen rows, but every device downloading the entire ads table on every
+// poll doesn't scale. This paginates instead, newest-first, approved-only
+// (fetchAds() stays unfiltered/unpaginated for the business dashboard,
+// which needs to see its own pending/rejected ads too).
+export const ADS_PAGE_SIZE = 30;
+
+export async function fetchAdsPage(
+  offset: number,
+  limit = ADS_PAGE_SIZE
+): Promise<{ ads: Ad[]; hasMore: boolean }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("ads")
+    .select("*, campaigns(reward_watch, reward_like, reward_save, reward_click)")
+    .eq("moderation_status", "approved")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  const ads = (data ?? []).map(mapAd);
+  return { ads, hasMore: ads.length === limit };
+}
+
 export async function fetchCampaigns(): Promise<Campaign[]> {
   const supabase = createClient();
   const { data, error } = await supabase

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import type { Category } from "@/types";
 
 export async function POST(request: Request) {
+  // Unauthenticated by design (there's no account yet) — the one endpoint
+  // in this app an attacker could actually script mass-signups against.
+  const allowed = await checkRateLimit(`signup-business:${getClientIp(request)}`, 5, 60 * 60);
+  if (!allowed) {
+    return NextResponse.json({ error: "Te veel pogingen. Probeer het over een uur opnieuw." }, { status: 429 });
+  }
+
   const { email, password, companyName, category, location } = await request.json();
 
   if (!email || !password || !companyName) {

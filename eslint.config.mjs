@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Native Xcode project + its build output — not web source, never meant
+    // to be linted by this config (the "build/**" pattern above is anchored
+    // to the repo root, so it doesn't already cover ios/build/**).
+    "ios/**",
   ]),
 ]);
 

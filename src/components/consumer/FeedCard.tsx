@@ -105,6 +105,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
     if (!isActive || paused) {
       video.pause();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBuffering(false);
       setNeedsTapToPlay(false);
       return;
@@ -225,7 +226,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (videoRef.current) videoRef.current.currentTime = 0;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPaused(false);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWatchPct(0);
   }, [isActive]);
 

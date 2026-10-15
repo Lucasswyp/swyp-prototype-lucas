@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Check, X, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { useHlsSource } from "@/lib/useHlsSource";
 
 interface PendingAd {
   id: string;
@@ -15,6 +16,22 @@ interface PendingAd {
   business_name: string;
   product_name: string;
   created_at: string;
+}
+
+function ReviewVideo({ src, poster }: { src: string; poster?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const { needsHlsJs } = useHlsSource(ref, src, true);
+  return (
+    <video
+      ref={ref}
+      src={needsHlsJs ? undefined : src}
+      poster={poster}
+      className="w-28 h-48 object-cover rounded-xl bg-black shrink-0"
+      muted
+      playsInline
+      controls
+    />
+  );
 }
 
 type Status = "checking" | "signed-out" | "not-admin" | "ready";
@@ -111,14 +128,7 @@ export default function AdminAdsPage() {
         <div className="flex flex-col gap-4">
           {ads.map((ad) => (
             <div key={ad.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 flex gap-4">
-              <video
-                src={ad.video_url}
-                poster={ad.poster_url ?? undefined}
-                className="w-28 h-48 object-cover rounded-xl bg-black shrink-0"
-                muted
-                playsInline
-                controls
-              />
+              <ReviewVideo src={ad.video_url} poster={ad.poster_url ?? undefined} />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">{ad.business_name}</p>
                 <p className="text-xs text-white/50 mb-1">{ad.product_name}</p>

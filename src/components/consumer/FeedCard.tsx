@@ -1,5 +1,6 @@
 "use client";
 
+import { useHlsSource } from "@/lib/useHlsSource";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, AnimatePresence } from "framer-motion";
@@ -30,6 +31,7 @@ interface FeedCardProps {
 
 export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear));
   const progressTrackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
@@ -144,7 +146,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       // test) leaves the element in a broken state that play() alone can't
       // recover from. load() resets it so the next attemptPlay() has a
       // clean start instead of retrying against a dead element forever.
-      if (cancelled || !video) return;
+      if (cancelled || !video || hlsRef.current) return;
       video.load();
       window.setTimeout(attemptPlay, 300);
     }
@@ -173,7 +175,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       // a socket that's stalled before it started.
       if (video.paused && video.readyState === 0) {
         stuckTicks += 1;
-        if (stuckTicks >= 8) {
+        if (stuckTicks >= 8 && !hlsRef.current) {
           stuckTicks = 0;
           video.load();
           window.setTimeout(attemptPlay, 300);
@@ -205,7 +207,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       window.clearInterval(retryInterval);
       window.clearTimeout(tapToPlayTimeout);
     };
-  }, [isActive, paused]);
+  }, [isActive, paused, hlsRef]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -431,7 +433,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       >
         <video
           ref={videoRef}
-          src={ad.videoUrl}
+          src={needsHlsJs ? undefined : ad.videoUrl}
           poster={ad.posterUrl}
           muted
           loop

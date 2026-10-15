@@ -9,6 +9,7 @@ import { TokenBadge } from "@/components/ui/TokenBadge";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
 import { createProduct, createAd, createCampaign, uploadAdVideo } from "@/lib/data";
+import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
 import { formatEuro, cn } from "@/lib/utils";
 import type { CampaignObjective, Category, Product } from "@/types";
 import { interestOptions } from "@/data/seed";
@@ -53,6 +54,7 @@ export default function CreateCampaignPage() {
   const [ctaLabel, setCtaLabel] = useState("Bekijk product");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const [ageMin, setAgeMin] = useState(18);
   const [ageMax, setAgeMax] = useState(35);
@@ -103,23 +105,32 @@ export default function CreateCampaignPage() {
     setUploadError(null);
     try {
       setUploading(true);
-      const videoUrl = await uploadAdVideo(businessId, videoFile);
+      let videoUrl: string;
+      let uploadedPoster = "";
+      if (USE_MUX) {
+        const uploaded = await uploadVideoToMux(videoFile, setUploadProgress);
+        videoUrl = uploaded.videoUrl;
+        uploadedPoster = uploaded.posterUrl;
+      } else {
+        videoUrl = await uploadAdVideo(businessId, videoFile);
+      }
       setUploading(false);
+      setUploadProgress(null);
 
       let finalProductId = productId;
-      let posterUrl = selectedExistingProduct?.imageUrl ?? "";
+      let posterUrl = uploadedPoster || (selectedExistingProduct?.imageUrl ?? "");
       if (mode === "new") {
         const created = await createProduct(businessId, {
           name: newProduct.name,
           description: newProduct.description,
-          imageUrl: newProduct.imageUrl || videoUrl,
+          imageUrl: newProduct.imageUrl || uploadedPoster || videoUrl,
           price: newProduct.price,
           oldPrice: newProduct.oldPrice,
           category: newProduct.category,
           url: newProduct.url,
         });
         finalProductId = created.id;
-        posterUrl = created.imageUrl;
+        posterUrl = uploadedPoster || created.imageUrl;
       }
 
       const adId = await createAd(businessId, {
@@ -153,6 +164,7 @@ export default function CreateCampaignPage() {
     } finally {
       setPublishing(false);
       setUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -483,7 +495,15 @@ export default function CreateCampaignPage() {
               </div>
             </div>
             {uploadError && <p className="text-sm text-red-300">{uploadError}</p>}
-            {uploading && <p className="text-sm text-white/50">Video wordt geüpload...</p>}
+            {uploading && (
+              <p className="text-sm text-white/50">
+                {uploadProgress?.stage === "processing"
+                  ? "Video wordt verwerkt..."
+                  : uploadProgress
+                    ? `Video wordt geüpload... ${uploadProgress.percent}%`
+                    : "Video wordt geüpload..."}
+              </p>
+            )}
           </div>
         )}
       </Card>

@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      { protocol: "https", hostname: "image.mux.com" },
       // Profile photos and ad videos' poster images live in Supabase Storage.
       ...(supabaseHostname
         ? [{ protocol: "https" as const, hostname: supabaseHostname }]

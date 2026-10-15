@@ -46,6 +46,5 @@ export async function fetchReferralStats(): Promise<ReferralStats> {
 }
 
 export function referralLink(code: string) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://swyp-prototype-lucas.vercel.app";
-  return `${origin}/get-started/user?ref=${code}`;
+  return `https://swyp.it/get-started/user?ref=${code}`;
 }

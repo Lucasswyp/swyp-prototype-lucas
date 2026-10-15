@@ -15,11 +15,17 @@ export function usePaginatedAds() {
 
   const loadFirstPage = useCallback(async () => {
     setLoading(true);
-    const { ads: page, hasMore: more } = await fetchAdsPage(0);
-    setAds(page);
-    countRef.current = page.length;
-    setHasMore(more);
-    setLoading(false);
+    try {
+      const { ads: page, hasMore: more } = await fetchAdsPage(0);
+      setAds(page);
+      countRef.current = page.length;
+      setHasMore(more);
+    } catch {
+      // Keep whatever was already on screen; an empty first load just shows
+      // the normal empty state instead of a spinner that never ends.
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -34,9 +40,16 @@ export function usePaginatedAds() {
     loadingMoreRef.current = true;
     try {
       const { ads: page, hasMore: more } = await fetchAdsPage(countRef.current);
-      setAds((prev) => [...prev, ...page]);
+      // A new ad published while someone scrolls shifts every offset by one,
+      // so the next page can repeat an ad already shown. Drop repeats by id.
+      setAds((prev) => {
+        const seen = new Set(prev.map((a) => a.id));
+        return [...prev, ...page.filter((a) => !seen.has(a.id))];
+      });
       countRef.current += page.length;
       setHasMore(more);
+    } catch {
+      // Try again on the next scroll near the end.
     } finally {
       loadingMoreRef.current = false;
     }

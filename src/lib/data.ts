@@ -175,6 +175,7 @@ export async function fetchAdsPage(
     .select("*, campaigns(reward_watch, reward_like, reward_save, reward_click)")
     .eq("moderation_status", "approved")
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range(offset, offset + limit - 1);
   if (error) throw error;
   const ads = (data ?? []).map(mapAd);

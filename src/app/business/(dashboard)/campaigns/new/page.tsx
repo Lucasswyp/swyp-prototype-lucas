@@ -107,11 +107,15 @@ export default function CreateCampaignPage() {
       setUploading(true);
       let videoUrl: string;
       let uploadedPoster = "";
-      if (USE_MUX) {
+      try {
+        if (!USE_MUX) throw new Error("mux-disabled");
         const uploaded = await uploadVideoToMux(videoFile, setUploadProgress);
         videoUrl = uploaded.videoUrl;
         uploadedPoster = uploaded.posterUrl;
-      } else {
+      } catch {
+        // Mux unavailable or at its plan limit: the ad must still go live,
+        // so fall back to plain storage instead of failing the whole publish.
+        setUploadProgress(null);
         videoUrl = await uploadAdVideo(businessId, videoFile);
       }
       setUploading(false);

@@ -24,12 +24,19 @@ const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE
 });
 
 async function mux(path, init = {}) {
-  const res = await fetch(`https://api.mux.com${path}`, {
-    ...init,
-    headers: { Authorization: auth, "Content-Type": "application/json" },
-  });
-  if (!res.ok) throw new Error(`Mux ${res.status} on ${path}`);
-  return res.status === 204 ? {} : res.json();
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const res = await fetch(`https://api.mux.com${path}`, {
+      ...init,
+      headers: { Authorization: auth, "Content-Type": "application/json" },
+    });
+    if (res.status === 429) {
+      await new Promise((r) => setTimeout(r, 20000));
+      continue;
+    }
+    if (!res.ok) throw new Error(`Mux ${res.status} on ${path}`);
+    return res.status === 204 ? {} : res.json();
+  }
+  throw new Error(`Mux kept rate-limiting ${path}`);
 }
 
 async function migrate(ad) {
@@ -76,7 +83,7 @@ if (apply) {
   let failed = 0;
   const queue = [...todo];
   await Promise.all(
-    Array.from({ length: 3 }, async () => {
+    Array.from({ length: 1 }, async () => {
       while (queue.length) {
         const ad = queue.shift();
         try {

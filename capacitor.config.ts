@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   // Opens straight into the swipeable feed, not the marketing landing page —
   // the native app should feel like TikTok, not a website with a homepage.
   server: {
-    url: "https://swyp-prototype-lucas.vercel.app/app",
+    url: "https://swyp.it/app",
     cleartext: false,
   },
   // Without an explicit backgroundColor, the native root view behind the

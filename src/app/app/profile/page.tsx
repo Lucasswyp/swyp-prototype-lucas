@@ -17,6 +17,7 @@ import {
   Pencil,
   Gift,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -32,6 +33,7 @@ const menu = [
   { icon: Wallet, label: "Wallet", href: "/app/wallet" },
   { icon: Bookmark, label: "Saved", href: "/app/saved" },
   { icon: Users, label: "Following", href: "/app/saved?tab=Bedrijven" },
+  { icon: MessageSquare, label: "Feedback geven", href: "/app/feedback?from=profiel" },
   { icon: Settings, label: "Instellingen", href: "/app/settings" },
   { icon: Lock, label: "Privacy", href: "/privacy" },
   { icon: HelpCircle, label: "Help", href: "mailto:lucas@swyp.it?subject=Swyp%20support" },

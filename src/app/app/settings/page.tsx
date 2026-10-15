@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell } from "lucide-react";
+import Link from "next/link";
+import { Bell, MessageSquare } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -73,6 +74,18 @@ export default function SettingsPage() {
             </>
           )}
         </Card>
+
+        <Link href="/app/feedback?from=instellingen">
+          <Card className="p-4 mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/5">
+              <MessageSquare size={18} className="text-white/60" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold">Feedback geven</p>
+              <p className="text-xs text-white/50">Meld een fout of deel een idee</p>
+            </div>
+          </Card>
+        </Link>
 
         <DeleteAccount kind="consumer" />
       </div>

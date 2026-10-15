@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 
 // src/app/error.tsx only catches errors inside the root layout's children —
 // a crash in the root layout itself (or anywhere above that boundary) was
@@ -9,6 +10,7 @@ import { useEffect } from "react";
 // own <html>/<body> since the root layout is exactly what failed.
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
+    Sentry.captureException(error);
     console.error(error);
   }, [error]);
 

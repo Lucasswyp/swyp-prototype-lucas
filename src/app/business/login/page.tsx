@@ -68,6 +68,9 @@ export default function BusinessLoginPage() {
           </form>
         </div>
         <p className="text-center text-xs text-white/30 mt-6 flex flex-col gap-1.5">
+          <Link href="/wachtwoord-vergeten" className="hover:text-white/60">
+            Wachtwoord vergeten?
+          </Link>
           <Link href="/business/signup" className="hover:text-white/60">
             Nog geen account? Meld je bedrijf aan
           </Link>

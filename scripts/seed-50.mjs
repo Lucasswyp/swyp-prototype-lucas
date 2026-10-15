@@ -1,3 +1,7 @@
+if (process.env.ALLOW_SEED !== "1") {
+  console.error("Dit script schrijft testdata naar de database waar .env.local naar wijst (productie). Draai het alleen bewust met ALLOW_SEED=1.");
+  process.exit(1);
+}
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 

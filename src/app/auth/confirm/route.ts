@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/get-started/user?authError=${encodeURIComponent(oauthError)}`);
   }
 
-  const response = NextResponse.redirect(`${origin}/app`);
+  // Only same-site relative paths, so this can never become an open redirect.
+  const nextParam = searchParams.get("next");
+  const destination = nextParam && /^\/[A-Za-z0-9\-_/]*$/.test(nextParam) && !nextParam.startsWith("//") ? nextParam : "/app";
+  const response = NextResponse.redirect(`${origin}${destination}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { createClient } from "@/lib/supabase/client";
+import { DeleteAccount } from "@/components/DeleteAccount";
 
 export default function BusinessSettingsPage() {
   const { business, email } = useBusiness();
@@ -68,6 +69,10 @@ export default function BusinessSettingsPage() {
           <span className="font-semibold">{email}</span>
         </div>
       </Card>
+
+      <div className="mt-4">
+        <DeleteAccount kind="business" />
+      </div>
     </div>
   );
 }

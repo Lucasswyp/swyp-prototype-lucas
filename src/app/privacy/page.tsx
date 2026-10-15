@@ -40,7 +40,7 @@ export default function PrivacyPage() {
               <h2 className="font-heading text-lg font-bold text-white mb-2">2. Welke gegevens we verzamelen</h2>
               <ul className="list-disc pl-5 flex flex-col gap-1.5">
                 <li>Accountgegevens: naam, gebruikersnaam, e-mailadres, profielfoto.</li>
-                <li>Optionele profielgegevens: geslacht, geboortedatum, achtergrond — je kiest zelf of je deze invult.</li>
+                <li>Profielgegevens: geslacht en geboortedatum. Je geboortedatum is verplicht om vast te stellen dat je minimaal 16 jaar bent. We vragen niet naar etniciteit of andere gevoelige gegevens.</li>
                 <li>
                   Bij inloggen met Google of Apple: je naam en e-mailadres (en bij Google ook je profielfoto) zoals
                   bekend bij dat account. Swyp krijgt geen toegang tot je wachtwoord of andere diensten van Google of
@@ -70,8 +70,8 @@ export default function PrivacyPage() {
               <p>
                 We verwerken je gegevens omdat dit nodig is om de overeenkomst met jou (het gebruik van Swyp) uit te
                 voeren, omdat we een gerechtvaardigd belang hebben (fraudepreventie, dienstverbetering), of omdat je
-                hier expliciet toestemming voor hebt gegeven — dit laatste geldt in het bijzonder voor de optionele
-                velden geslacht, geboortedatum en achtergrond.
+                hier expliciet toestemming voor hebt gegeven — dit laatste geldt in het bijzonder voor het veld
+                geslacht.
               </p>
             </div>
 
@@ -94,9 +94,12 @@ export default function PrivacyPage() {
             <div>
               <h2 className="font-heading text-lg font-bold text-white mb-2">6. Bewaartermijn</h2>
               <p>
-                We bewaren je gegevens zolang je account actief is. Vraag je je account te verwijderen, dan
-                verwijderen of anonimiseren we je persoonsgegevens binnen een redelijke termijn, tenzij we iets
-                wettelijk langer moeten bewaren.
+                We bewaren je gegevens zolang je account actief is. Je kunt je account zelf direct verwijderen in de
+                app (Instellingen) of via{" "}
+                <Link href="/account-verwijderen" className="underline text-white">
+                  swyp.it/account-verwijderen
+                </Link>
+                ; daarbij worden je persoonsgegevens meteen gewist, tenzij we iets wettelijk langer moeten bewaren.
               </p>
             </div>
 

@@ -13,20 +13,6 @@ import { signInWithApple } from "@/lib/appleAuth";
 import { isOldEnough, MIN_AGE } from "@/lib/age";
 
 const GENDERS = ["Man", "Vrouw", "Non-binair", "Zeg ik liever niet"];
-const ETHNICITIES = [
-  "Nederlands",
-  "Europees",
-  "Midden-Oosters",
-  "Noord-Afrikaans",
-  "Sub-Sahara Afrikaans",
-  "Zuid-Aziatisch",
-  "Oost-Aziatisch",
-  "Zuidoost-Aziatisch",
-  "Latijns-Amerikaans",
-  "Anders",
-  "Zeg ik liever niet",
-];
-
 export default function UserAuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signup" | "login">("signup");
@@ -36,7 +22,6 @@ export default function UserAuthPage() {
   const [username, setUsername] = useState("");
   const [gender, setGender] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  const [ethnicity, setEthnicity] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -112,7 +97,7 @@ export default function UserAuthPage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/confirm`,
-          data: { name, username, gender, birthdate, ethnicity },
+          data: { name, username, gender, birthdate },
         },
       });
       setLoading(false);
@@ -321,24 +306,6 @@ export default function UserAuthPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5 text-white/60">Achtergrond</label>
-                  <select
-                    required
-                    value={ethnicity}
-                    onChange={(e) => setEthnicity(e.target.value)}
-                    className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
-                  >
-                    <option value="" disabled>
-                      Kies...
-                    </option>
-                    {ETHNICITIES.map((eth) => (
-                      <option key={eth} value={eth}>
-                        {eth}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </>
             )}
             <div>
@@ -378,7 +345,12 @@ export default function UserAuthPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-6">
+        <p className="text-center text-xs text-white/30 mt-6 flex flex-col gap-1.5">
+          {mode === "login" && (
+            <Link href="/wachtwoord-vergeten" className="hover:text-white/60">
+              Wachtwoord vergeten?
+            </Link>
+          )}
           <Link href="/get-started" className="hover:text-white/60">
             ← Ander pad kiezen
           </Link>

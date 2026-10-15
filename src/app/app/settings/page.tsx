@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { DeleteAccount } from "@/components/DeleteAccount";
 
 type PushStatus = "not-native" | "checking" | "granted" | "denied" | "prompt" | "prompt-with-rationale";
 
@@ -72,6 +73,8 @@ export default function SettingsPage() {
             </>
           )}
         </Card>
+
+        <DeleteAccount kind="consumer" />
       </div>
     </div>
   );

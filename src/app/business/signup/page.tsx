@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -54,6 +55,7 @@ export default function BusinessSignupPage() {
       setError("Inloggen na aanmelden is mislukt.");
       return;
     }
+    posthog.capture("signup_completed", { kind: "business" });
     router.replace("/business");
     router.refresh();
   }

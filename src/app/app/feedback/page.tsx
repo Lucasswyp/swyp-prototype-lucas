@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import posthog from "posthog-js";
 import { useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
@@ -35,6 +36,7 @@ function FeedbackForm() {
         setError(body.error ?? "Versturen is mislukt.");
         return;
       }
+      posthog.capture("feedback_sent", { kind });
       setDone(true);
     } catch {
       setError("Geen verbinding. Probeer het opnieuw.");

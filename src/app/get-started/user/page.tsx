@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -112,6 +113,7 @@ export default function UserAuthPage() {
         );
         return;
       }
+      posthog.capture("signup_completed", { kind: "consumer" });
       setCheckEmail(true);
       return;
     }

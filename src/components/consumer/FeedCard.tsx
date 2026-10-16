@@ -1,5 +1,6 @@
 "use client";
 
+import posthog from "posthog-js";
 import { useHlsSource } from "@/lib/useHlsSource";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
@@ -398,6 +399,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   function handleClickThrough() {
     logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "click" });
+    posthog.capture("ad_clicked", { adId: ad.id, productId: product.id });
   }
 
   async function handleShare() {

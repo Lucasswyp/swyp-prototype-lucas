@@ -24,8 +24,15 @@
 html,
 body {
   height: 100%;
-  overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* The swipeable consumer app is a fixed full-screen frame with its own inner
+   scroller; locking the page itself keeps its bottom nav in place. Every
+   other page (business dashboard, landing, legal pages) scrolls normally. */
+html:has([data-lock-viewport]),
+html:has([data-lock-viewport]) body {
+  overflow: hidden;
 }
 
 body {

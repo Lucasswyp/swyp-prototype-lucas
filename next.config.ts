@@ -6,6 +6,10 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  // The separate Discover feed is gone: the algorithm serves one feed.
+  async redirects() {
+    return [{ source: "/app/discover", destination: "/app", permanent: false }];
+  },
   images: {
     remotePatterns: [
       {

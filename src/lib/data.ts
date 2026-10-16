@@ -157,7 +157,7 @@ export async function fetchAds(): Promise<Ad[]> {
   return (data ?? []).map(mapAd);
 }
 
-// The consumer feed (src/app/app/page.tsx, src/app/app/discover/page.tsx)
+// The consumer feed (src/app/app/page.tsx)
 // used to load every ad in the table via fetchAds() above — fine at a few
 // dozen rows, but every device downloading the entire ads table on every
 // poll doesn't scale. This paginates instead, newest-first, approved-only

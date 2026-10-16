@@ -3,13 +3,12 @@ import { shuffle } from "@/lib/shuffle";
 
 /**
  * Keeps the feed's on-screen order stable across the background 20s poll /
- * realtime refetch in DataContext (and, on Discover, the continuous
- * adWatchProgress ticks a playing video fires) — those return a brand-new
+ * realtime refetch in DataContext — that returns a brand-new
  * array reference every time even when nothing actually changed, and
  * re-shuffling on every reference change made the feed visibly reorder
  * itself under the user's thumb (reported as "the feed keeps refreshing
  * itself while I scroll/watch"). Order is only re-shuffled when
- * `refreshKey` actually changes (pull-to-refresh / tapping the active tab)
+ * `refreshKey` actually changes (pull-to-refresh)
  * or on first render; every other recompute keeps the existing order for
  * items still present and appends newly-visible items (shuffled among
  * themselves) at the end, so nothing already on screen jumps around.

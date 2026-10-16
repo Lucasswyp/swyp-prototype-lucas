@@ -10,7 +10,7 @@ const items = [
     href: "/app",
     label: "Home",
     icon: Home,
-    match: (p: string) => p === "/app" || p.startsWith("/app/discover"),
+    match: (p: string) => p === "/app",
   },
   { href: "/app/search", label: "Zoeken", icon: Search, match: (p: string) => p.startsWith("/app/search") },
   { href: "/app/rewards", label: "Rewards", icon: Gift, match: (p: string) => p.startsWith("/app/rewards") || p.startsWith("/app/my-rewards") },

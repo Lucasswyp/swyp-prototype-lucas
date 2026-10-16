@@ -33,12 +33,9 @@ interface FeedCardProps {
 export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear));
-  const progressTrackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [watchPct, setWatchPct] = useState(0);
-  const [scrubbing, setScrubbing] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number; rotate: number }[]>([]);
@@ -54,11 +51,9 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const x = useMotionValue(0);
   const watch80FiredRef = useRef(false);
   const completeFiredRef = useRef(false);
-  // Accumulated *actual playback* time (ms) while this card is active, not
-  // paused, and not being scrubbed — unlike a plain wall-clock timer since
-  // the card became active, this can't be satisfied by waiting a few seconds
-  // and then dragging the scrubber straight to 80%, since a scrub doesn't
-  // advance it at all.
+  // Accumulated *actual playback* time (ms) while this card is active and not
+  // paused — unlike a plain wall-clock timer since the card became active,
+  // it only advances while the video is genuinely playing.
   const playedMsRef = useRef(0);
   const lastPlayingTickRef = useRef<number | null>(null);
 
@@ -229,20 +224,17 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (videoRef.current) videoRef.current.currentTime = 0;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPaused(false);
-    setWatchPct(0);
   }, [isActive]);
 
   function handleTimeUpdate() {
     const video = videoRef.current;
     if (!video || !video.duration) return;
     const pct = (video.currentTime / video.duration) * 100;
-    setWatchPct(pct);
 
     // Accumulate real playback time: only while genuinely playing forward,
-    // never while paused or mid-scrub, so dragging the progress bar straight
-    // to 80% can't substitute for actually watching.
+    // never while paused.
     const now = Date.now();
-    if (isActive && !paused && !scrubbing) {
+    if (isActive && !paused) {
       if (lastPlayingTickRef.current !== null) {
         const delta = now - lastPlayingTickRef.current;
         // Cap a single tick's contribution so a backgrounded/throttled tab
@@ -274,34 +266,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
         if (result.points) flashReward(`+${result.points} SWYP`, result.streakBonus === 30);
       });
     }
-  }
-
-  const seekFromClientX = useCallback((clientX: number) => {
-    const track = progressTrackRef.current;
-    const video = videoRef.current;
-    if (!track || !video || !video.duration) return;
-    const rect = track.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    video.currentTime = ratio * video.duration;
-    setWatchPct(ratio * 100);
-  }, []);
-
-  function handleScrubStart(e: React.PointerEvent) {
-    e.stopPropagation();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    setScrubbing(true);
-    seekFromClientX(e.clientX);
-  }
-
-  function handleScrubMove(e: React.PointerEvent) {
-    if (!scrubbing) return;
-    e.stopPropagation();
-    seekFromClientX(e.clientX);
-  }
-
-  function handleScrubEnd(e: React.PointerEvent) {
-    e.stopPropagation();
-    setScrubbing(false);
   }
 
   // Runs the play()/pause() call synchronously inside the tap's own event
@@ -483,35 +447,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           </motion.button>
         )}
       </AnimatePresence>
-
-      {/* watch progress — draggable to seek */}
-      <div
-        className="absolute top-[calc(env(safe-area-inset-top)+0.5rem)] left-3 right-3 z-20 flex h-6 -translate-y-2.5 items-center touch-none"
-        onPointerDown={handleScrubStart}
-        onPointerMove={handleScrubMove}
-        onPointerUp={handleScrubEnd}
-        onPointerCancel={handleScrubEnd}
-      >
-        <div
-          ref={progressTrackRef}
-          className={cn(
-            "relative w-full rounded-full bg-white/20 overflow-visible transition-[height]",
-            scrubbing ? "h-1.5" : "h-1"
-          )}
-        >
-          <div
-            className="h-full rounded-full bg-white transition-[width] duration-150"
-            style={{ width: `${Math.min(100, watchPct)}%` }}
-          />
-          <div
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow-[0_0_6px_rgba(0,0,0,0.4)] transition-transform",
-              scrubbing ? "h-4 w-4 scale-110" : "h-2.5 w-2.5"
-            )}
-            style={{ left: `${Math.min(100, watchPct)}%` }}
-          />
-        </div>
-      </div>
 
       <AnimatePresence>
         {showPauseIcon && (

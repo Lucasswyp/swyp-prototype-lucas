@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FeedCard } from "@/components/consumer/FeedCard";
-import { FeedTabs } from "@/components/consumer/FeedTabs";
 import { PullToRefreshIndicator } from "@/components/consumer/PullToRefreshIndicator";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { Logo } from "@/components/ui/Logo";
@@ -60,9 +59,7 @@ export default function FeedPage() {
     }
   }
 
-  // Shared by the pull-down-at-top gesture and tapping the already-active
-  // "For You" tab — matching TikTok/Instagram, both are the same "give me a
-  // fresh feed" action, just triggered two different ways.
+  // Pull-down-at-top gesture: "give me a fresh feed".
   const refreshFeed = useCallback(async () => {
     await refreshAds();
     setRefreshKey((k) => k + 1);
@@ -122,15 +119,7 @@ export default function FeedPage() {
 
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
 
-      {/* Centering this with a 3-column grid (each column an equal 1/3 of the
-          width) squeezed "For You" + "Discover" into a column too narrow for
-          both words side by side, wrapping "For You" onto two lines. Free-
-          floating absolute positioning instead lets the tab group be exactly
-          as wide as its content while still landing dead-center. */}
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 h-7">
-        <div className="pointer-events-auto absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap">
-          <FeedTabs active="for-you" onActiveTap={refreshFeed} />
-        </div>
         <Link href="/app/wallet" className="pointer-events-auto absolute right-4 top-0">
           <TokenBadge amount={tokenBalance} size="sm" className="bg-black/35 backdrop-blur border-white/20" />
         </Link>

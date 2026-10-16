@@ -16,8 +16,8 @@ interface AppState {
   onboardingComplete: boolean;
   interests: Category[];
 
-  // Purely a "have I seen this one yet" hint for the Discover feed's
-  // unseen-first ordering — not a reward signal, so it's fine to keep local.
+  // Purely a local "how much of this one have I watched" hint — not a reward
+  // signal, so it's fine to keep local.
   adWatchProgress: Record<string, number>;
   markWatched: (adId: string, percent: number) => void;
 

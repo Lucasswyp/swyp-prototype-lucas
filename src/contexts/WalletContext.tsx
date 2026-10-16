@@ -159,7 +159,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const awardWatch80 = useCallback(async (adId: string, watchMs: number) => {
     const result = await awardInteraction(adId, "watch80", watchMs);
     applyAward(result);
-    posthog.capture("ad_watched_80", { adId, watchMs });
+    posthog.capture("ad_watched_80", { adId, watchMs, awarded: result.awarded, reason: result.reason ?? null, points: result.points ?? 0 });
     return result;
   }, []);
 
@@ -167,7 +167,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const result = await awardInteraction(adId, "like");
     if (result.awarded) setLikedAdIds((s) => new Set(s).add(adId));
     applyAward(result);
-    posthog.capture("ad_liked", { adId });
+    posthog.capture("ad_liked", { adId, awarded: result.awarded, reason: result.reason ?? null, points: result.points ?? 0 });
     return result;
   }, []);
 

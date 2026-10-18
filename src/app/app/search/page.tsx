@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useWallet } from "@/contexts/WalletContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { createAlgoliaSearchClient, SEARCH_INDEX_NAME, type SearchRecord } from "@/lib/algolia";
+import { getRelatedTerms } from "@/lib/relatedTerms";
 import type { Company, Product, Reward, Category, RewardCategory } from "@/types";
 
 interface AdHit {
@@ -96,6 +97,40 @@ function hitToReward(hit: Extract<SearchRecord, { type: "reward" }>): Reward {
   };
 }
 
+function VideoGrid({ hits }: { hits: Extract<SearchRecord, { type: "ad" }>[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {hits.map((hit) => {
+        const ad: AdHit = {
+          id: idFromObjectID(hit.objectID),
+          productId: hit.productId,
+          companyId: hit.companyId,
+          companyName: hit.companyName,
+          companyLogoUrl: hit.companyLogoUrl,
+          posterUrl: hit.posterUrl,
+          caption: hit.caption,
+        };
+        return (
+          <Link
+            key={ad.id}
+            href={`/app/product/${ad.productId}`}
+            className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white/[0.03] border border-white/10"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ad.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+            <PlayCircle size={26} className="absolute top-2 right-2 text-white/80" />
+            <div className="absolute bottom-0 left-0 right-0 p-2.5">
+              {ad.companyName && <p className="text-[11px] font-semibold text-white/70 mb-0.5">{ad.companyName}</p>}
+              <p className="text-xs font-medium line-clamp-2">{ad.caption}</p>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SearchPage() {
   const [q, setQ] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
@@ -104,6 +139,9 @@ export default function SearchPage() {
   const { requireAuth } = useConsumerAuth();
 
   const [hits, setHits] = useState<SearchRecord[] | null>(null);
+  // Video's die niet letterlijk bij de zoekterm passen, maar wel bij wat er
+  // mee samenhangt (zoek op "adidas" en krijg ook sneakers, nike, sportkleding).
+  const [relatedAds, setRelatedAds] = useState<Extract<SearchRecord, { type: "ad" }>[]>([]);
   const [loading, setLoading] = useState(false);
 
   const query = q.trim();
@@ -114,6 +152,7 @@ export default function SearchPage() {
       // not a value derived from this render.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setHits(null);
+      setRelatedAds([]);
       return;
     }
     let cancelled = false;
@@ -121,13 +160,45 @@ export default function SearchPage() {
     const client = createAlgoliaSearchClient();
     const timeout = window.setTimeout(async () => {
       try {
-        const { hits: results } = await client.searchSingleIndex<SearchRecord>({
-          indexName: SEARCH_INDEX_NAME,
-          searchParams: { query, hitsPerPage: 40 },
-        });
-        if (!cancelled) setHits(results);
+        const found = getRelatedTerms(query);
+        // De categorie van de groep telt ook mee: video's hebben een categorie.
+        const related = { terms: [...found.categories.map((c) => c.toLowerCase()), ...found.terms] };
+        const [main, extra] = await Promise.all([
+          client.searchSingleIndex<SearchRecord>({
+            indexName: SEARCH_INDEX_NAME,
+            searchParams: { query, hitsPerPage: 40 },
+          }),
+          related.terms.length > 0
+            ? client
+                .searchSingleIndex<SearchRecord>({
+                  indexName: SEARCH_INDEX_NAME,
+                  searchParams: {
+                    query: related.terms.join(" "),
+                    filters: "type:ad",
+                    // Alle woorden zijn optioneel: een video hoeft maar bij één
+                    // verwant woord te passen om mee te komen.
+                    optionalWords: related.terms,
+                    removeWordsIfNoResults: "allOptional",
+                    typoTolerance: false,
+                    hitsPerPage: 20,
+                  },
+                })
+                .catch(() => null)
+            : Promise.resolve(null),
+        ]);
+        if (cancelled) return;
+        const mainIds = new Set(main.hits.map((h) => h.objectID));
+        setHits(main.hits);
+        setRelatedAds(
+          (extra?.hits ?? []).filter(
+            (h): h is Extract<SearchRecord, { type: "ad" }> => h.type === "ad" && !mainIds.has(h.objectID)
+          )
+        );
       } catch {
-        if (!cancelled) setHits([]);
+        if (!cancelled) {
+          setHits([]);
+          setRelatedAds([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -179,7 +250,8 @@ export default function SearchPage() {
     results.companies.length === 0 &&
     results.products.length === 0 &&
     results.rewards.length === 0 &&
-    results.ads.length === 0;
+    results.ads.length === 0 &&
+    relatedAds.length === 0;
 
   return (
     <div className="min-h-full pb-28">
@@ -235,35 +307,16 @@ export default function SearchPage() {
       {results && results.ads.length > 0 && (
         <section className="px-4 mb-6">
           <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">Video&apos;s</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {results.ads.map((hit) => {
-              const ad: AdHit = {
-                id: idFromObjectID(hit.objectID),
-                productId: hit.productId,
-                companyId: hit.companyId,
-                companyName: hit.companyName,
-                companyLogoUrl: hit.companyLogoUrl,
-                posterUrl: hit.posterUrl,
-                caption: hit.caption,
-              };
-              return (
-                <Link
-                  key={ad.id}
-                  href={`/app/product/${ad.productId}`}
-                  className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white/[0.03] border border-white/10"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ad.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-                  <PlayCircle size={26} className="absolute top-2 right-2 text-white/80" />
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                    {ad.companyName && <p className="text-[11px] font-semibold text-white/70 mb-0.5">{ad.companyName}</p>}
-                    <p className="text-xs font-medium line-clamp-2">{ad.caption}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <VideoGrid hits={results.ads} />
+        </section>
+      )}
+
+      {results && relatedAds.length > 0 && (
+        <section className="px-4 mb-6">
+          <h2 className="font-heading font-bold text-sm mb-2 text-white/50 uppercase tracking-wide">
+            {results.ads.length > 0 ? "Meer video's die erbij passen" : "Video's die erbij passen"}
+          </h2>
+          <VideoGrid hits={relatedAds} />
         </section>
       )}
 

@@ -58,13 +58,6 @@ interface WalletValue {
 
 const WalletContext = createContext<WalletValue | null>(null);
 
-function genCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "SWYP-";
-  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
-
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { isLoggedIn } = useConsumerAuth();
   const [loading, setLoading] = useState(true);
@@ -312,15 +305,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const redeem = useCallback(
     async (reward: Reward) => {
-      const code = genCode();
-      const result = await redeemReward(reward.id, code);
+      const result = await redeemReward(reward.id);
       if (result.ok && typeof result.balance === "number") {
         setBalance(result.balance);
         refreshHistory();
         refreshRedemptions();
         posthog.capture("reward_redeemed", { rewardId: reward.id, tokenCost: reward.tokenCost });
       }
-      return { ok: result.ok, reason: result.reason, code: result.ok ? code : undefined };
+      return { ok: result.ok, reason: result.reason, code: result.ok ? result.code : undefined };
     },
     [refreshHistory, refreshRedemptions]
   );

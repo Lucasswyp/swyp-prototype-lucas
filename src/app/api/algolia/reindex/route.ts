@@ -36,6 +36,10 @@ export async function GET(request: Request) {
     admin.from("ads").select("id, business_id, product_id, caption, category, video_url, poster_url, cta_label, moderation_status").eq("moderation_status", "approved"),
   ]);
 
+  // Ads whose campaign is paused, over budget or ended must not be searchable.
+  const { data: liveIds } = await admin.rpc("live_ad_ids");
+  const live = new Set((liveIds ?? []) as string[]);
+
   const companyById = new Map((companies ?? []).map((c) => [c.id, c]));
 
   const records: SearchRecord[] = [
@@ -87,7 +91,7 @@ export async function GET(request: Request) {
         companyLogoUrl: company?.logo_url ?? "",
       };
     }),
-    ...(ads ?? []).map((a): SearchRecord => {
+    ...(ads ?? []).filter((a) => live.has(a.id)).map((a): SearchRecord => {
       const company = companyById.get(a.business_id);
       return {
         objectID: `ad-${a.id}`,

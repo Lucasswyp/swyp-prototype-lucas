@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { fetchInteractionsForBusiness, computeAnalytics, updateCampaignStatus as updateCampaignStatusRemote, type Interaction } from "@/lib/data";
+import { fetchInteractionsForBusiness, fetchCampaignSpend, computeAnalytics, updateCampaignStatus as updateCampaignStatusRemote, type Interaction } from "@/lib/data";
 import { formatEuro, formatNumber, cn } from "@/lib/utils";
 import type { CampaignStatus } from "@/types";
 
@@ -23,6 +23,11 @@ export default function CampaignsPage() {
   const { campaigns, refresh } = useData();
   const [filter, setFilter] = useState<CampaignStatus | "Alle">("Alle");
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [spend, setSpend] = useState<Record<string, { spent: number; today: number }>>({});
+
+  useEffect(() => {
+    fetchCampaignSpend().then(setSpend).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchInteractionsForBusiness(businessId).then(setInteractions);
@@ -100,7 +105,12 @@ export default function CampaignsPage() {
                         {c.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 tabular-nums">{formatEuro(c.totalBudget)}</td>
+                    <td className="px-4 py-3 tabular-nums">
+                      {formatEuro(c.totalBudget)}
+                      {spend[c.id] && (
+                        <p className="text-xs text-white/40">{formatEuro(spend[c.id].spent)} besteed</p>
+                      )}
+                    </td>
                     <td className="px-4 py-3 tabular-nums">{formatNumber(a.impressions)}</td>
                     <td className="px-4 py-3 tabular-nums">{engagement.toFixed(1)}%</td>
                     <td className="px-4 py-3 tabular-nums">{formatNumber(a.clicks)}</td>

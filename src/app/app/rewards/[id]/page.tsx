@@ -42,6 +42,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
   const REASON_LABELS: Record<string, string> = {
     insufficient_balance: "Onvoldoende Swyp Tokens",
     reward_not_found: "Deze reward bestaat niet (meer)",
+    out_of_codes: "Alle codes van deze reward zijn op",
     not_a_consumer: "Log opnieuw in en probeer het nogmaals",
   };
 

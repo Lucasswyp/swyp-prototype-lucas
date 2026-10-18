@@ -418,3 +418,46 @@ export async function fetchRedemptionsForBusiness(businessId: string) {
   if (error) throw error;
   return data ?? [];
 }
+
+
+// ---- Kortingscodes en budget (zie supabase/reward_codes_and_budget.sql) ----
+
+export async function addRewardCodes(rewardId: string, rawCodes: string): Promise<{ added: number; skipped: number }> {
+  const codes = rawCodes.split(/[\n,;]+/).map((c) => c.trim()).filter(Boolean);
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("add_reward_codes", { p_reward_id: rewardId, p_codes: codes });
+  if (error) throw error;
+  if (!data?.ok) throw new Error("Deze reward is niet van jouw bedrijf.");
+  return { added: data.added, skipped: data.skipped };
+}
+
+export async function fetchRewardCodeCounts(): Promise<Record<string, { available: number; claimed: number }>> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_reward_code_counts");
+  if (error) throw error;
+  const out: Record<string, { available: number; claimed: number }> = {};
+  for (const r of (data ?? []) as { reward_id: string; available: number; claimed: number }[]) {
+    out[r.reward_id] = { available: r.available, claimed: r.claimed };
+  }
+  return out;
+}
+
+export type CodeCheck = { found: false } | { found: true; status: "active" | "used" | "used_now"; title: string };
+
+export async function checkRedemptionCode(code: string, markUsed: boolean): Promise<CodeCheck> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("business_use_code", { p_code: code, p_mark_used: markUsed });
+  if (error) throw error;
+  return data as CodeCheck;
+}
+
+export async function fetchCampaignSpend(): Promise<Record<string, { spent: number; today: number }>> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_campaign_spend");
+  if (error) throw error;
+  const out: Record<string, { spent: number; today: number }> = {};
+  for (const r of (data ?? []) as { campaign_id: string; spent_eur: number; spent_today_eur: number }[]) {
+    out[r.campaign_id] = { spent: Number(r.spent_eur), today: Number(r.spent_today_eur) };
+  }
+  return out;
+}

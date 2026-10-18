@@ -64,11 +64,13 @@ export interface RedeemResult {
   code?: string;
 }
 
-export async function redeemReward(rewardId: string, code: string): Promise<RedeemResult> {
+// The server picks the code (from the business's own list when it uploaded
+// one, otherwise a generated one); the second argument is ignored there.
+export async function redeemReward(rewardId: string): Promise<RedeemResult> {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("redeem_reward", { p_reward_id: rewardId, p_code: code });
+  const { data, error } = await supabase.rpc("redeem_reward", { p_reward_id: rewardId, p_code: "" });
   if (error) return { ok: false, reason: error.message };
-  return { ok: data.ok, reason: data.reason, balance: data.balance, redemptionId: data.redemption_id, code };
+  return { ok: data.ok, reason: data.reason, balance: data.balance, redemptionId: data.redemption_id, code: data.code };
 }
 
 export async function fetchMyConsumerId(): Promise<string | null> {

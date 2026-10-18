@@ -2,12 +2,14 @@
 
 import { use, useState } from "react";
 import Image from "next/image";
-import { MapPin, Globe, MoreVertical } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Globe, MoreVertical, PlayCircle } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
+import { AdThumb } from "@/components/consumer/AdThumb";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { useWallet } from "@/contexts/WalletContext";
 import type { ReportReason } from "@/lib/safety";
@@ -15,13 +17,13 @@ import { useData } from "@/contexts/DataContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { formatNumber } from "@/lib/utils";
 
-const tabs = ["Ads", "Deals", "Over"] as const;
+const tabs = ["Video's", "Producten", "Deals", "Over"] as const;
 
 export default function CompanyProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { companies, products: allProducts, rewards: allRewards, ads } = useData();
   const company = companies.find((c) => c.id === id);
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Ads");
+  const [tab, setTab] = useState<(typeof tabs)[number]>("Video's");
   const [safetySheetOpen, setSafetySheetOpen] = useState(false);
 
   const { followedCompanyIds, toggleFollow, savedProductIds, toggleSave, toggleBlock, report } = useWallet();
@@ -39,6 +41,8 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
 
   const products = allProducts.filter((p) => p.companyId === company.id);
   const rewards = allRewards.filter((r) => r.companyId === company.id);
+  // Nieuwste video eerst; consumenten zien via RLS toch alleen goedgekeurde.
+  const videos = ads.filter((a) => a.companyId === company.id && a.moderationStatus === "approved").reverse();
   const followerCount = company.followers + (followed ? 1 : 0);
 
   return (
@@ -56,7 +60,7 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
           <div>
             <h1 className="font-heading text-xl font-bold">{company.name}</h1>
             <p className="text-xs text-white/40 mt-1">
-              {formatNumber(followerCount)} volgers · {company.category}
+              {formatNumber(followerCount)} volgers · {videos.length} video&apos;s · {company.category}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -96,8 +100,33 @@ export default function CompanyProfilePage({ params }: { params: Promise<{ id: s
           ))}
         </div>
 
-        {tab === "Ads" && (
+        {tab === "Video's" && (
+          videos.length === 0 ? (
+            <p className="text-sm text-white/40">Nog geen video&apos;s van dit bedrijf.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-1.5">
+              {videos.map((ad) => {
+                const productImage = allProducts.find((p) => p.id === ad.productId)?.imageUrl;
+                return (
+                  <Link
+                    key={ad.id}
+                    href={`/app/company/${company.id}/videos?start=${ad.id}`}
+                    className="relative aspect-[9/16] overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]"
+                  >
+                    <AdThumb posterUrl={ad.posterUrl} videoUrl={ad.videoUrl} fallbackImageUrl={productImage} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <PlayCircle size={18} className="absolute right-1.5 top-1.5 text-white/80" />
+                    <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[11px] font-medium leading-tight">{ad.caption}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {tab === "Producten" && (
           <div className="grid grid-cols-2 gap-3">
+            {products.length === 0 && <p className="text-sm text-white/40 col-span-2">Nog geen producten van dit bedrijf.</p>}
             {products.map((p) => {
               const productAd = ads.find((a) => a.productId === p.id);
               return (

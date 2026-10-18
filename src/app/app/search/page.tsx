@@ -7,6 +7,7 @@ import { TopBar } from "@/components/consumer/TopBar";
 import { ProductCard } from "@/components/consumer/ProductCard";
 import { RewardCard } from "@/components/consumer/RewardCard";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
+import { AdThumb } from "@/components/consumer/AdThumb";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useWallet } from "@/contexts/WalletContext";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
@@ -116,8 +117,7 @@ function VideoGrid({ hits }: { hits: Extract<SearchRecord, { type: "ad" }>[] }) 
             href={`/app/product/${ad.productId}`}
             className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white/[0.03] border border-white/10"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ad.posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <AdThumb posterUrl={ad.posterUrl} videoUrl={hit.videoUrl} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
             <PlayCircle size={26} className="absolute top-2 right-2 text-white/80" />
             <div className="absolute bottom-0 left-0 right-0 p-2.5">

@@ -9,6 +9,7 @@ import { Heart, Bookmark, Share2, Info, Play, Pause, MoreVertical } from "lucide
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
+import { ShareSheet } from "@/components/consumer/ShareSheet";
 import { formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useAppStore } from "@/store/useAppStore";
@@ -64,6 +65,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const saved = savedProductIds.has(product.id);
   const { requireAuth, isLoggedIn } = useConsumerAuth();
   const [safetySheetOpen, setSafetySheetOpen] = useState(false);
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
 
   function handleReport(reason: ReportReason) {
     return report("ad", ad.id, reason);
@@ -367,6 +369,12 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   }
 
   async function handleShare() {
+    // Ingelogd: stuur de video naar een vriend op Swyp (levert punten op).
+    // Als gast blijft het de gewone deel-link.
+    if (isLoggedIn) {
+      setShareSheetOpen(true);
+      return;
+    }
     const result = await shareLink(
       `${window.location.origin}/app/product/${product.id}`,
       `Bekijk ${product.name} op Swyp`
@@ -547,6 +555,15 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           </span>
         </button>
       </div>
+
+      <ShareSheet
+        open={shareSheetOpen}
+        onClose={() => setShareSheetOpen(false)}
+        adId={ad.id}
+        productName={product.name}
+        linkUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/app/product/${product.id}`}
+        onNotify={flashToast}
+      />
 
       <ReportBlockSheet
         open={safetySheetOpen}

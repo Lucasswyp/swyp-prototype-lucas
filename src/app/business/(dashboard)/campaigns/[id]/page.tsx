@@ -80,6 +80,7 @@ export default function CampaignAnalyticsPage({ params }: { params: Promise<{ id
         <MetricCard label="Likes" value={formatNumber(totals.likes)} />
         <MetricCard label="Saves" value={formatNumber(totals.saves)} />
         <MetricCard label="Clicks naar winkel" value={formatNumber(totals.clicks)} />
+        <MetricCard label="Doorgestuurd naar vrienden" value={formatNumber(totals.shares)} />
         <MetricCard label="Volledig bekeken" value={formatNumber(totals.completed)} />
       </div>
 

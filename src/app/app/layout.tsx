@@ -63,7 +63,9 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const showNav = !NO_NAV_ROUTES.includes(pathname);
+  // Een open gesprek (/app/messages/<id>) heeft zijn eigen invoerbalk onderin.
+  const inThread = /^\/app\/messages\/(?!new$)[^/]+$/.test(pathname);
+  const showNav = !NO_NAV_ROUTES.includes(pathname) && !inThread;
 
   return (
     <DataProvider>

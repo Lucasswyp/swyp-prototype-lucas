@@ -31,6 +31,18 @@ describe("computeAnalytics", () => {
     expect(totals.watch80).toBe(0);
   });
 
+  it("counts shares, but not as unique viewers", () => {
+    const withShares = [
+      ...interactions,
+      { event_name: "share", device_id: "consumer-1", ad_id: "ad1" },
+      { event_name: "share", device_id: "consumer-2", ad_id: "ad2" },
+    ];
+    const totals = computeAnalytics(withShares);
+    expect(totals.shares).toBe(2);
+    expect(totals.uniqueDevices).toBe(3);
+    expect(computeAnalytics(withShares, "ad1").shares).toBe(1);
+  });
+
   it("returns all zeros for an empty interaction list", () => {
     const totals = computeAnalytics([]);
     expect(totals.impressions).toBe(0);

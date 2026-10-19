@@ -52,6 +52,8 @@ interface WalletValue {
   report: (targetType: ReportTargetType, targetId: string, reason: ReportReason, details?: string) => Promise<void>;
   redeem: (reward: Reward) => Promise<{ ok: boolean; reason?: string; code?: string }>;
   markRedemptionUsed: (redemptionId: string) => Promise<void>;
+  /** Na een video doorsturen: zet het nieuwe saldo uit de server in beeld. */
+  syncBalance: (balance: number | null | undefined) => void;
   refreshHistory: () => Promise<void>;
   refreshRedemptions: () => Promise<void>;
 }
@@ -148,6 +150,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (typeof result.balance === "number") setBalance(result.balance);
     if (typeof result.streak === "number") setCurrentStreak(result.streak);
   }
+
+  const syncBalance = useCallback((next: number | null | undefined) => {
+    if (typeof next === "number") setBalance(next);
+  }, []);
 
   const awardWatch80 = useCallback(async (adId: string, watchMs: number) => {
     const result = await awardInteraction(adId, "watch80", watchMs);
@@ -345,6 +351,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         report,
         redeem,
         markRedemptionUsed,
+        syncBalance,
         refreshHistory,
         refreshRedemptions,
       }}

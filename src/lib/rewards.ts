@@ -106,6 +106,7 @@ const ACTION_LABELS: Record<string, string> = {
   save: "Product opgeslagen",
   click: "Doorgeklikt naar winkel",
   follow: "Bedrijf gevolgd",
+  share: "Video doorgestuurd",
   streak_daily: "Dagelijkse streak-bonus",
   welcome_bonus: "Welkomstbonus",
   redeem: "Reward ingewisseld",

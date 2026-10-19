@@ -391,12 +391,15 @@ export interface AnalyticsTotals {
   likes: number;
   saves: number;
   clicks: number;
+  /** Hoe vaak een kijker de video naar een vriend heeft doorgestuurd. */
+  shares: number;
   uniqueDevices: number;
 }
 
 export function computeAnalytics(interactions: Pick<Interaction, "event_name" | "device_id" | "ad_id">[], adId?: string): AnalyticsTotals {
   const relevant = adId ? interactions.filter((i) => i.ad_id === adId) : interactions;
-  const devices = new Set(relevant.map((i) => i.device_id));
+  // Een share draagt de id van de consument, geen apparaat: telt niet mee als kijker.
+  const devices = new Set(relevant.filter((i) => i.event_name !== "share").map((i) => i.device_id));
   const count = (name: string) => relevant.filter((i) => i.event_name === name).length;
   return {
     impressions: count("impression"),
@@ -405,6 +408,7 @@ export function computeAnalytics(interactions: Pick<Interaction, "event_name" | 
     likes: count("like"),
     saves: count("save"),
     clicks: count("click"),
+    shares: count("share"),
     uniqueDevices: devices.size,
   };
 }

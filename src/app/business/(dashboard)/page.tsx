@@ -10,7 +10,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { Eye, MousePointerClick, Heart, Bookmark, Smartphone, Ticket } from "lucide-react";
+import { Eye, MousePointerClick, Heart, Bookmark, Smartphone, Ticket, Send } from "lucide-react";
 import { MetricCard } from "@/components/business/MetricCard";
 import { ChartContainer } from "@/components/business/ChartContainer";
 import { useBusiness } from "@/contexts/BusinessContext";
@@ -84,6 +84,7 @@ export default function BusinessOverviewPage() {
         <MetricCard label="Likes" value={formatNumber(totals.likes)} icon={Heart} />
         <MetricCard label="Saves" value={formatNumber(totals.saves)} icon={Bookmark} />
         <MetricCard label="Clicks naar winkel" value={formatNumber(totals.clicks)} icon={MousePointerClick} />
+        <MetricCard label="Doorgestuurd naar vrienden" value={formatNumber(totals.shares)} icon={Send} />
         <MetricCard label="Rewards ingewisseld" value={formatNumber(redemptionCount)} icon={Ticket} />
       </div>
 

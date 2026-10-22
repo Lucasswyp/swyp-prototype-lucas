@@ -18,6 +18,7 @@ import {
   fetchMessages,
   groupReactions,
   markConversationRead,
+  notifyRecipient,
   reactToMessage,
   reportMessage,
   reportUser,
@@ -162,6 +163,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         setMessages((m) => m.filter((x) => x.id !== tempId));
         setText(body);
       } else {
+        notifyRecipient(r.messageId);
         await refreshMessages();
       }
     } catch {

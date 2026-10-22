@@ -10,6 +10,7 @@ import {
   SHARE_POINTS,
   dmErrorLabel,
   fetchConversations,
+  notifyRecipient,
   getOrCreateConversation,
   searchConsumers,
   sendMessage,
@@ -120,6 +121,7 @@ export function ShareSheet({ open, onClose, adId, productName, linkUrl, onNotify
         return;
       }
       setRows((r) => ({ ...r, [user.id]: "sent" }));
+      notifyRecipient(result.messageId);
       syncBalance(result.balance);
       posthog.capture("video_shared_dm", { adId, awarded: result.awarded, points: result.points ?? 0, reason: result.awardReason });
       if (result.awarded) {

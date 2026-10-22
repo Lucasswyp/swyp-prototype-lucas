@@ -25,7 +25,10 @@ export interface ApnsSendResult {
   shouldRemoveToken: boolean;
 }
 
-export function sendApnsPush(deviceToken: string, payload: { title: string; body: string }): Promise<ApnsSendResult> {
+export function sendApnsPush(
+  deviceToken: string,
+  payload: { title: string; body: string; /** Pad dat de app opent als iemand op de melding tikt. */ url?: string; /** Groepeert meldingen van hetzelfde gesprek. */ threadId?: string }
+): Promise<ApnsSendResult> {
   const host = process.env.APNS_ENV === "sandbox" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
   const client = http2.connect(host);
 
@@ -60,6 +63,15 @@ export function sendApnsPush(deviceToken: string, payload: { title: string; body
       resolve({ ok: false, shouldRemoveToken: false });
     });
 
-    req.end(JSON.stringify({ aps: { alert: { title: payload.title, body: payload.body }, sound: "default" } }));
+    req.end(
+      JSON.stringify({
+        aps: {
+          alert: { title: payload.title, body: payload.body },
+          sound: "default",
+          ...(payload.threadId ? { "thread-id": payload.threadId } : {}),
+        },
+        ...(payload.url ? { url: payload.url } : {}),
+      })
+    );
   });
 }

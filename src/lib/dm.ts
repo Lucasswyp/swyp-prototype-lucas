@@ -178,6 +178,18 @@ export async function sendMessage(
   };
 }
 
+// Vraagt de server om de ontvanger een pushmelding te sturen. Een mislukte
+// melding mag het versturen nooit in de weg zitten.
+export function notifyRecipient(messageId: string | undefined) {
+  if (!messageId) return;
+  fetch("/api/push/message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export async function reactToMessage(messageId: string, emoji: string): Promise<{ ok: boolean; action?: string; reason?: string }> {
   const { data, error } = await createClient().rpc("dm_react", { p_message_id: messageId, p_emoji: emoji });
   if (error) throw error;

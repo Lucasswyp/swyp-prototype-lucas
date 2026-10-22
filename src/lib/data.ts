@@ -345,6 +345,16 @@ export async function createCampaign(
   return data.id as string;
 }
 
+// Budget van een afgeronde campagne aanvullen en hem weer live zetten.
+export async function topUpCampaign(campaignId: string, plan: { totalBudget: number; endDate: string }) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ total_budget: plan.totalBudget, end_date: plan.endDate || null, status: "Active" })
+    .eq("id", campaignId);
+  if (error) throw error;
+}
+
 export async function updateCampaignStatus(campaignId: string, status: Campaign["status"]) {
   const supabase = createClient();
   const { error } = await supabase.from("campaigns").update({ status }).eq("id", campaignId);

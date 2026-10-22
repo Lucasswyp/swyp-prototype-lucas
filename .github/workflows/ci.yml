@@ -9,6 +9,10 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      # age.test.ts rekent met kalenderdagen; zonder vaste tijdzone kan het
+      # rond middernacht verspringen.
+      TZ: Europe/Amsterdam
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,3 +23,23 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+
+  # Vangt fouten die alleen bij het echt bouwen optreden (bijvoorbeeld in de
+  # Next- of Sentry-configuratie). Alleen nepwaarden; er zijn geen geheimen nodig.
+  build:
+    runs-on: ubuntu-latest
+    needs: check
+    env:
+      TZ: Europe/Amsterdam
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
+      NEXT_PUBLIC_ALGOLIA_APP_ID: DUMMY
+      NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build

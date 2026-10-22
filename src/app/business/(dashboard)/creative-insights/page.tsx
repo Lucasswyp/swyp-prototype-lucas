@@ -1,58 +1,117 @@
 "use client";
 
-import { useMemo } from "react";
-import { Lightbulb } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Lightbulb, TrendingUp, TriangleAlert, Info } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { AdThumb } from "@/components/consumer/AdThumb";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
+import { fetchInteractionsForBusiness, computeAnalytics, type Interaction } from "@/lib/data";
+import { MIN_IMPRESSIONS, buildAdInsights, compareByEngagement } from "@/lib/insights";
+import { formatNumber } from "@/lib/utils";
 
-const insightTemplates = [
-  (name: string) => `Video "${name}" houdt kijkers vast in de eerste drie seconden — een sterke hook.`,
-  () => `Productshots vroeg in de video correleren met hogere saves.`,
-  () => `Deze advertentie doet het goed bij herhaalde weergaven.`,
-  (name: string) => `De CTA op "${name}" is duidelijk en actiegericht.`,
-];
+const toneIcon = {
+  good: <TrendingUp size={13} className="text-emerald-400 shrink-0 mt-0.5" />,
+  warn: <TriangleAlert size={13} className="text-yellow-400 shrink-0 mt-0.5" />,
+  info: <Info size={13} className="text-white/40 shrink-0 mt-0.5" />,
+};
+
+const pct = (n: number) => `${(n * 100).toFixed(1).replace(".", ",")}%`;
 
 export default function CreativeInsightsPage() {
   const { businessId } = useBusiness();
   const { ads, products } = useData();
-  const ownAds = useMemo(() => ads.filter((a) => a.companyId === businessId), [ads, businessId]);
+  const [interactions, setInteractions] = useState<Interaction[] | null>(null);
+
+  useEffect(() => {
+    fetchInteractionsForBusiness(businessId)
+      .then(setInteractions)
+      .catch(() => setInteractions([]));
+  }, [businessId]);
+
+  const rows = useMemo(() => {
+    if (!interactions) return [];
+    return ads
+      .filter((a) => a.companyId === businessId)
+      .map((ad) => {
+        const totals = computeAnalytics(interactions, ad.id);
+        const insight = buildAdInsights({
+          impressions: totals.impressions,
+          watch80: totals.watch80,
+          likes: totals.likes,
+          saves: totals.saves,
+          clicks: totals.clicks,
+          shares: totals.shares,
+        });
+        return { ad, totals, insight, product: products.find((p) => p.id === ad.productId) };
+      })
+      .sort((a, b) => compareByEngagement(a.insight, b.insight));
+  }, [ads, products, interactions, businessId]);
 
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold mb-1">Creative Insights</h1>
-      <p className="text-white/50 text-sm mb-1">
-        Automatisch gegenereerde inzichten over je eigen advertenties.
+      <p className="text-white/50 text-sm mb-6">
+        Wat er echt gebeurt met je video&apos;s, afgeleid van je eigen cijfers. Vanaf {MIN_IMPRESSIONS} weergaven per video geven we tips.
       </p>
-      <span className="inline-block text-[11px] font-semibold text-magenta bg-magenta/10 rounded-full px-2.5 py-1 mb-6">
-        Demo insights — gebaseerd op algemene best practices, niet op AI-analyse van je video
-      </span>
 
-      {ownAds.length === 0 ? (
+      {interactions === null ? (
+        <Card className="p-8 text-center">
+          <p className="text-sm text-white/50">Laden...</p>
+        </Card>
+      ) : rows.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-sm text-white/50">Nog geen advertenties. Maak een campagne aan om hier inzichten te zien.</p>
         </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {ownAds.map((ad, i) => {
-            const product = products.find((p) => p.id === ad.productId);
-            const insight = insightTemplates[i % insightTemplates.length](product?.name ?? "deze advertentie");
-            return (
-              <Card key={ad.id} className="p-4 flex gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={ad.posterUrl} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold mb-1 truncate">{product?.name}</p>
-                  <p className="text-xs text-white/60 leading-relaxed flex items-start gap-1.5">
-                    <Lightbulb size={13} className="text-yellow-400 shrink-0 mt-0.5" />
-                    {insight}
-                  </p>
+        <div className="grid gap-4">
+          {rows.map(({ ad, totals, insight, product }, i) => (
+            <Card key={ad.id} className="p-4">
+              <div className="flex gap-3">
+                <div className="relative h-24 w-[54px] shrink-0 overflow-hidden rounded-xl bg-white/5">
+                  <AdThumb posterUrl={ad.posterUrl} videoUrl={ad.videoUrl} fallbackImageUrl={product?.imageUrl} />
                 </div>
-              </Card>
-            );
-          })}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold">{product?.name ?? ad.caption}</p>
+                    {i === 0 && insight.enough && rows.filter((r) => r.insight.enough).length > 1 && (
+                      <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">Beste video</span>
+                    )}
+                  </div>
+                  <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
+                    <Stat label="Weergaven" value={formatNumber(totals.impressions)} />
+                    <Stat label="Uitgekeken" value={insight.enough ? pct(insight.completionRate) : "-"} />
+                    <Stat label="Likes en opslagen" value={insight.enough ? pct(insight.engagementRate) : "-"} />
+                    <Stat label="Doorgeklikt" value={insight.enough ? pct(insight.clickRate) : "-"} />
+                  </div>
+                  <ul className="grid gap-1.5">
+                    {insight.insights.map((it, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5 text-xs leading-relaxed text-white/65">
+                        {toneIcon[it.tone]}
+                        {it.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
+
+      <p className="mt-6 flex items-start gap-1.5 text-xs text-white/35">
+        <Lightbulb size={13} className="mt-0.5 shrink-0" />
+        Percentages zijn het aandeel van het aantal weergaven. Dubbele weergaven van hetzelfde apparaat tellen binnen 30 minuten één keer mee.
+      </p>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-white/40">{label}</p>
+      <p className="font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

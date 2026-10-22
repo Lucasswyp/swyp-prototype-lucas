@@ -497,3 +497,32 @@ export async function fetchCampaignSpend(): Promise<Record<string, { spent: numb
   }
   return out;
 }
+
+
+// ---- Doelgroep (zie supabase/audience_summary.sql) ----
+
+export interface AudienceGroup {
+  label: string;
+  count: number;
+}
+
+export interface AudienceSummary {
+  engaged: number;
+  minimum: number;
+  enough: boolean;
+  age: AudienceGroup[];
+  gender: AudienceGroup[];
+}
+
+export async function fetchAudienceSummary(): Promise<AudienceSummary | null> {
+  const { data, error } = await createClient().rpc("get_audience_summary");
+  if (error) throw error;
+  if (!data?.ok) return null;
+  return {
+    engaged: data.engaged ?? 0,
+    minimum: data.minimum ?? 10,
+    enough: !!data.enough,
+    age: data.age ?? [],
+    gender: data.gender ?? [],
+  };
+}

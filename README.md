@@ -3,7 +3,7 @@
 Swipe door video-advertenties, verdien SWYP (1 punt = €0,01) en wissel die in voor echte voordelen bij bedrijven.
 Dit is de webapp (Next.js) die ook als iOS-app (Capacitor) in TestFlight staat, plus het dashboard voor bedrijven.
 
-Live: <https://swyp.it> · App: `/app` · Bedrijven: `/business` · Admin: `/admin/ads`
+Live: <https://swyp.it> · App: `/app` · Bedrijven: `/business` · Admin: `/admin/ads` (video's beoordelen) en `/admin/reports` (meldingen afhandelen)
 
 ## Starten
 
@@ -42,7 +42,7 @@ Lokaal in `.env.local`, in productie in Vercel (team `swyp1`, project `swyp-prot
 ## Database (Supabase)
 
 Het project heet **swyp** (PRODUCTION). Er is geen migratietool: de bestanden in `supabase/` worden met de hand in de SQL Editor gedraaid, in deze volgorde:
-`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
+`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, `reports_moderation`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
 
 Werkwijze voor een wijziging op productie:
 1. Test het eerst als `DO`-blok dat eindigt met `raise exception`, zodat alles wordt teruggedraaid.

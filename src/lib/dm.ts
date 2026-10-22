@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { notifyAdminsOfReport } from "@/lib/safety";
 
 // Moet gelijk blijven aan de lijst in dm_react() (supabase/dm.sql); een test
 // controleert dat.
@@ -220,6 +221,7 @@ export async function reportMessage(reporterId: string, messageId: string, reaso
     reason,
   });
   if (error) throw error;
+  notifyAdminsOfReport();
 }
 
 export async function reportUser(reporterId: string, userId: string, reason: string) {
@@ -230,6 +232,7 @@ export async function reportUser(reporterId: string, userId: string, reason: str
     reason,
   });
   if (error) throw error;
+  notifyAdminsOfReport();
 }
 
 export function groupReactions(reactions: { consumerId: string; emoji: string }[], meId: string) {

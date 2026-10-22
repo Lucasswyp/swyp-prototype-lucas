@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import { Check, X, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { signInWithGoogle } from "@/lib/googleAuth";
@@ -117,6 +118,10 @@ export default function AdminAdsPage() {
 
   return (
     <div className="min-h-screen bg-indigo text-white p-6 max-w-2xl mx-auto">
+      <nav className="mb-4 flex gap-4 text-sm text-white/50">
+        <span className="font-semibold text-white">Advertenties</span>
+        <Link href="/admin/reports" className="hover:text-white">Meldingen</Link>
+      </nav>
       <h1 className="font-heading text-xl font-bold mb-1">Advertenties beoordelen</h1>
       <p className="text-sm text-white/50 mb-6">
         Nieuwe campagnes staan hier tot ze goed- of afgekeurd zijn — pas daarna verschijnen ze in de feed.

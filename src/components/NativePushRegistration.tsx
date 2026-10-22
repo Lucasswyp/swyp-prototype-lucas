@@ -31,10 +31,10 @@ export function NativePushRegistration() {
       });
       const errorListener = await PushNotifications.addListener("registrationError", () => {});
       // Tik op een melding: open de pagina uit de melding (bijvoorbeeld het
-      // gesprek). Alleen paden binnen de app, nooit een extern adres.
+      // gesprek). Alleen paden binnen de app (en het beheerscherm voor meldingen), nooit een extern adres.
       const tapListener = await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
         const url = action.notification?.data?.url;
-        if (typeof url === "string" && /^\/app(\/|$)/.test(url)) window.location.href = url;
+        if (typeof url === "string" && /^\/(app(\/|$)|admin\/reports$)/.test(url)) window.location.href = url;
       });
       removeListeners = () => {
         regListener.remove();

@@ -1,7 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
 
-export type ReportTargetType = "ad" | "business";
+export type ReportTargetType = "ad" | "business" | "message" | "user";
 export type ReportReason = "inappropriate" | "scam" | "spam" | "other";
+
+// Laat de beheerders een pushmelding krijgen. Mislukt dit, dan blijft de
+// melding gewoon in de lijst staan; het mag de melder nooit in de weg zitten.
+export function notifyAdminsOfReport() {
+  fetch("/api/reports/notify", { method: "POST", keepalive: true }).catch(() => {});
+}
 
 export async function submitReport(
   reporterId: string,
@@ -19,6 +25,7 @@ export async function submitReport(
     details: details || null,
   });
   if (error) throw error;
+  notifyAdminsOfReport();
 }
 
 export async function fetchMyBlockedBusinessIds(): Promise<Set<string>> {

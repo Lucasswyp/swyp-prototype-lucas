@@ -17,6 +17,7 @@ import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { shareLink } from "@/lib/share";
+import { hapticSuccess, hapticTap } from "@/lib/haptics";
 import type { ReportReason } from "@/lib/safety";
 import type { Ad, Company, Product } from "@/types";
 
@@ -91,6 +92,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   // pattern research flagged as the line not to cross).
   const flashReward = useCallback((label: string, big = false) => {
     setCelebration({ label, big });
+    hapticSuccess();
     window.setTimeout(() => setCelebration(null), big ? 1100 : 350);
   }, []);
 
@@ -337,6 +339,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   function handleLike() {
     if (!requireAuth()) return;
     if (liked) return; // one-time reward — already claimed, nothing more to toggle
+    hapticTap();
     setOptimisticLiked(true); // instant visual feedback, reconciled from the server response below
     awardLike(ad.id)
       .then((result) => {
@@ -353,6 +356,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   function handleSave() {
     if (!requireAuth()) return;
     const wasSaved = saved;
+    hapticTap();
     toggleSave(product.id, ad.id).then((result) => {
       if (result?.awarded) {
         if (!wasSaved) {

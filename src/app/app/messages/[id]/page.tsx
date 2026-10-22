@@ -28,6 +28,7 @@ import {
   type DmMessage,
 } from "@/lib/dm";
 import { cn } from "@/lib/utils";
+import { hapticSelect, hapticTap } from "@/lib/haptics";
 
 const REPORT_REASONS = [
   { value: "inappropriate", label: "Ongepaste berichten" },
@@ -156,6 +157,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
       { id: tempId, conversationId: id, senderId: info.me, kind: "text", body, adId: null, createdAt: new Date().toISOString(), reactions: [] },
     ]);
     setText("");
+    hapticTap();
     try {
       const r = await sendMessage(id, "text", body);
       if (!r.ok) {
@@ -179,6 +181,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     if (messageId.startsWith("tmp-")) return;
     setPickerFor(null);
     setError(null);
+    hapticSelect();
     // Meteen zichtbaar: dezelfde emoji haalt weg, een andere vervangt.
     if (info) {
       setMessages((list) =>

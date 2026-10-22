@@ -59,6 +59,14 @@ test.describe("technische bestanden en beveiliging", () => {
     expect(h["strict-transport-security"]).toBeTruthy();
   });
 
+  test("gezondheidscheck meldt dat site en database draaien", async ({ request }) => {
+    const res = await request.get("/api/health");
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ ok: true, db: true });
+    expect(res.headers()["cache-control"]).toContain("no-store");
+  });
+
   test("pushroute weigert wie niet is ingelogd", async ({ request }) => {
     const res = await request.post("/api/push/message", { data: { messageId: "22222222-2222-2222-2222-222222222222" } });
     expect(res.status()).toBe(401);

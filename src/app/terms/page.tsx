@@ -54,7 +54,16 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">4. Adverteerders en producten</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">4. Berichten en gedrag</h2>
+              <ul className="list-disc pl-5 flex flex-col gap-1.5">
+                <li>Je bent zelf verantwoordelijk voor wat je naar anderen stuurt. Pest, bedreig of lastigval niemand en stuur geen illegale, seksuele of misleidende inhoud.</li>
+                <li>Je krijgt Swyp Tokens voor het doorsturen van een video, maar niet voor het spammen van berichten of het gebruiken van meerdere accounts. We beperken het aantal beloonde keren per dag.</li>
+                <li>Je kunt gebruikers en berichten melden en gebruikers blokkeren. Bij overtredingen kunnen we berichten verwijderen en accounts beperken of verwijderen.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">5. Adverteerders en producten</h2>
               <p>
                 Swyp is een platform dat consumenten en bedrijven met elkaar in contact brengt. We zijn niet
                 verantwoordelijk voor de kwaliteit, levering of inhoud van producten en aanbiedingen van bedrijven die
@@ -63,7 +72,7 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">5. Intellectueel eigendom</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">6. Intellectueel eigendom</h2>
               <p>
                 Alle rechten op de Swyp-app, het merk en de content die wij plaatsen, blijven bij Swyp V.O.F. Je mag
                 Swyp niet kopiëren, namaken of reverse-engineeren zonder onze toestemming.
@@ -71,7 +80,7 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">6. Aansprakelijkheid</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">7. Aansprakelijkheid</h2>
               <p>
                 Swyp wordt aangeboden &quot;zoals het is&quot;. Voor zover wettelijk toegestaan zijn wij niet
                 aansprakelijk voor indirecte schade die voortvloeit uit het gebruik van de app.
@@ -79,7 +88,7 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">7. Beëindiging</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">8. Beëindiging</h2>
               <p>
                 Je kunt je account op elk moment verwijderen. Wij kunnen jouw account schorsen of verwijderen bij
                 overtreding van deze voorwaarden.
@@ -87,7 +96,7 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">8. Wijzigingen en toepasselijk recht</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">9. Wijzigingen en toepasselijk recht</h2>
               <p>
                 We kunnen deze voorwaarden van tijd tot tijd aanpassen. Op deze voorwaarden is Nederlands recht van
                 toepassing.
@@ -95,7 +104,7 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-lg font-bold text-white mb-2">9. Contact</h2>
+              <h2 className="font-heading text-lg font-bold text-white mb-2">10. Contact</h2>
               <p>
                 Vragen over deze voorwaarden? Mail naar{" "}
                 <a href="mailto:lucas@swyp.it" className="text-white/70 underline">lucas@swyp.it</a>.

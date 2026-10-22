@@ -1,0 +1,25 @@
+name: Bereikbaarheid swyp.it
+
+# Elk kwartier een lichte controle: antwoordt de site en de database?
+# Faalt dit, dan stuurt GitHub een mail naar de eigenaar van de repo.
+# (GitHub kan geplande taken enkele minuten uitstellen; dit is geen seconde-bewaking.)
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Gezondheidscheck, met drie pogingen
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 20 https://swyp.it/api/health || echo 000)
+            echo "poging $i: HTTP $code $(cat /tmp/health.json 2>/dev/null)"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 20
+          done
+          echo "::error::swyp.it of de database antwoordt niet"
+          exit 1

@@ -135,7 +135,8 @@ function mapReward(r: any): Reward {
 
 export async function fetchCompanies(): Promise<Company[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("businesses").select("*").order("created_at");
+  // De view laat het interne account-id weg; de tabel zelf is alleen nog voor de eigenaar.
+  const { data, error } = await supabase.from("public_businesses").select("*").order("created_at");
   if (error) throw error;
   return (data ?? []).map(mapCompany);
 }
@@ -147,14 +148,27 @@ export async function fetchProducts(): Promise<Product[]> {
   return (data ?? []).map(mapProduct);
 }
 
+// Campagnes zelf zijn alleen voor hun eigenaar leesbaar; wat een video
+// oplevert komt uit de openbare view campaign_rewards.
+async function withCampaignRewards(rows: any[]): Promise<Ad[]> {
+  const ids = [...new Set(rows.map((r) => r.campaign_id).filter(Boolean))];
+  const byCampaign = new Map<string, any>();
+  if (ids.length > 0) {
+    const { data, error } = await createClient()
+      .from("campaign_rewards")
+      .select("campaign_id, reward_watch, reward_like, reward_save, reward_click")
+      .in("campaign_id", ids);
+    if (error) throw error;
+    for (const r of data ?? []) byCampaign.set(r.campaign_id, r);
+  }
+  return rows.map((r) => mapAd({ ...r, campaigns: byCampaign.get(r.campaign_id) }));
+}
+
 export async function fetchAds(): Promise<Ad[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("ads")
-    .select("*, campaigns(reward_watch, reward_like, reward_save, reward_click)")
-    .order("created_at");
+  const { data, error } = await supabase.from("ads").select("*").order("created_at");
   if (error) throw error;
-  return (data ?? []).map(mapAd);
+  return withCampaignRewards(data ?? []);
 }
 
 // The consumer feed (src/app/app/page.tsx)
@@ -172,14 +186,15 @@ export async function fetchAdsPage(
   const supabase = createClient();
   const { data, error } = await supabase
     .from("ads")
-    .select("*, campaigns(reward_watch, reward_like, reward_save, reward_click)")
+    .select("*")
     .eq("moderation_status", "approved")
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .range(offset, offset + limit - 1);
   if (error) throw error;
-  const ads = (data ?? []).map(mapAd);
-  return { ads, hasMore: ads.length === limit };
+  const rows = data ?? [];
+  const ads = await withCampaignRewards(rows);
+  return { ads, hasMore: rows.length === limit };
 }
 
 export async function fetchCampaigns(): Promise<Campaign[]> {
@@ -350,21 +365,28 @@ export async function uploadAdVideo(businessId: string, file: File): Promise<str
 
 export async function logInteraction(event: {
   deviceId: string;
+  /** Wordt genegeerd: de server leidt bedrijf en product af van de advertentie. */
   businessId?: string;
   adId?: string;
+  /** Wordt genegeerd, zie businessId. */
   productId?: string;
   eventName: string;
   value?: number;
 }) {
+  if (!event.adId) return;
   const supabase = createClient();
-  await supabase.from("interactions").insert({
-    device_id: event.deviceId,
-    business_id: event.businessId ?? null,
-    ad_id: event.adId ?? null,
-    product_id: event.productId ?? null,
-    event_name: event.eventName,
-    value: event.value ?? null,
-  });
+  // Fire-and-forget: een mislukte meting mag de app nooit storen.
+  await supabase
+    .rpc("log_interaction", {
+      p_device_id: event.deviceId,
+      p_event: event.eventName,
+      p_ad_id: event.adId,
+      p_value: event.value ?? null,
+    })
+    .then(
+      () => undefined,
+      () => undefined
+    );
 }
 
 export interface Interaction {

@@ -21,10 +21,26 @@ const inter = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+const description =
+  "Swyp brengt consumenten en bedrijven samen: swipe door advertenties die bij je passen, verdien Swyp Tokens en wissel ze in voor echte voordelen.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://swyp.it"),
   title: "Swyp — Swipe. Spaar. Profiteer.",
-  description:
-    "Swyp brengt consumenten en bedrijven samen: swipe door advertenties die bij je passen, verdien Swyp Tokens en wissel ze in voor echte voordelen.",
+  description,
+  openGraph: {
+    type: "website",
+    siteName: "Swyp",
+    locale: "nl_NL",
+    url: "https://swyp.it",
+    title: "Swyp — Swipe. Spaar. Profiteer.",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Swyp — Swipe. Spaar. Profiteer.",
+    description,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

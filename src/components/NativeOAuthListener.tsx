@@ -25,6 +25,15 @@ export function NativeOAuthListener() {
       ]);
 
       const listener = await App.addListener("appUrlOpen", async ({ url }) => {
+        // Universele link (https://swyp.it/app/...): open dezelfde pagina in de app.
+        // Alleen /app-paden; alles anders laten we met rust.
+        if (url.startsWith("https://swyp.it/")) {
+          const target = new URL(url);
+          if (target.pathname === "/app" || target.pathname.startsWith("/app/")) {
+            window.location.href = `${target.pathname}${target.search}`;
+          }
+          return;
+        }
         if (!url.startsWith("it.swyp.app://auth/confirm")) return;
 
         await Browser.close().catch(() => {});

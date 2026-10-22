@@ -65,10 +65,13 @@ export default function ForBusinessPage() {
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="font-heading text-3xl font-bold mb-3">Je eigen analytics dashboard</h2>
           <p className="text-white/55 mb-10 max-w-lg mx-auto">
-            Spend, ROAS, retention per seconde, engagement signals en creative insights — allemaal in real-time.
+            Bereik, likes, opslagen, doorgestuurde video&apos;s en je bestede budget — live in je dashboard.
           </p>
-          <div className="rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-            <div className="bg-slate p-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
+          <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+            <span className="absolute right-3 top-3 rounded-full bg-magenta/15 px-2.5 py-1 text-[11px] font-semibold text-magenta">
+              Voorbeeld met fictieve cijfers
+            </span>
+            <div className="bg-slate p-6 pt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
               {[
                 { label: "Spend", value: "€1.842" },
                 { label: "Views", value: "84.302" },

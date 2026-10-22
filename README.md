@@ -67,7 +67,7 @@ De iOS-app laadt `https://swyp.it/app`, dus een webwijziging hoeft geen nieuwe b
 - Punten en beloningen met eigen kortingscodes, dagmaxima en budgetbewaking (server-kant, `supabase/`)
 - Berichten: video's doorsturen (levert punten op), reacties, blokkeren, pushmelding (`supabase/dm.sql`, `src/app/app/messages`)
 - Bedrijfsdashboard: campagnes, producten, beloningen, statistiek
-- Veiligheid: beveiligingsheaders (CSP staat nog op alleen melden), rate limiting, moderatie, account verwijderen
+- Veiligheid: beveiligingsheaders (CSP wordt afgedwongen, `next.config.ts`), rate limiting, moderatie, account verwijderen
 
 ## Release (iOS)
 

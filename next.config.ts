@@ -5,10 +5,11 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
   : undefined;
 
-// Beveiligingsheaders. De vier eenvoudige staan meteen aan. De CSP staat eerst
-// op Report-Only: overtredingen worden gemeld (/api/csp-report) maar niets
-// wordt geblokkeerd. Na een paar dagen zonder meldingen gaat hij naar
-// "Content-Security-Policy".
+// Beveiligingsheaders. De CSP wordt afgedwongen (sinds 2026-10-22, nadat een
+// echte browser alle belangrijke pagina's zonder overtreding doorliep).
+// Overtredingen worden nog steeds gemeld aan /api/csp-report. Gaat er na een
+// wijziging iets stuk, zet dan tijdelijk de sleutel hieronder terug op
+// "Content-Security-Policy-Report-Only".
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://eu-assets.i.posthog.com",
@@ -23,6 +24,7 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self' https://appleid.apple.com",
   "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
   "report-uri /api/csp-report",
 ].join("; ");
 
@@ -31,7 +33,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=()" },
-  { key: "Content-Security-Policy-Report-Only", value: csp },
+  { key: "Content-Security-Policy", value: csp },
 ];
 
 const nextConfig: NextConfig = {

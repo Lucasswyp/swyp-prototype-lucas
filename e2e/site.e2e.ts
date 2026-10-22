@@ -54,7 +54,8 @@ test.describe("technische bestanden en beveiliging", () => {
     expect(h["x-content-type-options"]).toBe("nosniff");
     expect(h["x-frame-options"]).toBe("DENY");
     expect(h["referrer-policy"]).toBeTruthy();
-    expect(h["content-security-policy-report-only"] ?? h["content-security-policy"]).toBeTruthy();
+    expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(h["content-security-policy-report-only"]).toBeUndefined();
     expect(h["strict-transport-security"]).toBeTruthy();
   });
 

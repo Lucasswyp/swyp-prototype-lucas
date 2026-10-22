@@ -72,6 +72,10 @@ test.describe("technische bestanden en beveiliging", () => {
     expect(res.status()).toBe(401);
   });
 
+  test("meldingsroute voor beheerders weigert wie niet is ingelogd", async ({ request }) => {
+    expect((await request.post("/api/reports/notify")).status()).toBe(401);
+  });
+
   test("CSP-meldingen worden geaccepteerd", async ({ request }) => {
     const res = await request.post("/api/csp-report", { data: { "csp-report": { "violated-directive": "test" } } });
     expect(res.status()).toBe(204);
@@ -99,6 +103,11 @@ test.describe("de app als gast", () => {
     await page.getByPlaceholder("Zoek merken, producten, deals...").fill("pizza");
     // Resultaat of 'geen resultaten': allebei goed, een crash of eeuwig laden niet.
     await expect(page.getByText(/Geen resultaten voor|Video's|Producten|Bedrijven|Rewards/).first()).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("het meldingenscherm is niet voor gasten", async ({ page }) => {
+    await page.goto("/admin/reports");
+    await expect(page.getByText(/Log in met je Swyp-account om meldingen af te handelen|geen adminrechten/).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("berichten vragen een gast om in te loggen", async ({ page }) => {

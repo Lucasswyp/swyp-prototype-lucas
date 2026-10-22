@@ -17,7 +17,7 @@ test.describe("openbare pagina's", () => {
     await expect(page.getByText("Voorbeeld met fictieve cijfers")).toBeVisible();
   });
 
-  for (const path of ["/privacy", "/terms", "/get-started", "/business/login", "/test"]) {
+  for (const path of ["/privacy", "/terms", "/support", "/get-started", "/business/login", "/test"]) {
     test(`${path} laadt`, async ({ page }) => {
       const res = await page.goto(path);
       expect(res?.status()).toBe(200);

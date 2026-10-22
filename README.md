@@ -71,4 +71,6 @@ De iOS-app laadt `https://swyp.it/app`, dus een webwijziging hoeft geen nieuwe b
 
 ## Release (iOS)
 
+Alles voor de App Store-inzending (teksten, privacylabels, reviewnotities, stappen) staat in `docs/app-store.md`.
+
 Builds gaan met `xcrun altool` naar TestFlight (team `5YNP5PZ27W`, bundle `it.swyp.app`). Gebruik een app-specifiek wachtwoord uit de sleutelhanger (`@keychain:AC_PASSWORD`), nooit in een script of in de chat.

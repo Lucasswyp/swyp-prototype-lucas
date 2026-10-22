@@ -62,6 +62,7 @@ describe("previewText", () => {
 describe("dmErrorLabel", () => {
   it("geeft een nette Nederlandse melding", () => {
     expect(dmErrorLabel("blocked")).toMatch(/geen berichten/);
+    expect(dmErrorLabel("not_allowed")).toMatch(/niet mogen op Swyp/);
     expect(dmErrorLabel("onbekend_iets")).toMatch(/misgegaan|mis/);
     expect(dmErrorLabel(undefined)).toMatch(/mis/);
   });

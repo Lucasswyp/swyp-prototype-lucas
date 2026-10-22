@@ -67,6 +67,8 @@ const ERROR_LABELS: Record<string, string> = {
   message_not_found: "Dit bericht bestaat niet meer.",
   invalid_emoji: "Deze emoji kan niet.",
   invalid_kind: "Dit bericht kan niet verstuurd worden.",
+  not_allowed: "Dit bericht bevat woorden die niet mogen op Swyp. Pas het aan en probeer het opnieuw.",
+  suspended: "Je account is beperkt. Neem contact op via lucas@swyp.it.",
 };
 
 export function dmErrorLabel(reason?: string | null) {

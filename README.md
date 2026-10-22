@@ -42,7 +42,7 @@ Lokaal in `.env.local`, in productie in Vercel (team `swyp1`, project `swyp-prot
 ## Database (Supabase)
 
 Het project heet **swyp** (PRODUCTION). Er is geen migratietool: de bestanden in `supabase/` worden met de hand in de SQL Editor gedraaid, in deze volgorde:
-`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, `reports_moderation`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
+`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, `reports_moderation`, `message_filter`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
 
 Werkwijze voor een wijziging op productie:
 1. Test het eerst als `DO`-blok dat eindigt met `raise exception`, zodat alles wordt teruggedraaid.
@@ -65,7 +65,7 @@ De iOS-app laadt `https://swyp.it/app`, dus een webwijziging hoeft geen nieuwe b
 
 - Feed met video's (Mux, HLS), zoeken (Algolia) met verwante termen (`src/lib/relatedTermsData.ts`)
 - Punten en beloningen met eigen kortingscodes, dagmaxima en budgetbewaking (server-kant, `supabase/`)
-- Berichten: video's doorsturen (levert punten op), reacties, blokkeren, pushmelding (`supabase/dm.sql`, `src/app/app/messages`)
+- Berichten: video's doorsturen (levert punten op), reacties, blokkeren, melden en schorsen, woordenfilter (`moderation_terms`), pushmelding (`supabase/dm.sql`, `src/app/app/messages`)
 - Bedrijfsdashboard: campagnes, producten, beloningen, statistiek
 - Veiligheid: beveiligingsheaders (CSP wordt afgedwongen, `next.config.ts`), rate limiting, moderatie, account verwijderen
 

@@ -1,0 +1,35 @@
+name: Dagelijkse controle op swyp.it
+
+# Draait elke ochtend de end-to-end controles tegen de live site (zonder
+# inloggen, alleen lezen). Faalt er iets, dan stuurt GitHub een mail naar de
+# eigenaar van de repo. Handmatig starten kan via Actions > Run workflow.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Adres om te testen"
+        default: "https://swyp.it"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: ${{ github.event.inputs.base_url || 'https://swyp.it' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-verslag
+          path: test-results/
+          retention-days: 7

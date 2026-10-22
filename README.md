@@ -19,6 +19,7 @@ npm run dev                  # http://localhost:3000
 | `npm run lint` | ESLint |
 | `npm test` | Unit-tests (Vitest) |
 | `npm run build` | Productiebouw (draait ook in CI met nepwaarden) |
+| `npm run e2e` | Playwright-controles tegen de live site (`E2E_BASE_URL=http://localhost:3000 npm run e2e` voor lokaal). Draait ook elke ochtend via GitHub Actions (`smoke.yml`) |
 
 Next.js is hier een nieuwere versie dan veel documentatie: lees `node_modules/next/dist/docs/` voor je iets aanpast (zie `AGENTS.md`).
 

@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // e2e/ is voor Playwright, niet voor Vitest.
+    exclude: ["e2e/**", "node_modules/**"],
   },
   resolve: {
     alias: {

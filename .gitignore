@@ -50,3 +50,7 @@ ios/App/App.xcodeproj/xcuserdata/
 ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 ios/DerivedData/
 *.xcuserstate
+
+# Playwright
+/test-results/
+/playwright-report/

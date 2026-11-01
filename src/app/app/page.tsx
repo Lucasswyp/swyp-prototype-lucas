@@ -72,7 +72,7 @@ export default function FeedPage() {
   const { balance: tokenBalance } = useWallet();
 
   if (loading) {
-    // The branded SwypSplash in the layout covers this — nothing to render.
+    // The loading cover in the layout covers this — nothing to render.
     return null;
   }
 

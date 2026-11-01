@@ -2,10 +2,10 @@
 
 import { ReactNode, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence } from "framer-motion";
 import { MobileFrame } from "@/components/consumer/MobileFrame";
 import { BottomNav } from "@/components/consumer/BottomNav";
-import { SwypSplash } from "@/components/consumer/SwypSplash";
+import { LoadingCover } from "@/components/consumer/LoadingCover";
+import { LaunchSplash } from "@/components/consumer/LaunchSplash";
 import { DataProvider, useData } from "@/contexts/DataContext";
 import { ConsumerAuthProvider, useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { WalletProvider } from "@/contexts/WalletContext";
@@ -47,7 +47,8 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
             {children}
           </div>
           {showNav && <BottomNav />}
-          <AnimatePresence>{loading && <SwypSplash />}</AnimatePresence>
+          {loading && <LoadingCover />}
+          <LaunchSplash />
           {!loading && error && (
             <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-indigo px-8 text-center">
               <p className="text-sm text-white/60">Laden is mislukt. Controleer je verbinding.</p>

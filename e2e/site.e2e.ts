@@ -83,6 +83,16 @@ test.describe("technische bestanden en beveiliging", () => {
 });
 
 test.describe("de app als gast", () => {
+  // Een nieuwe browser telt als "eerste keer" en krijgt dan de lanceeranimatie;
+  // de gewone tests doen alsof de app net nog open was.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem("__force_minutes_ago") === null) {
+        localStorage.setItem("swyp-last-active", String(Date.now()));
+      }
+    });
+  });
+
   test("feed laadt een video met bedrijf en productknop", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -142,5 +152,41 @@ test.describe("de app als gast", () => {
   test("een gast wordt niet doorgestuurd naar andermans gesprek", async ({ page }) => {
     await page.goto("/app/messages/00000000-0000-0000-0000-000000000000");
     await expect(page.getByText(/Log in om je berichten te lezen|Welkom bij Swyp|bestaat niet/).first()).toBeVisible({ timeout: 15_000 });
+  });
+});
+
+test.describe("lanceeranimatie", () => {
+  // Zet vóór het laden "laatst actief" op X minuten geleden en start een nieuwe sessie.
+  async function startAfter(page: import("@playwright/test").Page, minutesAgo: number) {
+    await page.addInitScript((m) => {
+      if (!sessionStorage.getItem("__e2e_done")) {
+        localStorage.setItem("swyp-last-active", String(Date.now() - m * 60_000));
+        sessionStorage.clear();
+        sessionStorage.setItem("__e2e_done", "1");
+      }
+    }, minutesAgo);
+  }
+  const splash = (page: import("@playwright/test").Page) => page.getByTestId("launch-splash");
+
+  test("speelt na uren weg zijn, niet bij verversen, en is weg te tikken", async ({ page }) => {
+    await startAfter(page, 5 * 60);
+    await page.goto("/app");
+    await expect(splash(page)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByAltText("Swyp").first()).toBeVisible();
+    await splash(page).click();
+    await expect(splash(page)).toHaveCount(0, { timeout: 5_000 });
+
+    await page.reload();
+    await page.waitForFunction(() => sessionStorage.getItem("swyp-splash-shown") === "1");
+    await page.waitForTimeout(800);
+    await expect(splash(page)).toHaveCount(0);
+  });
+
+  test("speelt niet als je de app net nog open had", async ({ page }) => {
+    await startAfter(page, 10);
+    await page.goto("/app");
+    await page.waitForFunction(() => sessionStorage.getItem("swyp-splash-shown") === "1", null, { timeout: 15_000 });
+    await page.waitForTimeout(800);
+    await expect(splash(page)).toHaveCount(0);
   });
 });

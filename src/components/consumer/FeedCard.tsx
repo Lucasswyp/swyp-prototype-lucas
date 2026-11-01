@@ -4,10 +4,10 @@ import posthog from "posthog-js";
 import { useHlsSource } from "@/lib/useHlsSource";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useMotionValue, AnimatePresence } from "framer-motion";
 import { Heart, Play, Pause } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
-import { SwypToken } from "@/components/ui/SwypToken";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { ShareSheet } from "@/components/consumer/ShareSheet";
 import { FeedActionRail } from "@/components/consumer/FeedActionRail";
@@ -18,7 +18,7 @@ import { logInteraction } from "@/lib/data";
 import { getDeviceId } from "@/lib/deviceId";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { shareLink } from "@/lib/share";
-import { hapticSuccess, hapticTap } from "@/lib/haptics";
+import { hapticTap } from "@/lib/haptics";
 import type { ReportReason } from "@/lib/safety";
 import type { Ad, Company, Product } from "@/types";
 
@@ -34,13 +34,13 @@ interface FeedCardProps {
 }
 
 export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear));
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [buffering, setBuffering] = useState(false);
-  const [celebration, setCelebration] = useState<{ label: string; big: boolean } | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number; rotate: number }[]>([]);
   // True when the video is fully buffered and ready but still paused —
   // iOS Low Power Mode blocks ALL programmatic video autoplay (muted or
@@ -60,7 +60,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const playedMsRef = useRef(0);
   const lastPlayingTickRef = useRef<number | null>(null);
 
-  const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike, toggleBlock, report } = useWallet();
+  const { likedAdIds, savedProductIds, toggleSave, awardWatch80, awardLike, awardView, toggleBlock, report } = useWallet();
   const markWatched = useAppStore((s) => s.markWatched);
   const [optimisticLiked, setOptimisticLiked] = useState(false);
   const liked = optimisticLiked || likedAdIds.has(ad.id);
@@ -85,17 +85,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       lastPlayingTickRef.current = null;
     }
   }, [isActive]);
-
-  // Routine rewards get a quick, modest pop (~350ms) — reserving the bigger
-  // celebration for genuine milestones (a streak week, a new-account bonus)
-  // keeps celebratory feedback honest instead of dressing up a 3-token like
-  // as if it were a real win (the "losses disguised as wins" slot-machine
-  // pattern research flagged as the line not to cross).
-  const flashReward = useCallback((label: string, big = false) => {
-    setCelebration({ label, big });
-    hapticSuccess();
-    window.setTimeout(() => setCelebration(null), big ? 1100 : 350);
-  }, []);
 
   const flashToast = useCallback((label: string) => {
     setToast(label);
@@ -268,7 +257,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
         // relative to "impression", pushing completion rate over 100%.
         if (!result.awarded) return;
         logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });
-        if (result.points) flashReward(`+${result.points} SWYP`, result.streakBonus === 30);
       });
     }
   }
@@ -346,7 +334,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       .then((result) => {
         if (result.awarded) {
           logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "like" });
-          if (result.points) flashReward(`+${result.points} SWYP`);
         } else if (result.reason !== "already_awarded") {
           setOptimisticLiked(false); // genuine failure — revert the optimistic fill
         }
@@ -363,14 +350,32 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
         if (!wasSaved) {
           logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "save" });
         }
-        if (result.points) flashReward(`+${result.points} SWYP`);
       }
     });
   }
 
+  // "Bekijk product": beloon het bekijken (aparte, kleinere beloning dan de
+  // doorklik naar de winkel) en laat de animatie even spelen voor we naar de
+  // productpagina gaan. Als gast of zonder beloning gaan we meteen.
   function handleClickThrough() {
     logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "click" });
     posthog.capture("ad_clicked", { adId: ad.id, productId: product.id });
+  }
+
+  async function handleProductClick(e: React.MouseEvent) {
+    e.preventDefault();
+    handleClickThrough();
+    const href = `/app/product/${product.id}`;
+    if (!isLoggedIn) {
+      router.push(href);
+      return;
+    }
+    // Hooguit een halve seconde wachten op de server; daarna gaan we hoe dan ook.
+    const result = await Promise.race([
+      awardView(ad.id).catch(() => null),
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 600)),
+    ]);
+    window.setTimeout(() => router.push(href), result?.awarded ? 900 : 0);
   }
 
   async function handleShare() {
@@ -490,23 +495,6 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       ))}
 
       <AnimatePresence>
-        {celebration && (
-          <motion.div
-            initial={{ opacity: 0, y: 0, scale: 0.8 }}
-            animate={{ opacity: 1, y: celebration.big ? -80 : -60, scale: celebration.big ? 1.15 : 1.05 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: celebration.big ? 0.5 : 0.25, ease: "easeOut" }}
-            className={cn(
-              "pointer-events-none absolute right-8 top-1/3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet to-magenta font-bold shadow-lg",
-              celebration.big ? "px-4 py-2.5 text-base" : "px-3 py-1.5 text-sm"
-            )}
-          >
-            <SwypToken size={celebration.big ? 18 : 14} /> {celebration.big ? `🔥 Week compleet! ${celebration.label}` : celebration.label}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {toast && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -522,11 +510,9 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       <FeedActionRail
         liked={liked}
         saved={saved}
-        productHref={`/app/product/${product.id}`}
         onLike={handleLike}
         onSave={handleSave}
         onShare={handleShare}
-        onInfo={handleClickThrough}
         onMore={() => (requireAuth() ? setSafetySheetOpen(true) : undefined)}
       />
 
@@ -554,7 +540,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           <span className="font-heading font-bold text-sm">{company.name}</span>
         </Link>
         <p className="text-sm leading-snug mb-2 line-clamp-2">{ad.caption}</p>
-        <Link href={`/app/product/${product.id}`} onClick={handleClickThrough} className="block">
+        <Link href={`/app/product/${product.id}`} onClick={handleProductClick} className="block">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-semibold">{product.name}</span>
           </div>

@@ -21,6 +21,7 @@ import {
   type AwardResult,
 } from "@/lib/rewards";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import { announceAward } from "@/lib/rewardEvents";
 import {
   submitReport,
   fetchMyBlockedBusinessIds,
@@ -46,8 +47,9 @@ interface WalletValue {
   awardWatch80: (adId: string, watchMs: number) => Promise<AwardResult>;
   awardLike: (adId: string) => Promise<AwardResult>;
   awardClick: (adId: string) => Promise<AwardResult>;
+  awardView: (adId: string) => Promise<AwardResult>;
   toggleSave: (productId: string, adId: string | null) => Promise<AwardResult | null>;
-  toggleFollow: (companyId: string) => Promise<void>;
+  toggleFollow: (companyId: string) => Promise<AwardResult | null>;
   toggleBlock: (companyId: string) => Promise<void>;
   report: (targetType: ReportTargetType, targetId: string, reason: ReportReason, details?: string) => Promise<void>;
   redeem: (reward: Reward) => Promise<{ ok: boolean; reason?: string; code?: string }>;
@@ -159,6 +161,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const result = await awardInteraction(adId, "watch80", watchMs);
     applyAward(result);
     posthog.capture("ad_watched_80", { adId, watchMs, awarded: result.awarded, reason: result.reason ?? null, points: result.points ?? 0 });
+    announceAward("watch", result);
     return result;
   }, []);
 
@@ -167,12 +170,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (result.awarded) setLikedAdIds((s) => new Set(s).add(adId));
     applyAward(result);
     posthog.capture("ad_liked", { adId, awarded: result.awarded, reason: result.reason ?? null, points: result.points ?? 0 });
+    announceAward("like", result);
     return result;
   }, []);
 
   const awardClick = useCallback(async (adId: string) => {
     const result = await awardInteraction(adId, "click");
     applyAward(result);
+    announceAward("click", result);
+    return result;
+  }, []);
+
+  // "Bekijk product" in de feed: een kleine beloning voor het bekijken van het
+  // product, los van de doorklik naar de winkel (awardClick).
+  const awardView = useCallback(async (adId: string) => {
+    const result = await awardInteraction(adId, "view");
+    applyAward(result);
+    announceAward("view", result);
     return result;
   }, []);
 
@@ -214,6 +228,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (!adId) return null;
         const result = await awardInteraction(adId, "save");
         applyAward(result);
+        announceAward("save", result);
         return result;
       } finally {
         pendingSaves.current.delete(productId);
@@ -223,9 +238,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleFollow = useCallback(
-    async (companyId: string) => {
-      if (!consumerId) return;
-      if (pendingFollows.current.has(companyId)) return;
+    async (companyId: string): Promise<AwardResult | null> => {
+      if (!consumerId) return null;
+      if (pendingFollows.current.has(companyId)) return null;
       pendingFollows.current.add(companyId);
       try {
         const isFollowed = followedCompanyIds.has(companyId);
@@ -240,7 +255,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           } catch {
             setFollowedCompanyIds((s) => new Set(s).add(companyId));
           }
-          return;
+          return null;
         }
         setFollowedCompanyIds((s) => new Set(s).add(companyId));
         try {
@@ -251,11 +266,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             next.delete(companyId);
             return next;
           });
-          return;
+          return null;
         }
         posthog.capture("company_followed", { companyId });
         const result = await awardFollow(companyId);
         applyAward(result);
+        announceAward("follow", result);
+        return result;
       } finally {
         pendingFollows.current.delete(companyId);
       }
@@ -345,6 +362,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         awardWatch80,
         awardLike,
         awardClick,
+        awardView,
         toggleSave,
         toggleFollow,
         toggleBlock,

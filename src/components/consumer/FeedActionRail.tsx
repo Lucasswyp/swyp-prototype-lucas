@@ -1,24 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, Bookmark, Share2, Info, MoreVertical } from "lucide-react";
+import { Heart, Bookmark, Share2, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFeedButtonStyle } from "@/lib/feedButtonStyle";
 
 interface Props {
   liked: boolean;
   saved: boolean;
-  productHref: string;
   onLike: () => void;
   onSave: () => void;
   onShare: () => void;
-  onInfo: () => void;
   onMore: () => void;
 }
 
 // De knoppen rechts in de feed, in twee ontwerpen (zie lib/feedButtonStyle.ts).
-export function FeedActionRail({ liked, saved, productHref, onLike, onSave, onShare, onInfo, onMore }: Props) {
+export function FeedActionRail({ liked, saved, onLike, onSave, onShare, onMore }: Props) {
   const [style] = useFeedButtonStyle();
 
   if (style === "b") {
@@ -46,12 +43,6 @@ export function FeedActionRail({ liked, saved, productHref, onLike, onSave, onSh
           <span className={label}>Deel</span>
         </button>
         <span className="my-1 h-px w-7 bg-white/15" aria-hidden />
-        <Link href={productHref} onClick={onInfo} className={item} aria-label="Meer info">
-          <span className="flex h-8 items-center">
-            <Info size={23} strokeWidth={2.2} className="text-white drop-shadow" />
-          </span>
-          <span className={label}>Info</span>
-        </Link>
         <button onClick={onMore} className={item} aria-label="Meer opties">
           <span className="flex h-8 items-center">
             <MoreVertical size={23} strokeWidth={2.2} className="text-white drop-shadow" />
@@ -80,11 +71,6 @@ export function FeedActionRail({ liked, saved, productHref, onLike, onSave, onSh
           <Share2 size={21} className="text-white" />
         </span>
       </button>
-      <Link href={productHref} onClick={onInfo} className="flex flex-col items-center gap-1" aria-label="Meer info">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-          <Info size={21} className="text-white" />
-        </span>
-      </Link>
       <button onClick={onMore} className="flex flex-col items-center gap-1" aria-label="Meer opties">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
           <MoreVertical size={21} className="text-white" />

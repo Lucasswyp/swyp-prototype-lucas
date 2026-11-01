@@ -5,7 +5,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { WalletTransaction, Redemption } from "@/types";
 
-export type InteractionAction = "watch80" | "like" | "save" | "click";
+export type InteractionAction = "watch80" | "like" | "save" | "click" | "view";
 
 export interface AwardResult {
   awarded: boolean;
@@ -105,6 +105,7 @@ const ACTION_LABELS: Record<string, string> = {
   like: "Advertentie geliket",
   save: "Product opgeslagen",
   click: "Doorgeklikt naar winkel",
+  view: "Product bekeken",
   follow: "Bedrijf gevolgd",
   share: "Video doorgestuurd",
   streak_daily: "Dagelijkse streak-bonus",

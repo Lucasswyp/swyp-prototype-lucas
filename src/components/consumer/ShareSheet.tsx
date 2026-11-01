@@ -18,7 +18,7 @@ import {
   type DmUser,
 } from "@/lib/dm";
 import { shareLink } from "@/lib/share";
-import { hapticSuccess } from "@/lib/haptics";
+import { announceAward } from "@/lib/rewardEvents";
 
 type RowState = "idle" | "sending" | "sent";
 
@@ -123,7 +123,7 @@ export function ShareSheet({ open, onClose, adId, productName, linkUrl, onNotify
       }
       setRows((r) => ({ ...r, [user.id]: "sent" }));
       notifyRecipient(result.messageId);
-      hapticSuccess();
+      announceAward("share", { awarded: !!result.awarded, points: result.points });
       syncBalance(result.balance);
       posthog.capture("video_shared_dm", { adId, awarded: result.awarded, points: result.points ?? 0, reason: result.awardReason });
       if (result.awarded) {

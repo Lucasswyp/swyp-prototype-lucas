@@ -11,6 +11,7 @@ import { ConsumerAuthProvider, useConsumerAuth } from "@/contexts/ConsumerAuthCo
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LoginPromptModal } from "@/components/consumer/LoginPromptModal";
 import { ReferralAwardToast } from "@/components/consumer/ReferralAwardToast";
+import { RewardFxLayer } from "@/components/consumer/RewardFxLayer";
 import { Button } from "@/components/ui/Button";
 
 // /app/interests is still reachable from the profile menu for people who
@@ -54,6 +55,7 @@ function AppShell({ children, showNav }: { children: ReactNode; showNav: boolean
             </div>
           )}
           <ReferralAwardToast />
+          <RewardFxLayer />
         </MobileFrame>
         <LoginPromptModal />
       </WalletProvider>

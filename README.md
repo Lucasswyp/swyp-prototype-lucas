@@ -42,7 +42,7 @@ Lokaal in `.env.local`, in productie in Vercel (team `swyp1`, project `swyp-prot
 ## Database (Supabase)
 
 Het project heet **swyp** (PRODUCTION). Er is geen migratietool: de bestanden in `supabase/` worden met de hand in de SQL Editor gedraaid, in deze volgorde:
-`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, `reports_moderation`, `message_filter`, `hide_demo`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
+`schema`, `consumers`, `profiles`, `rewards`, `referrals`, `apple_auth`, `moderation`, `push`, `rate_limits`, `safety`, `storage_fix`, `security_hardening`, `feedback`, `reward_codes_and_budget`, `dm`, `exposure_and_caps`, `audience_summary`, `reports_moderation`, `message_filter`, `hide_demo`, `product_view_points`, daarna `exposure_lockdown` (pas na het uitrollen van de bijbehorende app-versie). Alle bestanden zijn herhaalbaar.
 
 Werkwijze voor een wijziging op productie:
 1. Test het eerst als `DO`-blok dat eindigt met `raise exception`, zodat alles wordt teruggedraaid.

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import type { Category } from "@/types";
+import { BUSINESS_TERMS_VERSION } from "@/lib/businessTerms";
 
 export async function POST(request: Request) {
   // Unauthenticated by design (there's no account yet) — the one endpoint
@@ -11,10 +12,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Te veel pogingen. Probeer het over een uur opnieuw." }, { status: 429 });
   }
 
-  const { email, password, companyName, category, location } = await request.json();
+  const { email, password, companyName, category, location, acceptedTerms } = await request.json();
 
   if (!email || !password || !companyName) {
     return NextResponse.json({ error: "Vul alle velden in." }, { status: 400 });
+  }
+
+  // Zonder akkoord op de voorwaarden voor bedrijven geen account. Het akkoord
+  // wordt met versie en tijdstip bij het account bewaard.
+  if (acceptedTerms !== true) {
+    return NextResponse.json({ error: "Ga akkoord met de voorwaarden voor bedrijven om door te gaan." }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -23,6 +30,7 @@ export async function POST(request: Request) {
     email,
     password,
     email_confirm: true,
+    user_metadata: { business_terms_version: BUSINESS_TERMS_VERSION, business_terms_accepted_at: new Date().toISOString() },
   });
 
   if (createError) {

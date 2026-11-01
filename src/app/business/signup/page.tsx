@@ -30,6 +30,7 @@ export default function BusinessSignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +40,7 @@ export default function BusinessSignupPage() {
     const res = await fetch("/api/auth/signup-business", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, companyName, category, location }),
+      body: JSON.stringify({ email, password, companyName, category, location, acceptedTerms }),
     });
     const body = await res.json();
     if (!res.ok) {
@@ -130,8 +131,24 @@ export default function BusinessSignupPage() {
                 placeholder="••••••••"
               />
             </div>
+            <label className="flex items-start gap-2.5 text-xs text-white/60 leading-relaxed">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-violet"
+              />
+              <span>
+                Ik ga akkoord met de{" "}
+                <Link href="/voorwaarden-bedrijven" target="_blank" className="underline text-white/80">
+                  voorwaarden voor bedrijven
+                </Link>{" "}
+                en het <Link href="/privacy" target="_blank" className="underline text-white/80">privacybeleid</Link>.
+              </span>
+            </label>
             {error && <p className="text-sm text-red-300">{error}</p>}
-            <Button type="submit" fullWidth className="mt-2" disabled={loading}>
+            <Button type="submit" fullWidth className="mt-2" disabled={loading || !acceptedTerms}>
               {loading ? "Bezig..." : "Account aanmaken"}
             </Button>
           </form>

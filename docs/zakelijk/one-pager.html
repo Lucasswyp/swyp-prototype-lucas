@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Swyp voor bedrijven</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { width: 210mm; height: 297mm; font-family: "Inter", system-ui, sans-serif; color: #1a1a33; font-size: 10.5pt; line-height: 1.45; }
+  .top { background: linear-gradient(135deg, #0B0A2E 0%, #2A1670 55%, #7B3DFF 100%); color: white; padding: 11mm 16mm 8mm; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 5mm; }
+  .mark { width: 11mm; height: 11mm; border-radius: 3mm; background: linear-gradient(135deg, #7B3DFF, #FF3EDB); display: flex; align-items: center; justify-content: center; font: 800 18pt "Plus Jakarta Sans"; }
+  .brand b { font: 800 17pt "Plus Jakarta Sans"; letter-spacing: -0.3px; }
+  .brand span { opacity: .7; font-size: 9.5pt; margin-left: 4px; }
+  h1 { font: 800 25pt/1.1 "Plus Jakarta Sans"; margin: 0 0 4mm; letter-spacing: -0.6px; }
+  .lead { font-size: 12pt; opacity: .88; max-width: 150mm; margin: 0; }
+  .body { padding: 6.5mm 16mm 0; }
+  h2 { font: 800 12.5pt "Plus Jakarta Sans"; margin: 0 0 2.5mm; color: #2A1670; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; margin-bottom: 5mm; }
+  .step { background: #F4F1FF; border-radius: 3mm; padding: 4mm; }
+  .step .n { font: 800 15pt "Plus Jakarta Sans"; color: #7B3DFF; }
+  .step p { margin: 1mm 0 0; font-size: 9.5pt; }
+  .step p b { display: block; color: #1a1a33; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-bottom: 5mm; }
+  ul { margin: 0; padding-left: 4.5mm; }
+  li { margin-bottom: 1.2mm; }
+  .partner { background: linear-gradient(135deg, #7B3DFF, #FF3EDB); color: white; border-radius: 4mm; padding: 4.5mm 6mm; margin-bottom: 4.5mm; }
+  .partner h2 { color: white; margin-bottom: 2mm; }
+  .partner ul { margin: 0; }
+  .price { display: flex; gap: 6mm; align-items: center; border: 1.5px solid #E3DEFA; border-radius: 4mm; padding: 3.5mm 6mm; margin-bottom: 4mm; }
+  .price .amt { font: 800 24pt "Plus Jakarta Sans"; color: #2A1670; white-space: nowrap; }
+  .price .amt small { display: block; font: 500 9pt Inter; color: #666; margin-top: -1mm; }
+  .price p { margin: 0; font-size: 9.8pt; }
+  .honest { font-size: 9.3pt; color: #555; margin: 0 0 4mm; }
+  .foot { position: absolute; bottom: 0; left: 0; right: 0; background: #0B0A2E; color: white; padding: 6mm 16mm; display: flex; justify-content: space-between; align-items: center; font-size: 9.5pt; }
+  .foot b { font: 800 11pt "Plus Jakarta Sans"; }
+  .foot a { color: #FF9DEB; text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"><div class="mark">S</div><b>Swyp</b><span>voor bedrijven</span></div>
+    <h1>Adverteren waar mensen<br>graag voor kijken</h1>
+    <p class="lead">Swyp is een app met korte video's van bedrijven. Kijkers verdienen punten voor kijken, liken en doorklikken, en wisselen die in bij jou voor een korting of aanbieding die je zelf kiest.</p>
+  </div>
+
+  <div class="body">
+    <h2>Zo werkt het</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><p><b>Upload je video</b>15 tot 45 seconden, staand (9:16).</p></div>
+      <div class="step"><div class="n">2</div><p><b>Kies je beloning</b>Bijvoorbeeld 10% korting, met je eigen codes.</p></div>
+      <div class="step"><div class="n">3</div><p><b>Kijkers verdienen</b>Punten voor kijken, liken, bewaren en doorsturen.</p></div>
+      <div class="step"><div class="n">4</div><p><b>Ze wisselen bij jou in</b>Jij controleert de code bij de kassa.</p></div>
+    </div>
+
+    <div class="cols">
+      <div>
+        <h2>Wat je ziet in je dashboard</h2>
+        <ul>
+          <li>Weergaven, likes, opslagen, doorkliks en keer doorgestuurd</li>
+          <li>Tips per video, op basis van je eigen cijfers</li>
+          <li>Leeftijd en geslacht van je kijkers, zonder wie ze zijn</li>
+          <li>Je budget: de campagne stopt vanzelf als het op is</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Waarom bedrijven meedoen</h2>
+        <ul>
+          <li>Kijkers die kiezen om jouw video te zien</li>
+          <li>Een korting waar je zelf de grens van bepaalt</li>
+          <li>Kijkers sturen je video door naar vrienden</li>
+          <li>Je betaalt per campagne, geen abonnement</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="partner">
+      <h2>Word lanceringspartner</h2>
+      <ul>
+        <li>Je <b>eerste campagne van 30 dagen is gratis</b></li>
+        <li>Een <b>tweede campagne gratis</b> als je 15 minuten eerlijke feedback geeft</li>
+        <li>Wij helpen met aanmelden en zetten je video live, meestal binnen een dag</li>
+      </ul>
+    </div>
+
+    <div class="price">
+      <div class="amt">&euro;149 <small>per campagne<br>excl. btw</small></div>
+      <p>Daarna is een campagne van 30 dagen &euro;149, inclusief een tokenbudget van maximaal &euro;100 dat kijkers kunnen verdienen. Bijvullen kan. Geen abonnement en geen verplichting.</p>
+    </div>
+
+    <p class="honest">Eerlijk vooraf: Swyp is nieuw en het aantal kijkers is nog klein. Jij stapt vroeg in en je feedback bepaalt mee wat we bouwen.</p>
+  </div>
+
+  <div class="foot">
+    <div><b>Swyp V.O.F.</b> &nbsp; KVK 42132440 &nbsp; lucas@swyp.it</div>
+    <div>Meld je aan: <a href="https://swyp.it/business/signup">swyp.it/business/signup</a></div>
+  </div>
+</body>
+</html>

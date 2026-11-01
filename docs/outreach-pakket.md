@@ -2,7 +2,7 @@
 
 Bijgewerkt op 22 oktober 2026. Alles hieronder is gebaseerd op wat de app nu echt kan. Beloof niets dat hier niet staat.
 
-Bijhouden wie je al hebt benaderd: [docs/adverteerderslijst.csv](adverteerderslijst.csv). Open het in Numbers of Google Sheets (importeren).
+Voorstel, prijs, factuur en one-pager staan in `docs/zakelijk/`. Bijhouden wie je al hebt benaderd: [docs/adverteerderslijst.csv](adverteerderslijst.csv). Open het in Numbers of Google Sheets (importeren).
 
 ---
 
@@ -19,7 +19,7 @@ Bijhouden wie je al hebt benaderd: [docs/adverteerderslijst.csv](adverteerdersli
 - De campagne stopt vanzelf als het budget op is, en je kunt bijvullen.
 
 **Wat je NIET mag beloven (nog niet gebouwd):**
-- Betalen en facturen (de proefperiode is gratis; er is nog geen betaalsysteem).
+- Automatisch betalen (er is nog geen betaalsysteem; je factureert zelf met `docs/zakelijk/factuursjabloon.docx`, zie `docs/zakelijk/prijs.md`).
 - ROAS, verkoopcijfers of "conversies". We meten klikken naar je website, geen aankopen.
 - Android (nu alleen iPhone en de website).
 - Vaste aantallen kijkers. Zeg eerlijk dat de app nog klein is en dat je in een vroeg stadium instapt.
@@ -97,7 +97,7 @@ Na 3 dagen het opvolgbericht uit C. Na nog eens 4 dagen niets: sluiten, "geen re
 | Zeggen ze | Jij antwoordt |
 |---|---|
 | "Hoeveel mensen zitten er op?" | Eerlijk: "We zijn net begonnen, jij stapt vroeg in. Daarom is het gratis en luister ik naar wat jij nodig hebt." Noem geen verzonnen aantallen. |
-| "Wat kost het?" | "De proefperiode is gratis. Wat het daarna kost, spreken we af op basis van wat het je oplevert. Er is geen verplichting." |
+| "Wat kost het?" | "De eerste campagne van 30 dagen is gratis. Daarna is het €149 per campagne van 30 dagen, exclusief btw, inclusief een tokenbudget van maximaal €100 voor kijkers. Geen abonnement en geen verplichting." |
 | "Heb ik geen tijd voor" | "Het is 20 minuten in totaal. Ik help je bij het aanmelden en je mag een bestaande video gebruiken." |
 | "Werkt dit echt?" | "Dat weten we samen pas na 30 dagen. Je ziet in je dashboard precies wat er gebeurt, ook als het tegenvalt." |
 | "Wie ziet mijn kortingscodes?" | "Alleen mensen die genoeg punten hebben ingewisseld. Je kunt een code ook bij de kassa laten controleren in het dashboard." |

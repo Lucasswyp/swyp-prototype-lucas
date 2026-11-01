@@ -40,10 +40,14 @@ export async function GET(request: Request) {
   const { data: liveIds } = await admin.rpc("live_ad_ids");
   const live = new Set((liveIds ?? []) as string[]);
 
+  // Verborgen bedrijven (zie supabase/hide_demo.sql) horen niet in de zoekindex.
+  const hiddenIds = new Set(((await admin.from("businesses").select("id").eq("hidden", true)).data ?? []).map((b) => b.id));
+  const isVisible = (businessId: string) => !hiddenIds.has(businessId);
+
   const companyById = new Map((companies ?? []).map((c) => [c.id, c]));
 
   const records: SearchRecord[] = [
-    ...(companies ?? []).map((c): SearchRecord => ({
+    ...(companies ?? []).filter((c) => isVisible(c.id)).map((c): SearchRecord => ({
       objectID: `company-${c.id}`,
       type: "company",
       name: c.name,
@@ -55,7 +59,7 @@ export async function GET(request: Request) {
       verified: c.verified ?? false,
       followers: c.followers ?? 0,
     })),
-    ...(products ?? []).map((p): SearchRecord => {
+    ...(products ?? []).filter((p) => isVisible(p.business_id)).map((p): SearchRecord => {
       const company = companyById.get(p.business_id);
       return {
         objectID: `product-${p.id}`,
@@ -75,7 +79,7 @@ export async function GET(request: Request) {
         companyVerified: company?.verified ?? false,
       };
     }),
-    ...(rewards ?? []).map((r): SearchRecord => {
+    ...(rewards ?? []).filter((r) => isVisible(r.business_id)).map((r): SearchRecord => {
       const company = companyById.get(r.business_id);
       return {
         objectID: `reward-${r.id}`,
@@ -91,7 +95,7 @@ export async function GET(request: Request) {
         companyLogoUrl: company?.logo_url ?? "",
       };
     }),
-    ...(ads ?? []).filter((a) => live.has(a.id)).map((a): SearchRecord => {
+    ...(ads ?? []).filter((a) => live.has(a.id) && isVisible(a.business_id)).map((a): SearchRecord => {
       const company = companyById.get(a.business_id);
       return {
         objectID: `ad-${a.id}`,

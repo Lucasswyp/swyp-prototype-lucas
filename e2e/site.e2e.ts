@@ -99,14 +99,16 @@ test.describe("de app als gast", () => {
     await expect(nav.getByRole("link", { name: /Berichten/ })).toBeVisible();
   });
 
-  test("de knoppen in de feed hebben twee ontwerpen en onthouden de keuze", async ({ page }) => {
-    await page.goto("/app?knoppen=b");
-    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
-    await page.goto("/app"); // zonder ?knoppen: de keuze blijft staan
+  test("de knoppen in de feed zijn standaard het glazen kapsel, en het klassieke ontwerp blijft te kiezen", async ({ page }) => {
+    await page.goto("/app");
     await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
     await page.goto("/app?knoppen=a");
     await expect(page.getByLabel("Opslaan")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("Bewaar", { exact: true })).toHaveCount(0);
+    await page.goto("/app"); // de keuze voor klassiek blijft staan
+    await expect(page.getByText("Bewaar", { exact: true })).toHaveCount(0);
+    await page.goto("/app?knoppen=b");
+    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
   });
 
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {

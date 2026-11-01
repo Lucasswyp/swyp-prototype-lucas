@@ -105,7 +105,7 @@ export default function SettingsPage() {
           <p className="text-sm font-bold mb-0.5">Knoppen in de feed</p>
           <p className="text-xs text-white/50 mb-3">Kies hoe de knoppen rechts naast een video eruitzien.</p>
           <div className="grid grid-cols-2 gap-3">
-            {(["a", "b"] as const).map((kind) => (
+            {(["b", "a"] as const).map((kind) => (
               <button
                 key={kind}
                 onClick={() => setFeedStyle(kind)}
@@ -115,7 +115,7 @@ export default function SettingsPage() {
                 }`}
               >
                 <StylePreview kind={kind} />
-                {kind === "a" ? "Klassiek: losse knoppen" : "Nieuw: glazen kapsel"}
+                {kind === "a" ? "Klassiek: losse knoppen" : "Glazen kapsel (standaard)"}
               </button>
             ))}
           </div>

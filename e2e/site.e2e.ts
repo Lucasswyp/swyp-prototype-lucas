@@ -111,6 +111,17 @@ test.describe("de app als gast", () => {
     await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
   });
 
+  test("het i-tje is weg uit de knoppen en 'Bekijk product' brengt een gast naar het product", async ({ page }) => {
+    await page.goto("/app");
+    await expect(page.getByText("Bekijk product").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByLabel("Meer info")).toHaveCount(0);
+    // Een gast krijgt eerst een inlogvenster; wegklikken zoals een echte bezoeker.
+    const later = page.getByText("Later, ik wil eerst kijken");
+    await later.first().waitFor({ timeout: 8_000 }).then(() => later.first().click()).catch(() => {});
+    await page.getByText("Bekijk product").first().click();
+    await expect(page).toHaveURL(/\/app\/product\//, { timeout: 15_000 });
+  });
+
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {
     await page.goto("/app/search");
     await page.getByPlaceholder("Zoek merken, producten, deals...").fill("pizza");

@@ -46,7 +46,7 @@ export default function SavedPage() {
 
   return (
     <div className="min-h-full pb-28">
-      <TopBar title="Saved" />
+      <TopBar title="Opgeslagen" back />
 
       {isEmpty ? (
         <EmptyState

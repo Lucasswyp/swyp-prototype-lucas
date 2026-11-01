@@ -12,7 +12,8 @@ const supabaseHostname = process.env.NEXT_PUBLIC_SUPABASE_URL
 // "Content-Security-Policy-Report-Only".
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://eu-assets.i.posthog.com",
+  // Alleen tijdens lokaal ontwikkelen heeft React eval nodig; in productie staat het niet aan.
+  `script-src 'self' 'unsafe-inline' https://eu-assets.i.posthog.com${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",

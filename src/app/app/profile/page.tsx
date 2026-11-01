@@ -23,6 +23,7 @@ import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
 import { formatTokens, formatEuro } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
+import { useData } from "@/contexts/DataContext";
 import { fetchMyProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,8 +32,7 @@ const menu = [
   { icon: Heart, label: "Mijn interesses", href: "/app/interests" },
   { icon: Ticket, label: "Mijn rewards", href: "/app/my-rewards" },
   { icon: Wallet, label: "Wallet", href: "/app/wallet" },
-  { icon: Bookmark, label: "Saved", href: "/app/saved" },
-  { icon: Users, label: "Following", href: "/app/saved?tab=Bedrijven" },
+  { icon: Users, label: "Gevolgd", href: "/app/saved?tab=Bedrijven" },
   { icon: MessageSquare, label: "Feedback geven", href: "/app/feedback?from=profiel" },
   { icon: Settings, label: "Instellingen", href: "/app/settings" },
   { icon: Lock, label: "Privacy", href: "/privacy" },
@@ -53,6 +53,9 @@ export default function ProfilePage() {
     followedCompanyIds,
     savedProductIds,
   } = useWallet();
+  const { products } = useData();
+  // Een paar plaatjes van wat je hebt opgeslagen, voor op de kaart "Opgeslagen".
+  const savedPreview = products.filter((p) => savedProductIds.has(p.id)).slice(0, 4);
 
   useEffect(() => {
     fetchMyProfile().then((profile) => {
@@ -114,15 +117,42 @@ export default function ProfilePage() {
           </Card>
         </Link>
 
+        <Link href="/app/saved">
+          <Card className="p-4 mb-4 flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
+              <Bookmark size={20} className="text-white/80" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold">Opgeslagen</p>
+              <p className="text-xs text-white/50">
+                {savedProductIds.size === 0
+                  ? "Bewaar producten en deals, je vindt ze hier terug"
+                  : `${savedProductIds.size} ${savedProductIds.size === 1 ? "product" : "producten"} bewaard`}
+              </p>
+            </div>
+            {savedPreview.length > 0 && (
+              <div className="flex -space-x-2 shrink-0" aria-hidden>
+                {savedPreview.map((p) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={p.id} src={p.imageUrl} alt="" className="h-9 w-9 rounded-lg border-2 border-indigo object-cover" />
+                ))}
+              </div>
+            )}
+            <ChevronRight size={18} className="text-white/40 shrink-0" />
+          </Card>
+        </Link>
+
         <div className="grid grid-cols-3 gap-2.5 mb-4">
           <Card className="p-3 text-center">
             <p className="font-heading font-bold text-lg">{formatTokens(tokenBalance)}</p>
             <p className="text-[10px] text-white/40 mt-0.5">Tokens</p>
           </Card>
-          <Card className="p-3 text-center">
-            <p className="font-heading font-bold text-lg">{savedProductIds.size}</p>
-            <p className="text-[10px] text-white/40 mt-0.5">Saved</p>
-          </Card>
+          <Link href="/app/saved">
+            <Card className="p-3 text-center">
+              <p className="font-heading font-bold text-lg">{savedProductIds.size}</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Opgeslagen</p>
+            </Card>
+          </Link>
           <Card className="p-3 text-center">
             <p className="font-heading font-bold text-lg">{redemptions.length}</p>
             <p className="text-[10px] text-white/40 mt-0.5">Rewards</p>
@@ -156,7 +186,7 @@ export default function ProfilePage() {
             >
               <item.icon size={18} className="text-white/50" />
               {item.label}
-              {item.label === "Following" && (
+              {item.label === "Gevolgd" && (
                 <span className="ml-auto text-xs text-white/30">
                   {followedCompanyIds.size}
                 </span>

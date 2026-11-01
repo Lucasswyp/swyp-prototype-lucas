@@ -5,11 +5,12 @@ import { useHlsSource } from "@/lib/useHlsSource";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, AnimatePresence } from "framer-motion";
-import { Heart, Bookmark, Share2, Info, Play, Pause, MoreVertical } from "lucide-react";
+import { Heart, Play, Pause } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SwypToken } from "@/components/ui/SwypToken";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { ShareSheet } from "@/components/consumer/ShareSheet";
+import { FeedActionRail } from "@/components/consumer/FeedActionRail";
 import { formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useAppStore } from "@/store/useAppStore";
@@ -518,47 +519,16 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
         )}
       </AnimatePresence>
 
-      {/* right action rail */}
-      <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+12.5rem)] flex flex-col items-center gap-5 z-10">
-        <button onClick={handleLike} className="flex flex-col items-center gap-1" aria-pressed={liked} aria-label="Like">
-          <motion.span whileTap={{ scale: 1.3 }} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-            <Heart size={24} className={liked ? "fill-magenta text-magenta" : "text-white"} />
-          </motion.span>
-        </button>
-        <button onClick={handleSave} className="flex flex-col items-center gap-1" aria-pressed={saved} aria-label="Opslaan">
-          <motion.span whileTap={{ scale: 1.3 }} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-            <Bookmark size={22} className={saved ? "fill-white text-white" : "text-white"} />
-          </motion.span>
-        </button>
-        <button
-          onClick={handleShare}
-          className="flex flex-col items-center gap-1"
-          aria-label="Delen"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-            <Share2 size={21} className="text-white" />
-          </span>
-        </button>
-        <Link
-          href={`/app/product/${product.id}`}
-          onClick={handleClickThrough}
-          className="flex flex-col items-center gap-1"
-          aria-label="Meer info"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-            <Info size={21} className="text-white" />
-          </span>
-        </Link>
-        <button
-          onClick={() => (requireAuth() ? setSafetySheetOpen(true) : undefined)}
-          className="flex flex-col items-center gap-1"
-          aria-label="Meer opties"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
-            <MoreVertical size={21} className="text-white" />
-          </span>
-        </button>
-      </div>
+      <FeedActionRail
+        liked={liked}
+        saved={saved}
+        productHref={`/app/product/${product.id}`}
+        onLike={handleLike}
+        onSave={handleSave}
+        onShare={handleShare}
+        onInfo={handleClickThrough}
+        onMore={() => (requireAuth() ? setSafetySheetOpen(true) : undefined)}
+      />
 
       <ShareSheet
         open={shareSheetOpen}

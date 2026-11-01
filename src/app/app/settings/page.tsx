@@ -2,15 +2,41 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, MessageSquare } from "lucide-react";
+import { Bell, MessageSquare, Heart, Bookmark, Share2, Info, MoreVertical } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { DeleteAccount } from "@/components/DeleteAccount";
+import { useFeedButtonStyle, type FeedButtonStyle } from "@/lib/feedButtonStyle";
 
 type PushStatus = "not-native" | "checking" | "granted" | "denied" | "prompt" | "prompt-with-rationale";
 
+function StylePreview({ kind }: { kind: FeedButtonStyle }) {
+  if (kind === "a") {
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        {[Heart, Bookmark, Share2, Info, MoreVertical].map((Icon, i) => (
+          <span key={i} className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
+            <Icon size={12} />
+          </span>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-2xl border border-white/20 bg-white/10 px-1.5 py-1.5">
+      {[Heart, Bookmark, Share2, Info, MoreVertical].map((Icon, i) => (
+        <span key={i} className="flex flex-col items-center">
+          <Icon size={14} />
+          <span className="h-0.5 w-3 rounded bg-white/40" />
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
+  const [feedStyle, setFeedStyle] = useFeedButtonStyle();
   const [pushStatus, setPushStatus] = useState<PushStatus>("checking");
 
   useEffect(() => {
@@ -73,6 +99,26 @@ export default function SettingsPage() {
               </Button>
             </>
           )}
+        </Card>
+
+        <Card className="p-4 mb-4">
+          <p className="text-sm font-bold mb-0.5">Knoppen in de feed</p>
+          <p className="text-xs text-white/50 mb-3">Kies hoe de knoppen rechts naast een video eruitzien.</p>
+          <div className="grid grid-cols-2 gap-3">
+            {(["a", "b"] as const).map((kind) => (
+              <button
+                key={kind}
+                onClick={() => setFeedStyle(kind)}
+                aria-pressed={feedStyle === kind}
+                className={`flex flex-col items-center gap-2 rounded-2xl border p-3 text-xs font-semibold ${
+                  feedStyle === kind ? "border-violet bg-violet/15" : "border-white/10 bg-white/[0.03] text-white/60"
+                }`}
+              >
+                <StylePreview kind={kind} />
+                {kind === "a" ? "Klassiek: losse knoppen" : "Nieuw: glazen kapsel"}
+              </button>
+            ))}
+          </div>
         </Card>
 
         <Link href="/app/feedback?from=instellingen">

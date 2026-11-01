@@ -91,11 +91,22 @@ test.describe("de app als gast", () => {
     expect(errors).toEqual([]);
   });
 
-  test("onderste navigatie heeft zes tabbladen, inclusief Berichten", async ({ page }) => {
+  test("onderste navigatie heeft vijf tabbladen, inclusief Berichten en zonder Saved", async ({ page }) => {
     await page.goto("/app");
     const nav = page.getByRole("navigation", { name: "Hoofdnavigatie" });
-    await expect(nav.getByRole("link")).toHaveCount(6);
+    await expect(nav.getByRole("link")).toHaveCount(5);
+    await expect(nav.getByRole("link", { name: /Saved|Opgeslagen/ })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: /Berichten/ })).toBeVisible();
+  });
+
+  test("de knoppen in de feed hebben twee ontwerpen en onthouden de keuze", async ({ page }) => {
+    await page.goto("/app?knoppen=b");
+    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await page.goto("/app"); // zonder ?knoppen: de keuze blijft staan
+    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await page.goto("/app?knoppen=a");
+    await expect(page.getByLabel("Opslaan")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Bewaar", { exact: true })).toHaveCount(0);
   });
 
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {

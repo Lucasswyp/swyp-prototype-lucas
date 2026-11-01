@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Gift, Bookmark, User, Send } from "lucide-react";
+import { Home, Search, Gift, User, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { useUnreadDms } from "@/lib/useUnreadDms";
@@ -17,8 +17,7 @@ const items = [
   { href: "/app/search", label: "Zoeken", icon: Search, match: (p: string) => p.startsWith("/app/search") },
   { href: "/app/messages", label: "Berichten", icon: Send, match: (p: string) => p.startsWith("/app/messages") },
   { href: "/app/rewards", label: "Rewards", icon: Gift, match: (p: string) => p.startsWith("/app/rewards") || p.startsWith("/app/my-rewards") },
-  { href: "/app/saved", label: "Saved", icon: Bookmark, match: (p: string) => p.startsWith("/app/saved") },
-  { href: "/app/profile", label: "Profiel", icon: User, match: (p: string) => p.startsWith("/app/profile") || p.startsWith("/app/wallet") },
+  { href: "/app/profile", label: "Profiel", icon: User, match: (p: string) => p.startsWith("/app/profile") || p.startsWith("/app/wallet") || p.startsWith("/app/saved") },
 ];
 
 export function BottomNav() {

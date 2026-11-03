@@ -38,6 +38,7 @@ function localMatches(query: string, relatedTerms: string[], catalog: LocalCatal
   const relatedNorm = relatedTerms.map(normalizeSearchText).filter(Boolean);
   const exact: AdSearchRecord[] = [];
   const related: AdSearchRecord[] = [];
+  const scored: { record: AdSearchRecord; score: number }[] = [];
 
   for (const ad of catalog.ads) {
     if (ad.moderationStatus !== "approved") continue;
@@ -63,9 +64,16 @@ function localMatches(query: string, relatedTerms: string[], catalog: LocalCatal
       companyLogoUrl: company.logoUrl,
       companyVerified: company.verified,
     };
-    if (matches) exact.push(record);
-    else if (relatedNorm.some((r) => words.includes(r) || hay.includes(` ${r} `))) related.push(record);
+    if (matches) {
+      // Een treffer op de naam van product of bedrijf telt zwaarder dan een treffer in de tekst.
+      const names = normalizeSearchText(`${product.name} ${company.name}`);
+      const caption = normalizeSearchText(ad.caption);
+      const score = (tokens.every((t) => names.includes(t)) ? 3 : 0) + (tokens.every((t) => caption.includes(t)) ? 2 : 0) + 1;
+      scored.push({ record, score });
+    } else if (relatedNorm.some((r) => words.includes(r) || hay.includes(` ${r} `))) related.push(record);
   }
+  scored.sort((a, b) => b.score - a.score);
+  for (const { record } of scored) exact.push(record);
   return { exact, related };
 }
 
@@ -109,6 +117,30 @@ export async function searchEverything(query: string, catalog?: LocalCatalog): P
     // Eigen zoekresultaten die de index nog niet kent komen erbij; wat al in de index zit blijft zoals het was.
     for (const rec of local.exact) if (!have.has(rec.objectID)) { ads.push(rec); have.add(rec.objectID); }
     for (const rec of local.related) if (!have.has(rec.objectID)) { relatedAds.push(rec); have.add(rec.objectID); }
+
+    // Daarna alle video's uit dezelfde categorie: wie op "FitMatch" zoekt wil meer fitness zien, wie op
+    // "schoenen" zoekt meer mode. Zo blijf je bij het scrollen bij verwante video's en krijg je nooit
+    // willekeurige dingen (dat is alleen voor de For You-pagina).
+    const categories = new Set<string>(ads.map((a) => a.category));
+    if (categories.size === 0) for (const c of found.categories) categories.add(c);
+    if (categories.size > 0) {
+      const productById = new Map(catalog.products.map((p) => [p.id, p]));
+      const companyById = new Map(catalog.companies.map((c) => [c.id, c]));
+      for (const ad of catalog.ads) {
+        const id = `ad-${ad.id}`;
+        if (have.has(id) || ad.moderationStatus !== "approved") continue;
+        const product = productById.get(ad.productId);
+        const company = companyById.get(ad.companyId);
+        if (!product || !company) continue;
+        if (!categories.has(ad.category) && !categories.has(product.category)) continue;
+        have.add(id);
+        relatedAds.push({
+          objectID: id, type: "ad", caption: ad.caption, category: ad.category, videoUrl: ad.videoUrl, posterUrl: ad.posterUrl,
+          ctaLabel: ad.ctaLabel, ctaColor: ad.ctaColor, productId: ad.productId, companyId: ad.companyId,
+          companyName: company.name, companyLogoUrl: company.logoUrl, companyVerified: company.verified,
+        });
+      }
+    }
   }
   return { hits: main.hits, ads, relatedAds };
 }

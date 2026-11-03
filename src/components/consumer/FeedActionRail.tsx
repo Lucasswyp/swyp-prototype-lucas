@@ -23,7 +23,7 @@ export function FeedActionRail({ liked, saved, onLike, onSave, onShare, onMore }
     const item = "flex w-12 flex-col items-center gap-0.5 rounded-2xl py-1.5 active:bg-white/10";
     const label = "text-[10px] font-semibold leading-none text-white/85";
     return (
-      <div className="absolute right-2.5 bottom-[calc(env(safe-area-inset-bottom)+11rem)] z-10 flex flex-col items-center gap-0.5 rounded-[1.75rem] border border-white/15 bg-black/30 px-1 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="absolute right-2.5 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-10 flex flex-col items-center gap-0.5 rounded-[1.75rem] border border-white/15 bg-black/30 px-1 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <button onClick={onLike} className={item} aria-pressed={liked} aria-label="Like">
           <motion.span whileTap={{ scale: 1.25 }} className="flex h-9 items-center">
             <Heart size={28} strokeWidth={2.2} className={cn("drop-shadow", liked ? "fill-magenta text-magenta" : "text-white")} />
@@ -55,7 +55,7 @@ export function FeedActionRail({ liked, saved, onLike, onSave, onShare, onMore }
 
   // Ontwerp A: losse ronde knoppen (zoals het was).
   return (
-    <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+12.5rem)] flex flex-col items-center gap-5 z-10">
+    <div className="absolute right-3 bottom-[calc(env(safe-area-inset-bottom)+6rem)] flex flex-col items-center gap-5 z-10">
       <button onClick={onLike} className="flex flex-col items-center gap-1" aria-pressed={liked} aria-label="Like">
         <motion.span whileTap={{ scale: 1.3 }} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/35 backdrop-blur">
           <Heart size={24} className={liked ? "fill-magenta text-magenta" : "text-white"} />

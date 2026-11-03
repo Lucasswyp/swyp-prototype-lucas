@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Play, Pause } from "lucide-react";
+import { Heart, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { ShareSheet } from "@/components/consumer/ShareSheet";
@@ -55,6 +55,12 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   // Past de video zich aan: 9:16 vult het scherm, andere formaten worden niet afgesneden.
   const [fit, setFit] = useState<VideoFit>("cover");
+  const soundOn = useAppStore((st) => st.soundOn);
+  const setSoundOn = useAppStore((st) => st.setSoundOn);
+  // De browser mag een video alleen met geluid starten na een tik; de knop volgt de echte stand.
+  const [isMuted, setIsMuted] = useState(true);
+  const soundOnRef = useRef(soundOn);
+  soundOnRef.current = soundOn;
   const watch80FiredRef = useRef(false);
   const completeFiredRef = useRef(false);
   // Accumulated *actual playback* time (ms) while this card is active and not
@@ -120,9 +126,14 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
     function attemptPlay() {
       if (cancelled || !video || video.paused === false) return;
-      video.muted = true;
+      video.muted = !soundOnRef.current;
       video.play().catch(() => {
-        // Ignored — the next readiness/timer tick will try again.
+        // Met geluid mag de browser het starten weigeren; dan start hij zonder geluid.
+        if (!video.muted) {
+          video.muted = true;
+          video.play().catch(() => {});
+        }
+        // Verder genegeerd: de volgende poging volgt vanzelf.
       });
     }
 
@@ -271,11 +282,24 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   // Under Low Power Mode specifically, iOS blocks ALL video autoplay outside
   // a direct gesture (muted or not), so this is the only reliable way a tap
   // can un-stick a video that autoplay never managed to start.
+  // Geluid aan of uit. Dit gebeurt direct in de tik zelf, anders staat de browser het niet toe.
+  function toggleSound(e: React.MouseEvent) {
+    e.stopPropagation();
+    const video = videoRef.current;
+    const turnOn = video ? video.muted : !soundOnRef.current;
+    setSoundOn(turnOn);
+    if (video) {
+      video.muted = !turnOn;
+      if (turnOn && video.paused) video.play().catch(() => {});
+    }
+    hapticTap();
+  }
+
   function handleTap() {
     const video = videoRef.current;
     if (video) {
       if (video.paused) {
-        video.muted = true;
+        video.muted = !soundOnRef.current;
         video.play().catch(() => {});
         setPaused(false);
         setNeedsTapToPlay(false);
@@ -416,6 +440,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           // Een ruw videobestand (geen stream) laadt in zijn geheel als we "auto" vragen;
           // alleen de actieve kaart krijgt dat, de buren alleen de eerste bytes.
           preload={isActive ? "auto" : isNear ? (isHlsUrl(ad.videoUrl) ? "auto" : "metadata") : "none"}
+          onVolumeChange={(e) => setIsMuted(e.currentTarget.muted)}
           onLoadedMetadata={(e) => setFit(videoFit(e.currentTarget.videoWidth, e.currentTarget.videoHeight))}
           onTimeUpdate={handleTimeUpdate}
           onClick={handleVideoClick}
@@ -500,6 +525,16 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           </motion.div>
         )}
       </AnimatePresence>
+
+      <button
+        type="button"
+        onClick={toggleSound}
+        aria-label={isMuted ? "Geluid aan" : "Geluid uit"}
+        aria-pressed={!isMuted}
+        className="absolute right-3 top-16 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur"
+      >
+        {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+      </button>
 
       <FeedActionRail
         liked={liked}

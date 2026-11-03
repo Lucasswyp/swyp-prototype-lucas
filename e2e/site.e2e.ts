@@ -132,6 +132,18 @@ test.describe("de app als gast", () => {
     await expect(page).toHaveURL(/\/app\/product\//, { timeout: 15_000 });
   });
 
+  test("het geluid staat uit en gaat aan met de geluidsknop", async ({ page }) => {
+    await page.goto("/app");
+    const later = page.getByText("Later, ik wil eerst kijken");
+    await later.first().waitFor({ timeout: 8_000 }).then(() => later.first().click()).catch(() => {});
+    const on = page.getByLabel("Geluid aan").first();
+    await expect(on).toBeVisible({ timeout: 20_000 });
+    await on.click();
+    await expect(page.getByLabel("Geluid uit").first()).toBeVisible();
+    await page.getByLabel("Geluid uit").first().click();
+    await expect(page.getByLabel("Geluid aan").first()).toBeVisible();
+  });
+
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {
     await page.goto("/app/search");
     await page.getByPlaceholder("Zoek merken, producten, deals...").fill("pizza");

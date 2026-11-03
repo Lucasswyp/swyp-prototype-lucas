@@ -16,6 +16,11 @@ interface AppState {
   onboardingComplete: boolean;
   interests: Category[];
 
+  // Geluid van de video's: staat standaard uit (zoals bij Instagram en TikTok) en wordt
+  // onthouden zodra je het aanzet.
+  soundOn: boolean;
+  setSoundOn: (on: boolean) => void;
+
   // Purely a local "how much of this one have I watched" hint — not a reward
   // signal, so it's fine to keep local.
   adWatchProgress: Record<string, number>;
@@ -29,6 +34,7 @@ const baseState = {
   hasHydrated: false,
   onboardingComplete: false,
   interests: [] as Category[],
+  soundOn: false,
   adWatchProgress: {} as Record<string, number>,
 };
 
@@ -40,6 +46,7 @@ export const useAppStore = create<AppState>()(
       setHasHydrated: () => set({ hasHydrated: true }),
 
       setInterests: (categories) => set({ interests: categories }),
+      setSoundOn: (on) => set({ soundOn: on }),
       completeOnboarding: () => set({ onboardingComplete: true }),
 
       markWatched: (adId, percent) =>

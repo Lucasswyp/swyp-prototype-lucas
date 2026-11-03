@@ -19,10 +19,20 @@ export default function BusinessLoginPage() {
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      setLoading(false);
       setError("Onjuist e-mailadres of wachtwoord.");
+      return;
+    }
+    // Een gewoon Swyp-account (kijker of beheerder) heeft geen bedrijf: dan stuurt het
+    // dashboard je terug naar deze pagina zonder uitleg. Zeg het hier, en log uit zodat
+    // je meteen met het adres van je bedrijf kunt proberen.
+    const { data: business } = await supabase.from("businesses").select("id").eq("auth_user_id", data.user.id).maybeSingle();
+    if (!business) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setError("Dit e-mailadres heeft geen bedrijfsaccount. Log in met het adres waarmee je je bedrijf hebt aangemeld.");
       return;
     }
     router.replace("/business");

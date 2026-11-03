@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { createClient } from "@/lib/supabase/client";
 import { DeleteAccount } from "@/components/DeleteAccount";
+import { uploadBusinessLogo } from "@/lib/imageUpload";
 
 export default function BusinessSettingsPage() {
   const { business, email } = useBusiness();
@@ -15,6 +17,30 @@ export default function BusinessSettingsPage() {
   const [address, setAddress] = useState(business.location);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const router = useRouter();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState(business.logoUrl);
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  async function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setLogoBusy(true);
+    setLogoError(null);
+    try {
+      const url = await uploadBusinessLogo(file);
+      const { error } = await createClient().from("businesses").update({ logo_url: url }).eq("id", business.id);
+      if (error) throw error;
+      setLogoUrl(url);
+      router.refresh();
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Uploaden is mislukt. Probeer het opnieuw.");
+    } finally {
+      setLogoBusy(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -36,8 +62,22 @@ export default function BusinessSettingsPage() {
       <Card className="p-5 mb-4">
         <h2 className="font-heading font-bold text-sm mb-4">Bedrijfsprofiel</h2>
         <div className="flex items-center gap-4 mb-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={business.logoUrl} alt="" className="h-16 w-16 rounded-2xl object-cover" />
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="h-16 w-16 rounded-2xl object-cover" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold">
+              {business.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <input ref={fileInput} type="file" accept="image/*" onChange={handleLogo} className="hidden" />
+            <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={logoBusy}>
+              {logoBusy ? "Bezig met uploaden..." : logoUrl ? "Foto wijzigen" : "Profielfoto toevoegen"}
+            </Button>
+            <p className="text-xs text-white/40 mt-1.5">Je logo of een foto van je zaak. Vierkant werkt het mooist.</p>
+            {logoError && <p className="text-xs text-red-300 mt-1">{logoError}</p>}
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
           <div>

@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     admin.from("rewards").select("id, business_id, title, description, category, token_cost, money_value, image_url"),
     // Only approved ads are searchable — a business's pending/rejected
     // submission shouldn't be discoverable before (or instead of) review.
-    admin.from("ads").select("id, business_id, product_id, caption, category, video_url, poster_url, cta_label, moderation_status").eq("moderation_status", "approved"),
+    admin.from("ads").select("id, business_id, product_id, caption, category, video_url, poster_url, cta_label, cta_color, moderation_status").eq("moderation_status", "approved"),
   ]);
 
   // Ads whose campaign is paused, over budget or ended must not be searchable.
@@ -105,6 +105,7 @@ export async function GET(request: Request) {
         videoUrl: a.video_url,
         posterUrl: a.poster_url ?? "",
         ctaLabel: a.cta_label ?? "Bekijk product",
+        ctaColor: a.cta_color ?? undefined,
         productId: a.product_id,
         companyId: a.business_id,
         companyName: company?.name ?? "",

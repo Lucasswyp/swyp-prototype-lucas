@@ -52,6 +52,8 @@ export interface Ad {
   caption: string;
   category: Category;
   ctaLabel: string;
+  /** Kleur van de knop, bijvoorbeeld "#7B3DFF". Leeg betekent wit. */
+  ctaColor?: string;
   moderationStatus: "pending" | "approved" | "rejected";
   rewardRules: {
     watch80: number;

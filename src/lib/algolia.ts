@@ -69,6 +69,7 @@ interface AdRecord {
   videoUrl: string;
   posterUrl: string;
   ctaLabel: string;
+  ctaColor?: string;
   productId: string;
   companyId: string;
   companyName: string;

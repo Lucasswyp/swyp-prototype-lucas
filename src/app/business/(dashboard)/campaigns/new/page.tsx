@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { Check, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { TokenBadge } from "@/components/ui/TokenBadge";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { createProduct, createAd, createCampaign, uploadAdVideo } from "@/lib/data";
+import { createProduct, createAd, createCampaign, uploadAdVideo, FIXED_REWARDS } from "@/lib/data";
+import { CTA_DEFAULT_COLOR, CTA_PRESETS, ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
+import { describeVideoFormat, videoFit } from "@/lib/videoFit";
 import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
 import { formatEuro, cn } from "@/lib/utils";
 import type { CampaignObjective, Category, Product } from "@/types";
@@ -24,7 +25,7 @@ const objectives: CampaignObjective[] = [
 
 const categories: Category[] = ["Fashion", "Food", "Tech", "Fitness", "Travel", "Beauty", "Events", "Days Out", "Restaurants"];
 
-const steps = ["Doel", "Advertentie", "Targeting", "Budget", "Reward", "Preview", "Publiceren"];
+const steps = ["Doel", "Advertentie", "Targeting", "Budget", "Preview", "Publiceren"];
 
 export default function CreateCampaignPage() {
   const router = useRouter();
@@ -52,6 +53,8 @@ export default function CreateCampaignPage() {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [ctaLabel, setCtaLabel] = useState("Bekijk product");
+  const [ctaColor, setCtaColor] = useState<string>(CTA_DEFAULT_COLOR);
+  const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -68,14 +71,6 @@ export default function CreateCampaignPage() {
   const [endDate, setEndDate] = useState(() =>
     new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
   );
-  // Matches award_interaction()'s own per-action bounds/defaults in
-  // supabase/rewards.sql — the server clamps into this same range
-  // regardless of what's set here, so showing anything outside it would
-  // just be a number the business never actually gets charged/pays out.
-  const [rewardWatch, setRewardWatch] = useState(15);
-  const [rewardLike, setRewardLike] = useState(4);
-  const [rewardSave, setRewardSave] = useState(8);
-  const [rewardClick, setRewardClick] = useState(10);
   const [published, setPublished] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
@@ -152,6 +147,7 @@ export default function CreateCampaignPage() {
         caption,
         category: mode === "new" ? newProduct.category : selectedExistingProduct?.category ?? business.category,
         ctaLabel,
+        ctaColor,
       });
 
       const campaignName = name || `${mode === "new" ? newProduct.name : selectedExistingProduct?.name} campagne`;
@@ -165,12 +161,12 @@ export default function CreateCampaignPage() {
         startDate,
         endDate,
         targeting: { ageMin, ageMax, gender, location, radiusKm, interests },
-        rewardRules: { watch80: rewardWatch, like: rewardLike, save: rewardSave, click: rewardClick },
+        rewardRules: { ...FIXED_REWARDS },
       });
 
       refresh();
       setPublished(campaignId);
-      setStep(6);
+      setStep(5);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Er ging iets mis bij het publiceren.");
     } finally {
@@ -189,9 +185,9 @@ export default function CreateCampaignPage() {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15">
           <Check size={30} className="text-emerald-400" />
         </div>
-        <h1 className="font-heading text-2xl font-bold mb-2">Campagne live!</h1>
+        <h1 className="font-heading text-2xl font-bold mb-2">Campagne ingediend!</h1>
         <p className="text-white/50 text-sm mb-8">
-          Je campagne is gepubliceerd met je eigen video en zichtbaar voor alle Swyp-gebruikers.
+          Je campagne is aangemaakt met je eigen video. Swyp controleert de video eerst; zodra hij is goedgekeurd is hij zichtbaar voor alle Swyp-gebruikers.
         </p>
         <div className="flex gap-3 justify-center">
           <Button variant="secondary" onClick={() => router.push("/business/campaigns")}>
@@ -346,18 +342,34 @@ export default function CreateCampaignPage() {
             )}
 
             <div className="border-t border-white/10 pt-5">
-              <label className="block text-sm font-medium mb-2">Video uploaden</label>
+              <label className="block text-sm font-medium mb-1">Video uploaden</label>
+              <p className="text-xs text-white/50 mb-2">
+                Beste formaat: staand 9:16 (1080 × 1920), precies zoals een Instagram Reel of TikTok. Je kunt dezelfde video
+                gebruiken. Houd belangrijke beelden en tekst in het midden: onderaan staan je tekst en knop.
+              </p>
               <label className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 cursor-pointer hover:border-violet/50">
                 {videoPreview ? (
-                  <video src={videoPreview} className="h-40 rounded-lg" muted controls />
+                  <video
+                    src={videoPreview}
+                    className="h-40 rounded-lg"
+                    muted
+                    controls
+                    onLoadedMetadata={(e) => setVideoSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+                  />
                 ) : (
                   <>
                     <Upload size={24} className="text-white/40" />
-                    <span className="text-sm text-white/50">Klik om een video te kiezen (mp4, verticaal aanbevolen)</span>
+                    <span className="text-sm text-white/50">Klik om een video te kiezen (mp4 of mov, staand 9:16)</span>
                   </>
                 )}
                 <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
               </label>
+              {videoSize && (() => {
+                const info = describeVideoFormat(videoSize.w, videoSize.h);
+                return info.text ? (
+                  <p className={cn("text-xs mt-2", info.ok ? "text-emerald-300" : "text-amber-300")}>{info.text}</p>
+                ) : null;
+              })()}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -378,6 +390,41 @@ export default function CreateCampaignPage() {
                   className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-white/60">Kleur van de knop</label>
+              <div className="flex flex-wrap items-center gap-2">
+                {CTA_PRESETS.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    aria-label={c.name}
+                    title={c.name}
+                    onClick={() => setCtaColor(c.hex)}
+                    className={cn(
+                      "h-8 w-8 rounded-full border-2",
+                      normalizeCtaColor(ctaColor) === c.hex ? "border-white" : "border-white/20"
+                    )}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+                <label className="flex items-center gap-2 text-xs text-white/60 ml-2">
+                  Eigen kleur
+                  <input
+                    type="color"
+                    value={normalizeCtaColor(ctaColor)}
+                    onChange={(e) => setCtaColor(e.target.value)}
+                    className="h-8 w-10 rounded bg-transparent border border-white/20 cursor-pointer"
+                  />
+                </label>
+              </div>
+              <span
+                className="inline-flex mt-3 items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2"
+                style={{ backgroundColor: normalizeCtaColor(ctaColor), color: ctaTextColor(ctaColor) }}
+              >
+                {ctaLabel || "Bekijk product"} →
+              </span>
             </div>
           </div>
         )}
@@ -453,39 +500,21 @@ export default function CreateCampaignPage() {
           </div>
         )}
 
-        {step === 4 && (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {[
-              { label: "Watch 80%", value: rewardWatch, set: setRewardWatch, min: 10, max: 25 },
-              { label: "Like", value: rewardLike, set: setRewardLike, min: 1, max: 8 },
-              { label: "Save", value: rewardSave, set: setRewardSave, min: 3, max: 15 },
-              { label: "Click", value: rewardClick, set: setRewardClick, min: 5, max: 20 },
-            ].map((r) => (
-              <div key={r.label}>
-                <label className="block text-sm font-medium mb-2">
-                  {r.label} <span className="text-white/40 font-normal">({r.min}-{r.max})</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={r.min}
-                    max={r.max}
-                    value={r.value}
-                    onChange={(e) => r.set(Math.max(r.min, Math.min(r.max, Number(e.target.value))))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet"
-                  />
-                  <TokenBadge amount={r.value} size="sm" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {step === 5 && previewProduct && (
+        {step === 4 && previewProduct && (
           <div className="flex flex-col items-center gap-4">
             <div className="relative w-[280px] h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-slate">
               {videoPreview && (
-                <video src={videoPreview} className="absolute inset-0 h-full w-full object-cover" muted autoPlay loop playsInline />
+                <video
+                  src={videoPreview}
+                  className={cn(
+                    "absolute inset-0 h-full w-full",
+                    videoSize && videoFit(videoSize.w, videoSize.h) === "contain" ? "object-contain" : "object-cover"
+                  )}
+                  muted
+                  autoPlay
+                  loop
+                  playsInline
+                />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30" />
               <div className="absolute left-3 right-3 bottom-4 text-white">
@@ -501,7 +530,10 @@ export default function CreateCampaignPage() {
                     <span className="text-xs text-white/50 line-through">{formatEuro(previewProduct.oldPrice)}</span>
                   )}
                 </div>
-                <span className="inline-block rounded-full bg-white text-indigo text-xs font-bold px-3 py-1.5">
+                <span
+                  className="inline-block rounded-full text-xs font-bold px-3 py-1.5"
+                  style={{ backgroundColor: normalizeCtaColor(ctaColor), color: ctaTextColor(ctaColor) }}
+                >
                   {ctaLabel} →
                 </span>
               </div>
@@ -524,7 +556,7 @@ export default function CreateCampaignPage() {
         <Button variant="secondary" disabled={step === 0 || publishing} onClick={() => setStep((s) => s - 1)}>
           Vorige
         </Button>
-        {step < 5 ? (
+        {step < 4 ? (
           <Button
             onClick={() => setStep((s) => s + 1)}
             disabled={(step === 1 && (!canGoToStep2 || !canGoToStep3))}

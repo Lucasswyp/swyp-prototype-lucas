@@ -2,10 +2,12 @@
 
 import posthog from "posthog-js";
 import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
+import { ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
+import { videoFit, type VideoFit } from "@/lib/videoFit";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useMotionValue, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Play, Pause } from "lucide-react";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
@@ -51,7 +53,8 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   const heartIdRef = useRef(0);
   const lastTapAtRef = useRef(0);
 
-  const x = useMotionValue(0);
+  // Past de video zich aan: 9:16 vult het scherm, andere formaten worden niet afgesneden.
+  const [fit, setFit] = useState<VideoFit>("cover");
   const watch80FiredRef = useRef(false);
   const completeFiredRef = useRef(false);
   // Accumulated *actual playback* time (ms) while this card is active and not
@@ -392,29 +395,17 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     if (result === "copied") flashToast("Link gekopieerd naar klembord");
   }
 
-  function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
-    if (info.offset.x > 110) {
-      handleLike();
-      x.set(0);
-    } else if (info.offset.x < -110) {
-      flashToast("Feed aangepast — minder van dit soort content");
-      x.set(0);
-      onSkip();
-    } else {
-      x.set(0);
-    }
-  }
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate select-none">
-      <motion.div
-        style={{ x }}
-        drag="x"
-        dragElastic={0.6}
-        dragConstraints={{ left: 0, right: 0 }}
-        onDragEnd={handleDragEnd}
-        className="h-full w-full"
-      >
+      {/* De video staat vast: geen zijwaarts slepen. Omhoog en omlaag swipen blijft werken. */}
+      <div className="h-full w-full">
+        {fit === "contain" && ad.posterUrl && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 scale-125 bg-cover bg-center opacity-60 blur-2xl"
+            style={{ backgroundImage: `url(${ad.posterUrl})` }}
+          />
+        )}
         <video
           ref={videoRef}
           src={needsHlsJs ? undefined : ad.videoUrl}
@@ -425,11 +416,12 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           // Een ruw videobestand (geen stream) laadt in zijn geheel als we "auto" vragen;
           // alleen de actieve kaart krijgt dat, de buren alleen de eerste bytes.
           preload={isActive ? "auto" : isNear ? (isHlsUrl(ad.videoUrl) ? "auto" : "metadata") : "none"}
+          onLoadedMetadata={(e) => setFit(videoFit(e.currentTarget.videoWidth, e.currentTarget.videoHeight))}
           onTimeUpdate={handleTimeUpdate}
           onClick={handleVideoClick}
-          className="h-full w-full object-cover"
+          className={cn("relative h-full w-full", fit === "contain" ? "object-contain" : "object-cover")}
         />
-      </motion.div>
+      </div>
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
 
@@ -558,9 +550,8 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
             )}
           </div>
           <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full bg-white text-indigo text-sm font-bold px-4 py-2"
-            )}
+            className="inline-flex items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2"
+            style={{ backgroundColor: normalizeCtaColor(ad.ctaColor), color: ctaTextColor(normalizeCtaColor(ad.ctaColor)) }}
           >
             {ad.ctaLabel} →
           </span>

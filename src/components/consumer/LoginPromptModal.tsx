@@ -69,8 +69,8 @@ export function LoginPromptModal() {
               <X size={18} />
             </button>
 
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet to-magenta">
-              <LogoMark size={26} />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center">
+              <LogoMark size={52} />
             </div>
             <h2 className="font-heading text-lg font-bold mb-1.5">Welkom bij Swyp</h2>
             <p className="text-sm text-white/50 mb-5">

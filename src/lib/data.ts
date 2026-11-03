@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- this module is the
    boundary layer that maps loosely-typed Supabase rows onto our strict
    internal types; the `any` params below are the raw row shape. */
+import { CTA_DEFAULT_COLOR, normalizeCtaColor } from "@/lib/ctaColor";
 import { createClient } from "@/lib/supabase/client";
 import type { Company, Product, Ad, Campaign, Reward } from "@/types";
 
@@ -45,6 +46,10 @@ const REWARD_BOUNDS = {
   like: { min: 1, max: 8, default: 4 },
 };
 
+// Vaste beloningen voor iedereen: bedrijven kiezen ze niet zelf. De database dwingt dezelfde
+// waarden af (supabase/fixed_rewards_and_cta_color.sql).
+export const FIXED_REWARDS = { watch80: 15, like: 4, save: 8, click: 10 } as const;
+
 function clampReward(action: keyof typeof REWARD_BOUNDS, value: number | null | undefined) {
   const { min, max, default: fallback } = REWARD_BOUNDS[action];
   return Math.min(max, Math.max(min, value ?? fallback));
@@ -62,6 +67,7 @@ function mapAd(r: any): Ad {
     caption: r.caption,
     category: r.category,
     ctaLabel: r.cta_label,
+    ctaColor: r.cta_color ?? undefined,
     moderationStatus: r.moderation_status ?? "approved",
     rewardRules: {
       watch80: clampReward("watch80", campaign?.reward_watch),
@@ -296,6 +302,7 @@ export async function createAd(businessId: string, ad: {
   caption: string;
   category: string;
   ctaLabel: string;
+  ctaColor?: string;
 }) {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -308,6 +315,8 @@ export async function createAd(businessId: string, ad: {
       caption: ad.caption,
       category: ad.category,
       cta_label: ad.ctaLabel,
+      // Alleen meesturen als het bedrijf een eigen kleur koos; wit is de standaard.
+      ...(ad.ctaColor && normalizeCtaColor(ad.ctaColor) !== CTA_DEFAULT_COLOR ? { cta_color: normalizeCtaColor(ad.ctaColor) } : {}),
     })
     .select("id")
     .single();
@@ -332,10 +341,10 @@ export async function createCampaign(
       start_date: c.startDate,
       end_date: c.endDate,
       targeting: c.targeting,
-      reward_watch: clampReward("watch80", c.rewardRules.watch80),
-      reward_like: clampReward("like", c.rewardRules.like),
-      reward_save: clampReward("save", c.rewardRules.save),
-      reward_click: clampReward("click", c.rewardRules.click),
+      reward_watch: FIXED_REWARDS.watch80,
+      reward_like: FIXED_REWARDS.like,
+      reward_save: FIXED_REWARDS.save,
+      reward_click: FIXED_REWARDS.click,
     })
     .select("id")
     .single();

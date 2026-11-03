@@ -252,8 +252,10 @@ export default function SearchPage() {
   }
 
   const total = results ? results.videos.length + results.companies.length + results.products.length + results.rewards.length : 0;
-  const noResults = results && !loading && total === 0;
   const showSuggestions = inputFocused && query.length > 0 && suggestions.length > 0;
+  // Zolang de voorstellen open staan, staan de resultaten er niet onderdoor te schemeren.
+  const visibleResults = showSuggestions ? null : results;
+  const noResults = visibleResults && !loading && total === 0;
   const showRecents = inputFocused && query.length === 0 && recents.length > 0;
 
   const tabs: { key: Tab; label: string; count: number }[] = results
@@ -331,7 +333,7 @@ export default function SearchPage() {
         )}
       </div>
 
-      {results && total > 0 && (
+      {visibleResults && total > 0 && (
         <div className="px-4 mb-4 flex gap-2 overflow-x-auto no-scrollbar">
           {tabs.map((t) => (
             <button
@@ -353,23 +355,23 @@ export default function SearchPage() {
         <EmptyState icon={SearchIcon} title={`Geen resultaten voor "${q}"`} description="Probeer een andere zoekterm." />
       )}
 
-      {results && tab === "videos" && results.videos.length > 0 && (
+      {visibleResults && tab === "videos" && visibleResults.videos.length > 0 && (
         <section className="px-4 mb-6">
-          <VideoGrid hits={results.videos} onOpen={openVideo} />
-          {results.ads.length > 0 && results.related.length > 0 && (
+          <VideoGrid hits={visibleResults.videos} onOpen={openVideo} />
+          {visibleResults.ads.length > 0 && visibleResults.related.length > 0 && (
             <p className="mt-3 text-center text-[11px] text-white/35">Onderaan staan video&apos;s die erbij passen.</p>
           )}
         </section>
       )}
 
-      {results && tab === "videos" && results.videos.length === 0 && total > 0 && (
+      {visibleResults && tab === "videos" && visibleResults.videos.length === 0 && total > 0 && (
         <p className="px-4 text-sm text-white/50">Geen video&apos;s hiervoor. Kijk bij Bedrijven of Producten.</p>
       )}
 
-      {results && tab === "companies" && results.companies.length > 0 && (
+      {visibleResults && tab === "companies" && visibleResults.companies.length > 0 && (
         <section className="px-4 mb-6">
           <div className="flex flex-col gap-2">
-            {results.companies.map((hit) => {
+            {visibleResults.companies.map((hit) => {
               const c = hitToCompany(hit);
               return (
                 <Link key={c.id} href={`/app/company/${c.id}`} className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/10 p-2.5">
@@ -385,13 +387,13 @@ export default function SearchPage() {
         </section>
       )}
 
-      {results && tab === "products" && results.products.length > 0 && (
+      {visibleResults && tab === "products" && visibleResults.products.length > 0 && (
         <section className="px-4 mb-6">
           <div className="grid grid-cols-2 gap-3">
-            {results.products.map((hit) => {
+            {visibleResults.products.map((hit) => {
               const product = hitToProduct(hit);
               const company = hitToCompanyStub(hit.companyId, hit.companyName, hit.companyLogoUrl, hit.companyVerified);
-              const productAd = results.ads.find((a) => a.productId === product.id);
+              const productAd = visibleResults.ads.find((a) => a.productId === product.id);
               return (
                 <ProductCard
                   key={product.id}
@@ -406,10 +408,10 @@ export default function SearchPage() {
         </section>
       )}
 
-      {results && tab === "rewards" && results.rewards.length > 0 && (
+      {visibleResults && tab === "rewards" && visibleResults.rewards.length > 0 && (
         <section className="px-4 mb-6">
           <div className="grid grid-cols-2 gap-3">
-            {results.rewards.map((hit) => {
+            {visibleResults.rewards.map((hit) => {
               const reward = hitToReward(hit);
               const company = hitToCompanyStub(hit.companyId, hit.companyName, hit.companyLogoUrl, false);
               return <RewardCard key={reward.id} reward={reward} company={company} />;

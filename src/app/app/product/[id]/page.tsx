@@ -7,7 +7,7 @@ import { Star, Bookmark, Share2, Check } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Button } from "@/components/ui/Button";
-import { formatEuro } from "@/lib/utils";
+import { formatEuro, formatPrice } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useData } from "@/contexts/DataContext";
 import { logInteraction } from "@/lib/data";
@@ -83,7 +83,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex items-center gap-2 mb-4">
-          <span className="font-heading text-2xl font-extrabold">{formatEuro(product.price)}</span>
+          <span className="font-heading text-2xl font-extrabold">{formatPrice(product.price)}</span>
           {product.oldPrice && (
             <>
               <span className="text-sm text-white/40 line-through">{formatEuro(product.oldPrice)}</span>

@@ -12,6 +12,11 @@ export function formatEuro(amount: number): string {
   }).format(amount);
 }
 
+/** Prijs van een product; zonder prijs (app-download, naamsbekendheid) staat er "Gratis". */
+export function formatPrice(amount: number): string {
+  return amount > 0 ? formatEuro(amount) : "Gratis";
+}
+
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat("nl-NL").format(n);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FeedCard } from "@/components/consumer/FeedCard";
 import { PullToRefreshIndicator } from "@/components/consumer/PullToRefreshIndicator";
@@ -18,11 +18,13 @@ import type { Ad } from "@/types";
 // currently loaded — far enough ahead that the fetch (a couple hundred ms)
 // finishes before they'd actually swipe past the last loaded card.
 const LOAD_MORE_THRESHOLD = 5;
+const RESUME_REFRESH_AFTER_MS = 30_000;
+const NEW_VIDEOS_POLL_MS = 60_000;
 
 export default function FeedPage() {
   const interests = useAppStore((s) => s.interests);
-  const { companies, products, loading: catalogLoading } = useData();
-  const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds } = usePaginatedAds();
+  const { companies, products, loading: catalogLoading, refresh: refreshCatalog } = useData();
+  const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds, syncNewest } = usePaginatedAds();
   const { blockedCompanyIds } = useWallet();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -68,6 +70,41 @@ export default function FeedPage() {
   }, [refreshAds]);
 
   const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
+
+  // Nieuwe video's komen vanzelf binnen:
+  //  - Opent iemand de app weer na minstens 30 seconden op de achtergrond, dan wordt de feed
+  //    ververst en staan de nieuwste video's erin.
+  //  - Blijft de app open, dan komen nieuwe video's elke minuut stilletjes onderaan erbij.
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+        return;
+      }
+      const away = hiddenAt ? Date.now() - hiddenAt : 0;
+      hiddenAt = null;
+      if (away > RESUME_REFRESH_AFTER_MS) {
+        refreshCatalog();
+        void syncNewest().then(() => {
+          setRefreshKey((k) => k + 1);
+          setActiveIndex(0);
+          containerRef.current?.scrollTo({ top: 0 });
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshCatalog();
+        void syncNewest();
+      }
+    }, NEW_VIDEOS_POLL_MS);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(timer);
+    };
+  }, [syncNewest, refreshCatalog]);
 
   const { balance: tokenBalance } = useWallet();
 

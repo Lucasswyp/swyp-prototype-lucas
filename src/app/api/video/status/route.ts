@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { muxRequest, muxPosterUrl, muxStreamUrl, type MuxAsset, type MuxUpload } from "@/lib/mux";
+import { isVideoTooLong } from "@/lib/videoFit";
 
 // Polled by the upload form until Mux has finished processing the video.
 export async function GET(request: Request) {
@@ -43,6 +44,12 @@ export async function GET(request: Request) {
     const playbackId = asset.playback_ids?.[0]?.id;
     if (asset.status !== "ready" || !playbackId) {
       return NextResponse.json({ status: "processing" });
+    }
+    // Langer dan een minuut: weigeren en de video bij Mux weer weghalen, anders blijft hij een
+    // van de beperkte plekken innemen.
+    if (isVideoTooLong(asset.duration ?? 0)) {
+      await muxRequest(`/video/v1/assets/${asset.id}`, { method: "DELETE" }).catch(() => {});
+      return NextResponse.json({ status: "errored", reason: "too_long" });
     }
     return NextResponse.json({
       status: "ready",

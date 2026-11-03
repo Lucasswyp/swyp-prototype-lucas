@@ -13,7 +13,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { ReportBlockSheet } from "@/components/consumer/ReportBlockSheet";
 import { ShareSheet } from "@/components/consumer/ShareSheet";
 import { FeedActionRail } from "@/components/consumer/FeedActionRail";
-import { formatEuro, cn } from "@/lib/utils";
+import { formatEuro, cn, formatPrice } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 import { useAppStore } from "@/store/useAppStore";
 import { logInteraction } from "@/lib/data";
@@ -574,7 +574,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
             <span className="text-sm font-semibold">{product.name}</span>
           </div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="font-heading text-lg font-extrabold">{formatEuro(product.price)}</span>
+            <span className="font-heading text-lg font-extrabold">{formatPrice(product.price)}</span>
             {product.oldPrice && (
               <span className="text-sm text-white/50 line-through">{formatEuro(product.oldPrice)}</span>
             )}

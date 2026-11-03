@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Bookmark } from "lucide-react";
-import { formatEuro, cn } from "@/lib/utils";
+import { formatEuro, cn, formatPrice } from "@/lib/utils";
 import type { Product, Company } from "@/types";
 
 export function ProductCard({
@@ -38,7 +38,7 @@ export function ProductCard({
           {company && <p className="text-[11px] text-white/40 mb-0.5 truncate">{company.name}</p>}
           <p className="text-sm font-semibold leading-snug line-clamp-1 mb-1">{product.name}</p>
           <div className="flex items-center gap-1.5">
-            <span className="font-heading font-bold text-sm">{formatEuro(product.price)}</span>
+            <span className="font-heading font-bold text-sm">{formatPrice(product.price)}</span>
             {product.oldPrice && (
               <span className="text-xs text-white/40 line-through">{formatEuro(product.oldPrice)}</span>
             )}

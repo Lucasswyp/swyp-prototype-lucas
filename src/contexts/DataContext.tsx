@@ -66,7 +66,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // poll as a robust fallback either way so data never goes stale for long.
     const interval = window.setInterval(load, 20000);
 
+    // Terug in de app na een tijd op de achtergrond: meteen verversen in plaats van wachten op de volgende ronde.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
       supabase.removeChannel(channel);
       window.clearInterval(interval);
     };

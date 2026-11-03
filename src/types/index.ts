@@ -68,7 +68,8 @@ export type CampaignObjective =
   | "Engagement"
   | "Website traffic"
   | "Sales"
-  | "Store visits";
+  | "Store visits"
+  | "App downloads";
 
 export type CampaignStatus = "Active" | "Paused" | "Draft" | "Completed";
 

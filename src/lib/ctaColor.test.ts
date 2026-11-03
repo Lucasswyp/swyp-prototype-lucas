@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CTA_DEFAULT_COLOR, CTA_PRESETS, ctaTextColor, isCtaColor, normalizeCtaColor } from "@/lib/ctaColor";
-import { describeVideoFormat, videoFit } from "@/lib/videoFit";
+import { describeVideoFormat, isVideoTooLong, videoFit } from "@/lib/videoFit";
 
 describe("ctaColor", () => {
   it("accepteert alleen zes cijfers hex en valt anders terug op wit", () => {
@@ -47,5 +47,16 @@ describe("videoFit", () => {
     expect(describeVideoFormat(1080, 1920).ok).toBe(true);
     expect(describeVideoFormat(1920, 1080).ok).toBe(false);
     expect(describeVideoFormat(0, 0).text).toBe("");
+  });
+});
+
+describe("maximale videolengte", () => {
+  it("staat 60 seconden toe (met een seconde marge) en weigert langer", () => {
+    expect(isVideoTooLong(45)).toBe(false);
+    expect(isVideoTooLong(60)).toBe(false);
+    expect(isVideoTooLong(60.9)).toBe(false);
+    expect(isVideoTooLong(61.5)).toBe(true);
+    expect(isVideoTooLong(168)).toBe(true);
+    expect(isVideoTooLong(NaN)).toBe(false);
   });
 });

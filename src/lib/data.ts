@@ -2,6 +2,7 @@
    boundary layer that maps loosely-typed Supabase rows onto our strict
    internal types; the `any` params below are the raw row shape. */
 import { CTA_DEFAULT_COLOR, normalizeCtaColor } from "@/lib/ctaColor";
+import { resizeImage } from "@/lib/imageUpload";
 import { createClient } from "@/lib/supabase/client";
 import type { Company, Product, Ad, Campaign, Reward } from "@/types";
 
@@ -378,6 +379,18 @@ export async function uploadAdVideo(businessId: string, file: File): Promise<str
   if (error) throw error;
   const { data } = supabase.storage.from("ad-videos").getPublicUrl(path);
   return data.publicUrl;
+}
+
+// Thumbnail of productfoto van een bedrijf. Wordt verkleind (jpeg, maximaal 1080 breed) zodat
+// het niet onnodig veel data kost, en staat in de map van het bedrijf (zie storage_fix.sql).
+export async function uploadAdImage(businessId: string, file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Kies een afbeelding (jpg, png of webp).");
+  const { blob, type } = await resizeImage(file, 1080);
+  const supabase = createClient();
+  const path = `${businessId}/${crypto.randomUUID()}.${type === "image/png" ? "png" : "jpg"}`;
+  const { error } = await supabase.storage.from("ad-videos").upload(path, blob, { contentType: type });
+  if (error) throw error;
+  return supabase.storage.from("ad-videos").getPublicUrl(path).data.publicUrl;
 }
 
 // ---- Consumer interactions (shared analytics) ----

@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { createProduct, createAd, createCampaign, uploadAdVideo, FIXED_REWARDS } from "@/lib/data";
+import { createProduct, createAd, createCampaign, uploadAdVideo, uploadAdImage, FIXED_REWARDS } from "@/lib/data";
+import { NumberField } from "@/components/ui/NumberField";
 import { CTA_DEFAULT_COLOR, CTA_PRESETS, ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
-import { describeVideoFormat, videoFit } from "@/lib/videoFit";
+import { MAX_VIDEO_SECONDS, describeVideoFormat, isVideoTooLong, videoFit } from "@/lib/videoFit";
 import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
-import { formatEuro, cn } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 import type { CampaignObjective, Category, Product } from "@/types";
 import { interestOptions } from "@/data/seed";
 
@@ -21,6 +22,7 @@ const objectives: CampaignObjective[] = [
   "Website traffic",
   "Sales",
   "Store visits",
+  "App downloads",
 ];
 
 const categories: Category[] = ["Fashion", "Food", "Tech", "Fitness", "Travel", "Beauty", "Events", "Days Out", "Restaurants"];
@@ -55,6 +57,12 @@ export default function CreateCampaignPage() {
   const [ctaLabel, setCtaLabel] = useState("Bekijk product");
   const [ctaColor, setCtaColor] = useState<string>(CTA_DEFAULT_COLOR);
   const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [isFree, setIsFree] = useState(false);
+  const [thumbFile, setThumbFile] = useState<File | null>(null);
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -78,7 +86,7 @@ export default function CreateCampaignPage() {
   const previewProduct =
     mode === "existing"
       ? selectedExistingProduct
-      : ({ ...newProduct, id: "new", companyId: businessId, rating: 5, highlights: [] } as Product);
+      : ({ ...newProduct, price: isFree ? 0 : newProduct.price, id: "new", companyId: businessId, rating: 5, highlights: [] } as Product);
 
   function toggleInterest(cat: Category) {
     setInterests((s) => (s.includes(cat) ? s.filter((c) => c !== cat) : [...s, cat]));
@@ -88,7 +96,23 @@ export default function CreateCampaignPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setVideoFile(file);
+    setVideoSize(null);
+    setVideoDuration(null);
     setVideoPreview(URL.createObjectURL(file));
+  }
+
+  function handleThumbSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbFile(file);
+    setThumbPreview(URL.createObjectURL(file));
+  }
+
+  function handleProductImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProductImageFile(file);
+    setProductImagePreview(URL.createObjectURL(file));
   }
 
   async function handlePublish() {
@@ -108,6 +132,8 @@ export default function CreateCampaignPage() {
         videoUrl = uploaded.videoUrl;
         uploadedPoster = uploaded.posterUrl;
       } catch (muxErr) {
+        // Een te lange video blijft te lang, ook zonder Mux.
+        if (muxErr instanceof Error && muxErr.message.startsWith("Deze video is langer")) throw muxErr;
         // Mux unavailable or at its plan limit: the ad must still go live,
         // so fall back to plain storage instead of failing the whole publish.
         // Storage accepts at most 50 MB; for a bigger file say why Mux failed
@@ -121,6 +147,8 @@ export default function CreateCampaignPage() {
         }
         videoUrl = await uploadAdVideo(businessId, videoFile);
       }
+      if (thumbFile) uploadedPoster = await uploadAdImage(businessId, thumbFile);
+      const uploadedProductImage = productImageFile ? await uploadAdImage(businessId, productImageFile) : "";
       setUploading(false);
       setUploadProgress(null);
 
@@ -130,8 +158,8 @@ export default function CreateCampaignPage() {
         const created = await createProduct(businessId, {
           name: newProduct.name,
           description: newProduct.description,
-          imageUrl: newProduct.imageUrl || uploadedPoster || videoUrl,
-          price: newProduct.price,
+          imageUrl: uploadedProductImage || newProduct.imageUrl || uploadedPoster || videoUrl,
+          price: isFree ? 0 : newProduct.price,
           oldPrice: newProduct.oldPrice,
           category: newProduct.category,
           url: newProduct.url,
@@ -176,8 +204,9 @@ export default function CreateCampaignPage() {
     }
   }
 
-  const canGoToStep2 = mode === "existing" ? !!productId : newProduct.name && newProduct.price > 0 && newProduct.url;
-  const canGoToStep3 = !!videoFile && !!caption;
+  const canGoToStep2 = mode === "existing" ? !!productId : newProduct.name && (isFree || newProduct.price > 0) && newProduct.url;
+  const videoTooLong = videoDuration !== null && isVideoTooLong(videoDuration);
+  const canGoToStep3 = !!videoFile && !!caption && !videoTooLong;
 
   if (published) {
     return (
@@ -271,7 +300,7 @@ export default function CreateCampaignPage() {
                     <img src={p.imageUrl} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">{p.name}</p>
-                      <p className="text-xs text-white/40 truncate">{formatEuro(p.price)}</p>
+                      <p className="text-xs text-white/40 truncate">{formatPrice(p.price)}</p>
                     </div>
                   </button>
                 ))}
@@ -299,12 +328,18 @@ export default function CreateCampaignPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5 text-white/60">Prijs (€)</label>
-                  <input
-                    type="number"
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct((p) => ({ ...p, price: Number(e.target.value) }))}
-                    className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
+                  <NumberField
+                    allowDecimals
+                    value={isFree ? 0 : newProduct.price}
+                    disabled={isFree}
+                    onChange={(price) => setNewProduct((p) => ({ ...p, price }))}
+                    placeholder={isFree ? "Gratis" : "0"}
+                    className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet disabled:opacity-50"
                   />
+                  <label className="mt-2 flex items-center gap-2 text-xs text-white/60 cursor-pointer">
+                    <input type="checkbox" checked={isFree} onChange={(e) => setIsFree(e.target.checked)} />
+                    Gratis, zonder prijs (app-download, naamsbekendheid)
+                  </label>
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5 text-white/60">Categorie</label>
@@ -321,7 +356,7 @@ export default function CreateCampaignPage() {
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-white/60">Link naar jouw winkel (echte URL)</label>
+                  <label className="block text-xs font-medium mb-1.5 text-white/60">Link naar jouw winkel, website of App Store (echte URL)</label>
                   <input
                     value={newProduct.url}
                     onChange={(e) => setNewProduct((p) => ({ ...p, url: e.target.value }))}
@@ -330,12 +365,23 @@ export default function CreateCampaignPage() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-white/60">Productfoto URL (optioneel)</label>
+                  <label className="block text-xs font-medium mb-1.5 text-white/60">Productfoto (optioneel)</label>
+                  <div className="flex items-center gap-3">
+                    {productImagePreview && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={productImagePreview} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                    )}
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm hover:border-violet/50">
+                      <Upload size={16} className="text-white/50" />
+                      {productImagePreview ? "Andere foto kiezen" : "Foto uploaden"}
+                      <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" />
+                    </label>
+                  </div>
                   <input
                     value={newProduct.imageUrl}
                     onChange={(e) => setNewProduct((p) => ({ ...p, imageUrl: e.target.value }))}
-                    placeholder="https://..."
-                    className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
+                    placeholder="of plak een link naar een foto (https://...)"
+                    className="mt-2 w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
                   />
                 </div>
               </div>
@@ -354,22 +400,51 @@ export default function CreateCampaignPage() {
                     className="h-40 rounded-lg"
                     muted
                     controls
-                    onLoadedMetadata={(e) => setVideoSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+                    onLoadedMetadata={(e) => {
+                      setVideoSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight });
+                      setVideoDuration(e.currentTarget.duration);
+                    }}
                   />
                 ) : (
                   <>
                     <Upload size={24} className="text-white/40" />
-                    <span className="text-sm text-white/50">Klik om een video te kiezen (mp4 of mov, staand 9:16)</span>
+                    <span className="text-sm text-white/50">Klik om een video te kiezen (mp4 of mov, staand 9:16, maximaal 1 minuut)</span>
                   </>
                 )}
                 <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
               </label>
+              {videoTooLong && videoDuration !== null && (
+                <p className="text-xs mt-2 text-red-300">
+                  Deze video duurt {Math.round(videoDuration)} seconden. De maximale lengte is {MAX_VIDEO_SECONDS} seconden (1 minuut). Kort hem in en kies hem opnieuw.
+                </p>
+              )}
               {videoSize && (() => {
                 const info = describeVideoFormat(videoSize.w, videoSize.h);
                 return info.text ? (
                   <p className={cn("text-xs mt-2", info.ok ? "text-emerald-300" : "text-amber-300")}>{info.text}</p>
                 ) : null;
               })()}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 text-white/60">Thumbnail van de video (optioneel)</label>
+              <p className="text-[11px] text-white/40 mb-2">Dit plaatje zie je voordat de video start. Zonder thumbnail nemen we een beeld uit de video. Staand 9:16 werkt het mooist.</p>
+              <div className="flex items-center gap-3">
+                {thumbPreview && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={thumbPreview} alt="" className="h-20 w-[45px] rounded-lg object-cover" />
+                )}
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm hover:border-violet/50">
+                  <Upload size={16} className="text-white/50" />
+                  {thumbPreview ? "Andere thumbnail kiezen" : "Thumbnail uploaden"}
+                  <input type="file" accept="image/*" onChange={handleThumbSelect} className="hidden" />
+                </label>
+                {thumbPreview && (
+                  <button type="button" className="text-xs text-white/50 underline" onClick={() => { setThumbFile(null); setThumbPreview(null); }}>
+                    Verwijderen
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -483,11 +558,11 @@ export default function CreateCampaignPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Dagbudget (€)</label>
-              <input type="number" value={dailyBudget} onChange={(e) => setDailyBudget(Number(e.target.value))} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
+              <NumberField value={dailyBudget} onChange={setDailyBudget} ariaLabel="Dagbudget" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Totaalbudget (€)</label>
-              <input type="number" value={totalBudget} onChange={(e) => setTotalBudget(Number(e.target.value))} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
+              <NumberField value={totalBudget} onChange={setTotalBudget} ariaLabel="Totaalbudget" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Startdatum</label>
@@ -506,6 +581,7 @@ export default function CreateCampaignPage() {
               {videoPreview && (
                 <video
                   src={videoPreview}
+                  poster={thumbPreview ?? undefined}
                   className={cn(
                     "absolute inset-0 h-full w-full",
                     videoSize && videoFit(videoSize.w, videoSize.h) === "contain" ? "object-contain" : "object-cover"
@@ -525,9 +601,9 @@ export default function CreateCampaignPage() {
                 </div>
                 <p className="text-xs mb-2 line-clamp-2">{caption}</p>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-heading font-extrabold text-sm">{formatEuro(previewProduct.price)}</span>
+                  <span className="font-heading font-extrabold text-sm">{formatPrice(previewProduct.price)}</span>
                   {previewProduct.oldPrice && (
-                    <span className="text-xs text-white/50 line-through">{formatEuro(previewProduct.oldPrice)}</span>
+                    <span className="text-xs text-white/50 line-through">{formatPrice(previewProduct.oldPrice)}</span>
                   )}
                 </div>
                 <span

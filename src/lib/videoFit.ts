@@ -27,3 +27,12 @@ export function describeVideoFormat(width: number, height: number): { ok: boolea
     text: `Dit is ${landscape ? "een liggende of vierkante" : "geen 9:16"} video (${width} × ${height}). Hij wordt zonder af te snijden getoond met een vervaagde rand. Staand 9:16 (1080 × 1920) vult het scherm het mooist.`,
   };
 }
+
+// Langste toegestane video: één minuut, net als een korte Reel.
+export const MAX_VIDEO_SECONDS = 60;
+// Kleine marge voor afrondingen in het videobestand.
+export const MAX_VIDEO_SECONDS_TOLERANCE = 1;
+
+export function isVideoTooLong(durationSeconds: number): boolean {
+  return Number.isFinite(durationSeconds) && durationSeconds > MAX_VIDEO_SECONDS + MAX_VIDEO_SECONDS_TOLERANCE;
+}

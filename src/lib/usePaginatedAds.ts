@@ -55,5 +55,25 @@ export function usePaginatedAds() {
     }
   }, [hasMore]);
 
-  return { ads, loading, hasMore, loadMore, refresh: loadFirstPage };
+  // Haalt de nieuwste video's op zonder laadscherm en voegt alleen nieuwe toe. Wie net iets
+  // bekijkt, ziet niets verspringen; de nieuwe video's komen erbij.
+  const syncNewest = useCallback(async () => {
+    try {
+      const { ads: page } = await fetchAdsPage(0);
+      setAds((prev) => {
+        const seen = new Set(prev.map((a) => a.id));
+        const fresh = page.filter((a) => !seen.has(a.id));
+        // Ook video's die zijn afgekeurd of gestopt verdwijnen weer uit de feed.
+        const stillLive = new Set(page.map((a) => a.id));
+        const newestPrev = prev.slice(0, page.length);
+        const kept = prev.filter((a) => stillLive.has(a.id) || !newestPrev.some((p) => p.id === a.id));
+        if (fresh.length === 0 && kept.length === prev.length) return prev;
+        return [...fresh, ...kept];
+      });
+    } catch {
+      // Geen verbinding: de volgende keer opnieuw.
+    }
+  }, []);
+
+  return { ads, loading, hasMore, loadMore, refresh: loadFirstPage, syncNewest };
 }

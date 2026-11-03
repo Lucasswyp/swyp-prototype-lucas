@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
 import { createProduct, updateProduct as updateProductRemote, deleteProduct as deleteProductRemote } from "@/lib/data";
-import { formatEuro } from "@/lib/utils";
+import { formatEuro, formatPrice } from "@/lib/utils";
 import type { Product, Category } from "@/types";
 
 const categories: Category[] = ["Fashion", "Food", "Tech", "Fitness", "Travel", "Beauty", "Events", "Days Out", "Restaurants"];
@@ -110,7 +110,7 @@ export default function ProductsPage() {
                 </div>
                 <p className="text-xs text-white/40 mb-2">{p.category}</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-heading font-bold text-sm">{formatEuro(p.price)}</span>
+                  <span className="font-heading font-bold text-sm">{formatPrice(p.price)}</span>
                   {p.oldPrice && <span className="text-xs text-white/40 line-through">{formatEuro(p.oldPrice)}</span>}
                 </div>
                 <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-xs text-magenta hover:underline mt-1 block truncate">

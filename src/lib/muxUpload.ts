@@ -43,7 +43,10 @@ export async function uploadVideoToMux(
     const statusRes = await fetch(`/api/video/status?uploadId=${encodeURIComponent(created.uploadId)}`);
     const status = await statusRes.json().catch(() => ({}));
     if (status.status === "ready") return { videoUrl: status.videoUrl, posterUrl: status.posterUrl };
-    if (status.status === "errored") throw new Error("De video kon niet worden verwerkt. Probeer een ander bestand.");
+    if (status.status === "errored") {
+      if (status.reason === "too_long") throw new Error("Deze video is langer dan 1 minuut. Kort hem in en probeer het opnieuw.");
+      throw new Error("De video kon niet worden verwerkt. Probeer een ander bestand.");
+    }
   }
   throw new Error("Het verwerken duurt te lang. Probeer het later opnieuw.");
 }

@@ -19,10 +19,23 @@ export function canPlayHlsNatively() {
 // Attaches an HLS source to a <video> element when the browser can't do it
 // itself. Returns whether hls.js is in charge, so callers can skip behaviour
 // (like reloading the element on error) that would break its playback.
-export function useHlsSource(videoRef: RefObject<HTMLVideoElement | null>, url: string | undefined, enabled: boolean) {
+// bufferSeconds: hoeveel seconden vooruit er geladen wordt. De video die speelt en de eerstvolgende
+// krijgen ruim, verder weg klaarstaande video's alleen de eerste paar seconden: dan staan er
+// meerdere video's meteen klaar zonder dat alles volledig wordt gedownload.
+export function useHlsSource(
+  videoRef: RefObject<HTMLVideoElement | null>,
+  url: string | undefined,
+  enabled: boolean,
+  bufferSeconds = 12
+) {
   const [native] = useState(canPlayHlsNatively);
   const needsHlsJs = isHlsUrl(url) && !native;
-  const hlsRef = useRef<{ destroy: () => void } | null>(null);
+  const hlsRef = useRef<{ destroy: () => void; config: { maxBufferLength: number } } | null>(null);
+  const bufferRef = useRef(bufferSeconds);
+  useEffect(() => {
+    bufferRef.current = bufferSeconds;
+    if (hlsRef.current) hlsRef.current.config.maxBufferLength = bufferSeconds;
+  }, [bufferSeconds]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,7 +44,7 @@ export function useHlsSource(videoRef: RefObject<HTMLVideoElement | null>, url: 
     import("hls.js").then(({ default: Hls }) => {
       if (cancelled || !Hls.isSupported()) return;
       const hls = new Hls({
-        maxBufferLength: 12,
+        maxBufferLength: bufferRef.current,
         capLevelToPlayerSize: true,
         // Meteen op een redelijke kwaliteit beginnen in plaats van eerst vaag en dan scherp.
         abrEwmaDefaultEstimate: 4_000_000,

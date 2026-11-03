@@ -17,7 +17,9 @@ import type { Ad } from "@/types";
 // Fetch the next page once the viewer is this close to the end of what's
 // currently loaded — far enough ahead that the fetch (a couple hundred ms)
 // finishes before they'd actually swipe past the last loaded card.
-const LOAD_MORE_THRESHOLD = 5;
+// Zodra je binnen 10 video's van het einde van wat er geladen is komt, worden de volgende opgehaald.
+const LOAD_MORE_THRESHOLD = 10;
+const PREFETCH_AHEAD = 5;
 const RESUME_REFRESH_AFTER_MS = 30_000;
 const NEW_VIDEOS_POLL_MS = 60_000;
 
@@ -147,9 +149,10 @@ export default function FeedPage() {
                 company={company}
                 product={product}
                 isActive={i === activeIndex}
-                // De volgende twee video's en de vorige worden alvast geladen: sneller swipen
-                // en nog steeds geen wachttijd.
-                isNear={i !== activeIndex && i - activeIndex >= -1 && i - activeIndex <= 2}
+                // Een reeks video's staat alvast klaar: de volgende twee ruim, de drie daarna en de
+                // vorige alleen de eerste paar seconden. Zo hoef je bij het scrollen nergens op te wachten.
+                isNear={i !== activeIndex && i - activeIndex >= -1 && i - activeIndex <= PREFETCH_AHEAD}
+                prefetch={i - activeIndex >= 1 && i - activeIndex <= 2 ? "full" : "light"}
                 onSkip={skipAd}
               />
             </div>

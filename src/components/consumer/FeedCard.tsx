@@ -32,14 +32,16 @@ interface FeedCardProps {
   /** Immediately before/after the active card — worth preloading so the
    * swipe to it doesn't start from zero bytes buffered. */
   isNear?: boolean;
+  /** Hoeveel er alvast van deze video geladen wordt als hij nog niet in beeld is. */
+  prefetch?: "full" | "light";
   /** Gaat naar de volgende video; krijgt het id van deze advertentie mee zodat de functie stabiel kan blijven. */
   onSkip: (adId: string) => void;
 }
 
-function FeedCardImpl({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
+function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full", onSkip }: FeedCardProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear));
+  const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear), isActive || prefetch === "full" ? 12 : 4);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -456,7 +458,7 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, onSkip }: FeedCa
           playsInline
           // Een ruw videobestand (geen stream) laadt in zijn geheel als we "auto" vragen;
           // alleen de actieve kaart krijgt dat, de buren alleen de eerste bytes.
-          preload={isActive ? "auto" : isNear ? (isHlsUrl(ad.videoUrl) ? "auto" : "metadata") : "none"}
+          preload={isActive ? "auto" : isNear ? (isHlsUrl(ad.videoUrl) && prefetch === "full" ? "auto" : "metadata") : "none"}
           onLoadedMetadata={(e) => setFit(videoFit(e.currentTarget.videoWidth, e.currentTarget.videoHeight))}
           onTimeUpdate={handleTimeUpdate}
           onClick={handleVideoClick}

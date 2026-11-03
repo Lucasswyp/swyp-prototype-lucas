@@ -17,15 +17,23 @@ export function useStableFeedOrder<T>(
   items: T[],
   getId: (item: T) => string,
   groupKey: (item: T) => 0 | 1,
-  refreshKey: number
+  refreshKey: number,
+  initialOrder?: string[] | null
 ): T[] {
   const [order, setOrder] = useState<string[]>([]);
   const lastRefreshKeyRef = useRef<number | null>(null);
+  const restoredRef = useRef(false);
 
   useLayoutEffect(() => {
+    // De video's komen pas na het laden binnen, dus terugzetten van de oude volgorde geldt zodra er
+    // voor het eerst video's zijn. Buiten de updater berekend: die kan twee keer draaien.
+    const restoring = !restoredRef.current && !!initialOrder && initialOrder.length > 0 && order.length === 0 && items.length > 0;
+    if (restoring) restoredRef.current = true;
     setOrder((prevOrder) => {
       const byId = new Map(items.map((item) => [getId(item), item]));
-      const forceReshuffle = lastRefreshKeyRef.current === null || lastRefreshKeyRef.current !== refreshKey;
+      const firstRun = lastRefreshKeyRef.current === null;
+      // Komt de feed terug binnen het halfuur, dan blijft de oude volgorde staan.
+      const forceReshuffle = !restoring && (firstRun || lastRefreshKeyRef.current !== refreshKey);
       lastRefreshKeyRef.current = refreshKey;
 
       let next: string[];
@@ -34,7 +42,8 @@ export function useStableFeedOrder<T>(
         const groupB = shuffle(items.filter((item) => groupKey(item) === 1));
         next = [...groupA, ...groupB].map(getId);
       } else {
-        const stillVisible = prevOrder.filter((id) => byId.has(id));
+        const basis = restoring ? initialOrder! : prevOrder;
+        const stillVisible = basis.filter((id) => byId.has(id));
         const seenIds = new Set(stillVisible);
         const freshIds = shuffle(items.filter((item) => !seenIds.has(getId(item)))).map(getId);
         next = [...stillVisible, ...freshIds];

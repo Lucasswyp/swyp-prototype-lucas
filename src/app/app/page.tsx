@@ -12,6 +12,8 @@ import { useWallet } from "@/contexts/WalletContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
 import { usePaginatedAds } from "@/lib/usePaginatedAds";
+import { APP_RESUME_REFRESH_MS, onAppActiveChange } from "@/lib/appVisibility";
+import { clearFeedState, loadFeedState, saveFeedState } from "@/lib/feedState";
 import type { Ad } from "@/types";
 
 // Fetch the next page once the viewer is this close to the end of what's
@@ -20,7 +22,6 @@ import type { Ad } from "@/types";
 // Zodra je binnen 10 video's van het einde van wat er geladen is komt, worden de volgende opgehaald.
 const LOAD_MORE_THRESHOLD = 10;
 const PREFETCH_AHEAD = 5;
-const RESUME_REFRESH_AFTER_MS = 30_000;
 const NEW_VIDEOS_POLL_MS = 60_000;
 
 export default function FeedPage() {
@@ -32,6 +33,8 @@ export default function FeedPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const loading = catalogLoading || adsLoading;
+  // Was je hier net nog (minder dan een halfuur geleden)? Dan sta je straks weer op dezelfde video.
+  const [saved] = useState(() => (typeof window === "undefined" ? null : loadFeedState()));
 
   // A blocked business's ads must never resurface no matter how the rest
   // of the feed is ranked (fetchAdsPage already only returns approved ones).
@@ -41,7 +44,7 @@ export default function FeedPage() {
   );
   const getAdId = useCallback((a: Ad) => a.id, []);
   const groupKey = useCallback((a: Ad) => (interests.length === 0 || interests.includes(a.category) ? 0 : 1), [interests]);
-  const orderedAds = useStableFeedOrder(visible, getAdId, groupKey, refreshKey);
+  const orderedAds = useStableFeedOrder(visible, getAdId, groupKey, refreshKey, saved?.ids);
 
   function handleScroll() {
     const el = containerRef.current;
@@ -53,9 +56,11 @@ export default function FeedPage() {
 
   // Stabiel (verandert niet bij elke scroll), zodat de video-kaarten niet steeds opnieuw getekend worden.
   const orderedRef = useRef(orderedAds);
+  const activeIndexRef = useRef(activeIndex);
   useEffect(() => {
     orderedRef.current = orderedAds;
-  }, [orderedAds]);
+    activeIndexRef.current = activeIndex;
+  }, [orderedAds, activeIndex]);
   const skipAd = useCallback((adId: string) => {
     const index = orderedRef.current.findIndex((a) => a.id === adId);
     const el = containerRef.current;
@@ -63,6 +68,28 @@ export default function FeedPage() {
       el.scrollTo({ top: (index + 1) * el.clientHeight, behavior: "smooth" });
     }
   }, []);
+
+  // Terug naar de video waar je was gebleven (alleen bij het openen, en alleen binnen het halfuur).
+  const restoredScrollRef = useRef(false);
+  useEffect(() => {
+    if (restoredScrollRef.current || !saved?.activeId || orderedAds.length === 0) return;
+    restoredScrollRef.current = true;
+    const index = orderedAds.findIndex((a) => a.id === saved.activeId);
+    const el = containerRef.current;
+    if (index > 0 && el) {
+      el.scrollTo({ top: index * el.clientHeight });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveIndex(index);
+    }
+  }, [orderedAds, saved]);
+
+  // Onthoud volgorde en positie, ook voor als de telefoon de app tussendoor uit het geheugen haalt.
+  useEffect(() => {
+    if (orderedAds.length === 0) return;
+    // Wacht met bewaren tot de oude positie is teruggezet, anders overschrijven we hem met video 1.
+    if (saved?.activeId && !restoredScrollRef.current) return;
+    saveFeedState(orderedAds.map((a) => a.id), orderedAds[activeIndex]?.id ?? null);
+  }, [orderedAds, activeIndex, saved]);
 
   // Pull-down-at-top gesture: "give me a fresh feed".
   const refreshFeed = useCallback(async () => {
@@ -75,28 +102,35 @@ export default function FeedPage() {
   const { pullDistance, refreshing, triggerDistance } = usePullToRefresh(containerRef, refreshFeed);
 
   // Nieuwe video's komen vanzelf binnen:
-  //  - Opent iemand de app weer na minstens 30 seconden op de achtergrond, dan wordt de feed
-  //    ververst en staan de nieuwste video's erin.
+  //  - Kom je binnen een halfuur terug in de app, dan staat alles precies zoals je het achterliet;
+  //    nieuwe video's komen stilletjes onderaan erbij.
+  //  - Ben je langer weg geweest, dan begint de feed helemaal opnieuw met de nieuwste video's.
   //  - Blijft de app open, dan komen nieuwe video's elke minuut stilletjes onderaan erbij.
   useEffect(() => {
     let hiddenAt: number | null = null;
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
+    const stop = onAppActiveChange((active) => {
+      if (!active) {
         hiddenAt = Date.now();
+        // Tijdstip van weggaan bewaren, voor het geval de app tussendoor uit het geheugen gaat.
+        const list = orderedRef.current;
+        if (list.length > 0) saveFeedState(list.map((a) => a.id), list[activeIndexRef.current]?.id ?? null);
         return;
       }
       const away = hiddenAt ? Date.now() - hiddenAt : 0;
       hiddenAt = null;
-      if (away > RESUME_REFRESH_AFTER_MS) {
+      if (away >= APP_RESUME_REFRESH_MS) {
+        clearFeedState();
         refreshCatalog();
         void syncNewest().then(() => {
           setRefreshKey((k) => k + 1);
           setActiveIndex(0);
           containerRef.current?.scrollTo({ top: 0 });
         });
+      } else if (away > 5_000) {
+        refreshCatalog();
+        void syncNewest();
       }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
+    });
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         refreshCatalog();
@@ -104,7 +138,7 @@ export default function FeedPage() {
       }
     }, NEW_VIDEOS_POLL_MS);
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      stop();
       window.clearInterval(timer);
     };
   }, [syncNewest, refreshCatalog]);

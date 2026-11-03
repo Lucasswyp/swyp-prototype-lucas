@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
 import { ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
 import { backdropUrl, videoFit, type VideoFit } from "@/lib/videoFit";
+import { onAppActiveChange } from "@/lib/appVisibility";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -41,7 +42,7 @@ interface FeedCardProps {
 function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full", onSkip }: FeedCardProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear), isActive || prefetch === "full" ? 12 : 4);
+  const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear), isActive || prefetch === "full" ? 15 : 6);
   const [paused, setPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -165,6 +166,14 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
       onError();
     }
 
+    // Naar de achtergrond of app gesloten: meteen stoppen, anders hoor je de video nog doorspelen.
+    // Terug in beeld: verder waar je was.
+    const stopWatchingApp = onAppActiveChange((active) => {
+      if (cancelled) return;
+      if (active) attemptPlay();
+      else video.pause();
+    });
+
     attemptPlay();
     video.addEventListener("canplay", attemptPlay);
     video.addEventListener("loadeddata", attemptPlay);
@@ -212,6 +221,7 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
 
     return () => {
       cancelled = true;
+      stopWatchingApp();
       video.removeEventListener("canplay", attemptPlay);
       video.removeEventListener("loadeddata", attemptPlay);
       video.removeEventListener("playing", onPlaying);

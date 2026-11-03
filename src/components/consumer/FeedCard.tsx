@@ -1,7 +1,7 @@
 "use client";
 
 import posthog from "posthog-js";
-import { useHlsSource } from "@/lib/useHlsSource";
+import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -422,7 +422,9 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
           muted
           loop
           playsInline
-          preload={isActive || isNear ? "auto" : "none"}
+          // Een ruw videobestand (geen stream) laadt in zijn geheel als we "auto" vragen;
+          // alleen de actieve kaart krijgt dat, de buren alleen de eerste bytes.
+          preload={isActive ? "auto" : isNear ? (isHlsUrl(ad.videoUrl) ? "auto" : "metadata") : "none"}
           onTimeUpdate={handleTimeUpdate}
           onClick={handleVideoClick}
           className="h-full w-full object-cover"

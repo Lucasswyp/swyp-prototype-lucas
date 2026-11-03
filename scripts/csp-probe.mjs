@@ -11,6 +11,8 @@ for (const [name, device] of [["desktop", devices["Desktop Chrome"]], ["mobiel",
   const ctx = await browser.newContext(device);
   for (const p of pages) {
     const page = await ctx.newPage();
+    // Geen volledige video's ophalen: dat kost databandbreedte en een CSP-overtreding ziet de browser vooraf.
+    await page.route(/\.(mp4|mov|m4v|webm|m3u8|m4s|ts)(\?|$)/i, (r) => r.abort());
     await page.addInitScript(() => {
       window.__v = [];
       document.addEventListener("securitypolicyviolation", (e) => window.__v.push({ d: e.effectiveDirective, b: e.blockedURI, disp: e.disposition }));

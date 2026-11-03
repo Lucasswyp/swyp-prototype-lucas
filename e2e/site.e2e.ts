@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-
+import { expect, test } from "./base";
+import type { Page } from "@playwright/test";
 // Controles voor wie niet is ingelogd. Ze veranderen niets in de database
 // (behalve een paar anonieme weergaven in de statistieken).
 
@@ -157,7 +157,7 @@ test.describe("de app als gast", () => {
 
 test.describe("lanceeranimatie", () => {
   // Zet vóór het laden "laatst actief" op X minuten geleden en start een nieuwe sessie.
-  async function startAfter(page: import("@playwright/test").Page, minutesAgo: number) {
+  async function startAfter(page: Page, minutesAgo: number) {
     await page.addInitScript((m) => {
       if (!sessionStorage.getItem("__e2e_done")) {
         localStorage.setItem("swyp-last-active", String(Date.now() - m * 60_000));
@@ -166,7 +166,7 @@ test.describe("lanceeranimatie", () => {
       }
     }, minutesAgo);
   }
-  const splash = (page: import("@playwright/test").Page) => page.getByTestId("launch-splash");
+  const splash = (page: Page) => page.getByTestId("launch-splash");
 
   test("speelt na uren weg zijn, niet bij verversen, en is weg te tikken", async ({ page }) => {
     await startAfter(page, 5 * 60);

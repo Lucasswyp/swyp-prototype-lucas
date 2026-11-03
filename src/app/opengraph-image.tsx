@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { brandDataUrl } from "@/lib/brandAssets";
 
 export const alt = "Swyp — Swipe. Spaar. Profiteer.";
 export const size = { width: 1200, height: 630 };
@@ -21,24 +22,9 @@ export default function OpengraphImage() {
           fontFamily: "sans-serif",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            width: 150,
-            height: 150,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 40,
-            background: "linear-gradient(135deg, #7B3DFF, #FF3EDB)",
-            fontSize: 110,
-            fontWeight: 800,
-            marginBottom: 40,
-          }}
-        >
-          S
-        </div>
-        <div style={{ fontSize: 86, fontWeight: 800, letterSpacing: -2 }}>Swyp</div>
-        <div style={{ fontSize: 40, marginTop: 16, opacity: 0.85 }}>Swipe. Spaar. Profiteer.</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={brandDataUrl("swyp-logo.png")} width={620} height={Math.round(620 / (992 / 364))} alt="Swyp" />
+        <div style={{ fontSize: 40, marginTop: 24, opacity: 0.85 }}>Swipe. Spaar. Profiteer.</div>
       </div>
     ),
     size

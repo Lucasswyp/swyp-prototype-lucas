@@ -112,10 +112,18 @@ export default function CreateCampaignPage() {
         const uploaded = await uploadVideoToMux(videoFile, setUploadProgress);
         videoUrl = uploaded.videoUrl;
         uploadedPoster = uploaded.posterUrl;
-      } catch {
+      } catch (muxErr) {
         // Mux unavailable or at its plan limit: the ad must still go live,
         // so fall back to plain storage instead of failing the whole publish.
+        // Storage accepts at most 50 MB; for a bigger file say why Mux failed
+        // instead of showing a storage error nobody can act on.
         setUploadProgress(null);
+        if (videoFile.size > 50 * 1024 * 1024) {
+          const reason = muxErr instanceof Error && muxErr.message !== "mux-disabled" ? ` (${muxErr.message})` : "";
+          throw new Error(
+            `Deze video is ${Math.round(videoFile.size / 1048576)} MB. De videodienst (Mux) werkt nu niet${reason} en zonder die dienst is 50 MB het maximum. Maak de video kleiner of probeer het later opnieuw.`
+          );
+        }
         videoUrl = await uploadAdVideo(businessId, videoFile);
       }
       setUploading(false);

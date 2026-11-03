@@ -31,7 +31,7 @@ export async function uploadVideoToMux(
 ): Promise<UploadedVideo> {
   const res = await fetch("/api/video/upload", { method: "POST" });
   const created = await res.json().catch(() => ({}));
-  if (!res.ok || !created.url) throw new Error(created.error ?? "Upload voorbereiden is mislukt.");
+  if (!res.ok || !created.url) throw new Error(`${created.error ?? "Upload voorbereiden is mislukt."}${created.detail ? ` (${created.detail})` : ""}`);
 
   onProgress({ stage: "uploading", percent: 0 });
   await putWithProgress(created.url, file, (percent) => onProgress({ stage: "uploading", percent }));

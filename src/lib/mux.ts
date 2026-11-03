@@ -25,7 +25,11 @@ export async function muxRequest<T>(path: string, init: { method?: string; body?
     body: init.body ? JSON.stringify(init.body) : undefined,
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`Mux ${res.status}`);
+  if (!res.ok) {
+    // De reden van Mux (bijvoorbeeld een planlimiet) is nodig om een mislukte upload te begrijpen.
+    const detail = (await res.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 200);
+    throw new Error(`Mux ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
   return (await res.json()) as T;
 }
 

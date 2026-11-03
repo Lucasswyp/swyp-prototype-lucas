@@ -41,7 +41,9 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json({ uploadId: upload.data.id, url: upload.data.url });
-  } catch {
-    return NextResponse.json({ error: "Upload voorbereiden is mislukt." }, { status: 502 });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "onbekend";
+    console.error("Mux upload aanmaken mislukt:", detail);
+    return NextResponse.json({ error: "Upload voorbereiden is mislukt.", detail }, { status: 502 });
   }
 }

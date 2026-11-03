@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { createProduct, updateProduct as updateProductRemote, deleteProduct as deleteProductRemote } from "@/lib/data";
+import { createProduct, removeAdVideo, updateProduct as updateProductRemote, deleteProduct as deleteProductRemote } from "@/lib/data";
 import { formatEuro, formatPrice } from "@/lib/utils";
 import type { Product, Category } from "@/types";
 
@@ -28,7 +28,7 @@ const emptyForm = {
 
 export default function ProductsPage() {
   const { businessId } = useBusiness();
-  const { products, refresh } = useData();
+  const { products, ads, refresh } = useData();
   const ownProducts = useMemo(() => products.filter((p) => p.companyId === businessId), [products, businessId]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -72,7 +72,15 @@ export default function ProductsPage() {
   }
 
   async function remove(p: Product) {
-    if (!confirm(`"${p.name}" verwijderen?`)) return;
+    if (!confirm(`"${p.name}" verwijderen? Ook de video's van dit product worden verwijderd.`)) return;
+    // De video's van dit product gaan mee weg; haal ze eerst bij Mux weg, anders blijven ze plekken innemen.
+    for (const ad of ads.filter((a) => a.productId === p.id)) {
+      try {
+        await removeAdVideo({ id: ad.id, videoUrl: ad.videoUrl });
+      } catch {
+        /* de video blijft dan staan; het product verwijderen gaat gewoon door */
+      }
+    }
     await deleteProductRemote(p.id);
     refresh();
   }

@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Pause, Play, BarChart3, Wallet } from "lucide-react";
+import { Plus, Pause, Play, BarChart3, Wallet, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
 import { MIN_TOP_UP, planTopUp } from "@/lib/campaignTopUp";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { fetchInteractionsForBusiness, fetchCampaignSpend, computeAnalytics, topUpCampaign, updateCampaignStatus as updateCampaignStatusRemote, type Interaction } from "@/lib/data";
+import { fetchInteractionsForBusiness, fetchCampaignSpend, computeAnalytics, topUpCampaign, removeAdVideo, updateCampaignStatus as updateCampaignStatusRemote, type Interaction } from "@/lib/data";
 import { formatEuro, formatNumber, cn } from "@/lib/utils";
 import type { Campaign, CampaignStatus } from "@/types";
 
@@ -22,7 +22,7 @@ const statusStyles: Record<CampaignStatus, string> = {
 
 export default function CampaignsPage() {
   const { businessId } = useBusiness();
-  const { campaigns, refresh } = useData();
+  const { campaigns, ads, refresh } = useData();
   const [filter, setFilter] = useState<CampaignStatus | "Alle">("Alle");
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [spend, setSpend] = useState<Record<string, { spent: number; today: number }>>({});
@@ -45,6 +45,19 @@ export default function CampaignsPage() {
   async function toggleStatus(id: string, status: CampaignStatus) {
     await updateCampaignStatusRemote(id, status === "Active" ? "Paused" : "Active");
     refresh();
+  }
+
+  async function removeVideo(c: Campaign) {
+    const ad = ads.find((a) => a.id === c.adId);
+    if (!ad) return;
+    if (!confirm(`De campagne "${c.name}" stoppen en de video definitief verwijderen? Dit kan niet ongedaan worden gemaakt. De cijfers blijven bewaard.`)) return;
+    try {
+      await updateCampaignStatusRemote(c.id, "Completed");
+      await removeAdVideo({ id: ad.id, videoUrl: ad.videoUrl });
+      refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Verwijderen is mislukt. Probeer het opnieuw.");
+    }
   }
 
   async function submitTopUp() {
@@ -167,6 +180,13 @@ export default function CampaignsPage() {
                             <Wallet size={14} /> Bijvullen
                           </button>
                         )}
+                        <button
+                          title="Stop en verwijder de video"
+                          onClick={() => removeVideo(c)}
+                          className="rounded-lg p-1.5 text-red-300/80 hover:bg-white/10"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                         <Link href={`/business/campaigns/${c.id}`} title="Analytics" className="rounded-lg p-1.5 hover:bg-white/10 block">
                           <BarChart3 size={15} />
                         </Link>

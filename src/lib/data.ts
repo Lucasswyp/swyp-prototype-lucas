@@ -2,6 +2,7 @@
    boundary layer that maps loosely-typed Supabase rows onto our strict
    internal types; the `any` params below are the raw row shape. */
 import { isUsableImageUrl } from "@/lib/imageUrl";
+import { muxPlaybackIdFromUrl, storagePathFromUrl } from "@/lib/muxAsset";
 import { CTA_DEFAULT_COLOR, normalizeCtaColor } from "@/lib/ctaColor";
 import { resizeImage } from "@/lib/imageUpload";
 import { createClient } from "@/lib/supabase/client";
@@ -390,6 +391,31 @@ export async function topUpCampaign(campaignId: string, plan: { totalBudget: num
 export async function updateCampaignStatus(campaignId: string, status: Campaign["status"]) {
   const supabase = createClient();
   const { error } = await supabase.from("campaigns").update({ status }).eq("id", campaignId);
+  if (error) throw error;
+}
+
+// De video van een advertentie echt weghalen (bij Mux of uit de eigen opslag) en uit de advertentie
+// wissen. Zo neemt hij geen ruimte of plek meer in. De cijfers van de advertentie blijven bewaard.
+export async function removeAdVideo(ad: { id: string; videoUrl: string }) {
+  const supabase = createClient();
+  if (muxPlaybackIdFromUrl(ad.videoUrl)) {
+    const res = await fetch("/api/video/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adId: ad.id }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Verwijderen van de video is mislukt.");
+    }
+  } else {
+    const path = storagePathFromUrl(ad.videoUrl);
+    if (path) {
+      const { error } = await supabase.storage.from("ad-videos").remove([path]);
+      if (error) throw error;
+    }
+  }
+  const { error } = await supabase.from("ads").update({ video_url: "" }).eq("id", ad.id);
   if (error) throw error;
 }
 

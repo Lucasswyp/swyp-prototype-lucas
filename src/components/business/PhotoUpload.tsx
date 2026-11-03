@@ -1,5 +1,6 @@
 "use client";
 
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { uploadAdImage } from "@/lib/data";
@@ -41,10 +42,7 @@ export function PhotoUpload({
   return (
     <div>
       <div className="flex items-center gap-3">
-        {imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="h-16 w-16 rounded-lg object-cover bg-white/5" />
-        )}
+        <SafeImage src={imageUrl} className="h-16 w-16 rounded-lg object-cover bg-white/5" />
         <button
           type="button"
           onClick={() => input.current?.click()}

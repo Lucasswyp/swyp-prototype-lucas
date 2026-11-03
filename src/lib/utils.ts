@@ -29,7 +29,8 @@ export function formatPercent(n: number, digits = 1): string {
   return `${n.toFixed(digits)}%`;
 }
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "";
   return new Intl.DateTimeFormat("nl-NL", { day: "numeric", month: "short", year: "numeric" }).format(
     new Date(iso)
   );

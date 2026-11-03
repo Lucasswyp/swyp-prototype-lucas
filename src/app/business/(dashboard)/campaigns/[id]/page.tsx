@@ -67,7 +67,7 @@ export default function CampaignAnalyticsPage({ params }: { params: Promise<{ id
         <div>
           <h1 className="font-heading text-2xl font-bold mb-1">{campaign.name}</h1>
           <p className="text-white/50 text-sm">
-            {campaign.objective} · {formatDate(campaign.startDate)} – {formatDate(campaign.endDate)}
+            {campaign.objective} · {campaign.startDate || campaign.endDate ? `${campaign.startDate ? formatDate(campaign.startDate) : "Direct"} – ${campaign.endDate ? formatDate(campaign.endDate) : "geen einddatum"}` : "Geen vaste looptijd"}
           </p>
         </div>
       </div>

@@ -172,7 +172,7 @@ export default function BusinessRewardsPage() {
             <img src={r.imageUrl} alt={r.title} className="w-full aspect-[16/10] object-cover" />
             <div className="p-4">
               <p className="font-semibold text-sm mb-1">{r.title}</p>
-              <p className="text-xs text-white/40 mb-2">Geldig t/m {formatDate(r.endDate)}</p>
+              <p className="text-xs text-white/40 mb-2">{r.endDate ? `Geldig t/m ${formatDate(r.endDate)}` : "Geen einddatum"}</p>
               <div className="flex items-center justify-between">
                 <TokenBadge amount={r.tokenCost} size="sm" />
                 <span className="text-xs text-white/40">
@@ -251,6 +251,20 @@ export default function BusinessRewardsPage() {
               ))}
             </select>
           </div>
+          <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!form.startDate && !form.endDate}
+              onChange={(e) =>
+                setForm((f) =>
+                  e.target.checked
+                    ? { ...f, startDate: "", endDate: "" }
+                    : { ...f, startDate: new Date().toISOString().slice(0, 10), endDate: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10) }
+                )
+              }
+            />
+            Geen begin- en einddatum (altijd geldig zolang er voorraad is)
+          </label>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Startdatum</label>

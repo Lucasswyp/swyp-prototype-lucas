@@ -1,5 +1,6 @@
 "use client";
 
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -133,8 +134,7 @@ export default function ProfilePage() {
             {savedPreview.length > 0 && (
               <div className="flex -space-x-2 shrink-0" aria-hidden>
                 {savedPreview.map((p) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={p.id} src={p.imageUrl} alt="" className="h-9 w-9 rounded-lg border-2 border-indigo object-cover" />
+                  <SafeImage key={p.id} src={p.imageUrl} className="h-9 w-9 rounded-lg border-2 border-indigo object-cover" />
                 ))}
               </div>
             )}

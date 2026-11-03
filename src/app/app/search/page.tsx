@@ -17,6 +17,7 @@ import { idFromObjectID, searchEverything, type AdSearchRecord, type SearchOutco
 import { clearRecentSearches, getSuggestions, loadRecentSearches, rememberSearch, type SuggestionSource } from "@/lib/searchSuggestions";
 import { useData } from "@/contexts/DataContext";
 import { cn } from "@/lib/utils";
+import { firstUsableImage } from "@/lib/imageUrl";
 import type { Company, Product, Reward, Category, RewardCategory } from "@/types";
 
 function hitToCompany(hit: Extract<SearchRecord, { type: "company" }>): Company {
@@ -394,6 +395,8 @@ export default function SearchPage() {
               const product = hitToProduct(hit);
               const company = hitToCompanyStub(hit.companyId, hit.companyName, hit.companyLogoUrl, hit.companyVerified);
               const productAd = visibleResults.ads.find((a) => a.productId === product.id);
+              // De zoekindex kan nog een oude of kapotte foto hebben: dan de foto van de app zelf, of de miniatuur van de video.
+              product.imageUrl = firstUsableImage(product.imageUrl, products.find((x) => x.id === product.id)?.imageUrl, productAd?.posterUrl);
               return (
                 <ProductCard
                   key={product.id}

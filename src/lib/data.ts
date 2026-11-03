@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- this module is the
    boundary layer that maps loosely-typed Supabase rows onto our strict
    internal types; the `any` params below are the raw row shape. */
+import { isUsableImageUrl } from "@/lib/imageUrl";
 import { CTA_DEFAULT_COLOR, normalizeCtaColor } from "@/lib/ctaColor";
 import { resizeImage } from "@/lib/imageUpload";
 import { createClient } from "@/lib/supabase/client";
@@ -90,8 +91,9 @@ function mapCampaign(r: any): Campaign {
     adId: r.ads?.[0]?.id ?? "",
     dailyBudget: Number(r.daily_budget),
     totalBudget: Number(r.total_budget),
-    startDate: r.start_date,
-    endDate: r.end_date,
+    // Geen datum betekent: geen begin of einde, de campagne loopt tot het budget op is.
+    startDate: r.start_date ?? "",
+    endDate: r.end_date ?? "",
     targeting: {
       ageMin: t.ageMin ?? 18,
       ageMax: t.ageMax ?? 45,
@@ -134,8 +136,8 @@ function mapReward(r: any): Reward {
     moneyValue: r.money_value ? Number(r.money_value) : undefined,
     terms: r.terms,
     stock: r.stock,
-    startDate: r.start_date,
-    endDate: r.end_date,
+    startDate: r.start_date ?? "",
+    endDate: r.end_date ?? "",
     redemptionMethod: r.redemption_method,
   };
 }
@@ -244,7 +246,12 @@ export async function fetchAll() {
     fetchCampaigns(),
     fetchRewards(),
   ]);
-  return { companies, products, ads, campaigns, rewards };
+  // Een product zonder bruikbare foto (leeg, of ooit het videobestand zelf) krijgt de miniatuur van
+  // zijn video, zodat het nergens kapot oogt.
+  const posterByProduct = new Map<string, string>();
+  for (const ad of ads) if (!posterByProduct.has(ad.productId) && isUsableImageUrl(ad.posterUrl)) posterByProduct.set(ad.productId, ad.posterUrl);
+  const fixedProducts = products.map((p) => (isUsableImageUrl(p.imageUrl) ? p : { ...p, imageUrl: posterByProduct.get(p.id) ?? "" }));
+  return { companies, products: fixedProducts, ads, campaigns, rewards };
 }
 
 // ---- Business mutations ----
@@ -304,8 +311,8 @@ export async function createReward(businessId: string, r: Omit<Reward, "id" | "c
     money_value: r.moneyValue ?? null,
     terms: r.terms,
     stock: r.stock,
-    start_date: r.startDate,
-    end_date: r.endDate,
+    start_date: r.startDate || null,
+    end_date: r.endDate || null,
     redemption_method: r.redemptionMethod,
   });
   if (error) throw error;
@@ -354,8 +361,8 @@ export async function createCampaign(
       status: c.status,
       daily_budget: c.dailyBudget,
       total_budget: c.totalBudget,
-      start_date: c.startDate,
-      end_date: c.endDate,
+      start_date: c.startDate || null,
+      end_date: c.endDate || null,
       targeting: c.targeting,
       reward_watch: FIXED_REWARDS.watch80,
       reward_like: FIXED_REWARDS.like,

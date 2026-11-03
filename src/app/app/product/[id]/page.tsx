@@ -1,8 +1,8 @@
 "use client";
 
+import { SafeImage } from "@/components/ui/SafeImage";
 import { use, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Star, Bookmark, Share2, Check } from "lucide-react";
 import { TopBar } from "@/components/consumer/TopBar";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
@@ -62,7 +62,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       <TopBar back transparent />
 
       <div className="relative -mt-14 w-full aspect-square">
-        <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+        <SafeImage src={product.imageUrl} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-indigo via-transparent to-transparent" />
       </div>
 

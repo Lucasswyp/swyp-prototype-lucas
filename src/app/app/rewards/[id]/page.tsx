@@ -92,7 +92,7 @@ export default function RewardDetailPage({ params }: { params: Promise<{ id: str
           <p className="text-white/70">{reward.terms}</p>
           <div className="flex justify-between pt-2 border-t border-white/8 mt-2">
             <span className="text-white/50">Geldig t/m</span>
-            <span>{formatDate(reward.endDate)}</span>
+            <span>{reward.endDate ? formatDate(reward.endDate) : "Geen einddatum"}</span>
           </div>
         </div>
 

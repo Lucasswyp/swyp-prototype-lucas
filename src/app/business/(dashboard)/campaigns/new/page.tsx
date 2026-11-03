@@ -1,5 +1,6 @@
 "use client";
 
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Upload } from "lucide-react";
@@ -60,6 +61,8 @@ export default function CreateCampaignPage() {
   const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [isFree, setIsFree] = useState(false);
+  // Geen begin- en einddatum: de campagne start direct en loopt tot het budget op is.
+  const [noDates, setNoDates] = useState(false);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -149,7 +152,7 @@ export default function CreateCampaignPage() {
         const created = await createProduct(businessId, {
           name: newProduct.name,
           description: newProduct.description,
-          imageUrl: newProduct.imageUrl || uploadedPoster || videoUrl,
+          imageUrl: newProduct.imageUrl || uploadedPoster,
           price: isFree ? 0 : newProduct.price,
           oldPrice: newProduct.oldPrice,
           category: newProduct.category,
@@ -177,8 +180,8 @@ export default function CreateCampaignPage() {
         adId,
         dailyBudget,
         totalBudget,
-        startDate,
-        endDate,
+        startDate: noDates ? "" : startDate,
+        endDate: noDates ? "" : endDate,
         targeting: { ageMin, ageMax, gender, location, radiusKm, interests },
         rewardRules: { ...FIXED_REWARDS },
       });
@@ -288,8 +291,7 @@ export default function CreateCampaignPage() {
                       productId === p.id ? "border-magenta bg-magenta/10" : "border-white/10 bg-white/5"
                     )}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.imageUrl} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+                    <SafeImage src={p.imageUrl} className="h-14 w-14 rounded-lg object-cover shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">{p.name}</p>
                       <p className="text-xs text-white/40 truncate">{formatPrice(p.price)}</p>
@@ -569,13 +571,17 @@ export default function CreateCampaignPage() {
               <label className="block text-sm font-medium mb-2">Totaalbudget (€)</label>
               <NumberField value={totalBudget} onChange={setTotalBudget} ariaLabel="Totaalbudget" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
             </div>
+            <label className="sm:col-span-2 flex items-center gap-2 text-sm text-white/70 cursor-pointer">
+              <input type="checkbox" checked={noDates} onChange={(e) => setNoDates(e.target.checked)} />
+              Geen begin- en einddatum: de campagne start direct en loopt door tot het budget op is
+            </label>
             <div>
               <label className="block text-sm font-medium mb-2">Startdatum</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
+              <input type="date" disabled={noDates} value={noDates ? "" : startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet disabled:opacity-40" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Einddatum</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
+              <input type="date" disabled={noDates} value={noDates ? "" : endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet disabled:opacity-40" />
             </div>
           </div>
         )}

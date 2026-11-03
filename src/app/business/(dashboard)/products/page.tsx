@@ -1,5 +1,6 @@
 "use client";
 
+import { SafeImage } from "@/components/ui/SafeImage";
 import { PhotoUpload } from "@/components/business/PhotoUpload";
 import { NumberField } from "@/components/ui/NumberField";
 import { useMemo, useState } from "react";
@@ -97,7 +98,7 @@ export default function ProductsPage() {
           {ownProducts.map((p) => (
             <Card key={p.id} className="overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.imageUrl} alt={p.name} className="w-full aspect-[16/10] object-cover" />
+              <SafeImage src={p.imageUrl} alt={p.name} className="w-full aspect-[16/10] object-cover" />
               <div className="p-4">
                 <div className="flex items-start justify-between mb-1">
                   <p className="font-semibold text-sm">{p.name}</p>

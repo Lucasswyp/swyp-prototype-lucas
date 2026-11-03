@@ -1,5 +1,5 @@
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
-import Image from "next/image";
 import { Bookmark } from "lucide-react";
 import { formatEuro, cn, formatPrice } from "@/lib/utils";
 import type { Product, Company } from "@/types";
@@ -21,12 +21,10 @@ export function ProductCard({
     <div className={cn("group relative rounded-2xl overflow-hidden border border-white/10 bg-white/[0.03]", className)}>
       <Link href={`/app/product/${product.id}`} className="block">
         <div className="relative aspect-[4/5] w-full">
-          <Image
+          <SafeImage
             src={product.imageUrl}
             alt={product.name}
-            fill
-            sizes="200px"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {product.oldPrice && (
             <span className="absolute top-2 left-2 rounded-full bg-magenta text-white text-[11px] font-bold px-2 py-0.5">

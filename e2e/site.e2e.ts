@@ -93,11 +93,11 @@ test.describe("de app als gast", () => {
     });
   });
 
-  test("feed laadt een video met bedrijf en productknop", async ({ page }) => {
+  test("feed laadt een video met een productknop (elk bedrijf kiest zijn eigen knoptekst)", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/app");
-    await expect(page.getByText("Bekijk product").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('a[href^="/app/product/"]').first()).toBeVisible({ timeout: 20_000 });
     expect(errors).toEqual([]);
   });
 
@@ -121,14 +121,14 @@ test.describe("de app als gast", () => {
     await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
   });
 
-  test("het i-tje is weg uit de knoppen en 'Bekijk product' brengt een gast naar het product", async ({ page }) => {
+  test("het i-tje is weg uit de knoppen en de productknop brengt een gast naar het product", async ({ page }) => {
     await page.goto("/app");
-    await expect(page.getByText("Bekijk product").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('a[href^="/app/product/"]').first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByLabel("Meer info")).toHaveCount(0);
     // Een gast krijgt eerst een inlogvenster; wegklikken zoals een echte bezoeker.
     const later = page.getByText("Later, ik wil eerst kijken");
     await later.first().waitFor({ timeout: 8_000 }).then(() => later.first().click()).catch(() => {});
-    await page.getByText("Bekijk product").first().click();
+    await page.locator('a[href^="/app/product/"]').first().click();
     await expect(page).toHaveURL(/\/app\/product\//, { timeout: 15_000 });
   });
 

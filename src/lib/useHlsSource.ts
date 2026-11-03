@@ -4,10 +4,16 @@ export function isHlsUrl(url: string | undefined) {
   return !!url && url.includes(".m3u8");
 }
 
-// Safari and iOS WebViews play HLS natively; Chrome and others need hls.js.
+// Safari en iOS (ook de app) spelen HLS zelf af en dat werkt daar het beste. Nieuwere versies van
+// Chrome en Edge zeggen ook "kan ik wel", maar daar start de video soms nooit; die gebruiken
+// daarom hls.js, wat betrouwbaar werkt.
 export function canPlayHlsNatively() {
-  if (typeof document === "undefined") return false;
-  return document.createElement("video").canPlayType("application/vnd.apple.mpegurl") !== "";
+  if (typeof document === "undefined" || typeof navigator === "undefined") return false;
+  if (document.createElement("video").canPlayType("application/vnd.apple.mpegurl") === "") return false;
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const isDesktopSafari = /Safari/.test(ua) && !/Chrome|Chromium|CriOS|Android|Edg|Firefox/.test(ua);
+  return isIOS || isDesktopSafari;
 }
 
 // Attaches an HLS source to a <video> element when the browser can't do it
@@ -24,7 +30,13 @@ export function useHlsSource(videoRef: RefObject<HTMLVideoElement | null>, url: 
     let cancelled = false;
     import("hls.js").then(({ default: Hls }) => {
       if (cancelled || !Hls.isSupported()) return;
-      const hls = new Hls({ maxBufferLength: 10, capLevelToPlayerSize: true });
+      const hls = new Hls({
+        maxBufferLength: 12,
+        capLevelToPlayerSize: true,
+        // Meteen op een redelijke kwaliteit beginnen in plaats van eerst vaag en dan scherp.
+        abrEwmaDefaultEstimate: 4_000_000,
+        startFragPrefetch: true,
+      });
       hlsRef.current = hls;
       hls.loadSource(url);
       hls.attachMedia(video);

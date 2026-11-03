@@ -3,8 +3,8 @@
 import posthog from "posthog-js";
 import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
 import { ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
-import { videoFit, type VideoFit } from "@/lib/videoFit";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { backdropUrl, videoFit, type VideoFit } from "@/lib/videoFit";
+import { memo, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,10 +32,11 @@ interface FeedCardProps {
   /** Immediately before/after the active card — worth preloading so the
    * swipe to it doesn't start from zero bytes buffered. */
   isNear?: boolean;
-  onSkip: () => void;
+  /** Gaat naar de volgende video; krijgt het id van deze advertentie mee zodat de functie stabiel kan blijven. */
+  onSkip: (adId: string) => void;
 }
 
-export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
+function FeedCardImpl({ ad, company, product, isActive, isNear, onSkip }: FeedCardProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const { needsHlsJs, hlsRef } = useHlsSource(videoRef, ad.videoUrl, !!(isActive || isNear));
@@ -55,6 +56,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   // Past de video zich aan: 9:16 vult het scherm, andere formaten worden niet afgesneden.
   const [fit, setFit] = useState<VideoFit>("cover");
+  const backdrop = backdropUrl(ad.posterUrl);
   const watch80FiredRef = useRef(false);
   const completeFiredRef = useRef(false);
   // Accumulated *actual playback* time (ms) while this card is active and not
@@ -77,7 +79,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
   }
 
   function handleBlock() {
-    return toggleBlock(company.id).then(() => onSkip());
+    return toggleBlock(company.id).then(() => onSkip(ad.id));
   }
 
   useEffect(() => {
@@ -140,15 +142,25 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     function onWaiting() {
       setBuffering(true);
     }
+    // Een stream (HLS, zoals Mux) haalt zijn stukjes zelf op en meldt vaak even "stalled" terwijl
+    // hij gewoon bezig is. Dan opnieuw laden (video.load()) breekt het ophalen telkens af en
+    // begint alles weer van voren: dat gaf het wachten en haperen bij het scrollen. Bij een stream
+    // laten we de speler dus met rust; alleen een ruw videobestand wordt opnieuw geladen.
+    const isStream = isHlsUrl(ad.videoUrl);
+
     function onError() {
       // A real media error (interrupted download, decode hiccup — more
       // common on a real device's variable connection than on a desktop
       // test) leaves the element in a broken state that play() alone can't
       // recover from. load() resets it so the next attemptPlay() has a
       // clean start instead of retrying against a dead element forever.
-      if (cancelled || !video || hlsRef.current) return;
+      if (cancelled || !video || hlsRef.current || isStream) return;
       video.load();
       window.setTimeout(attemptPlay, 300);
+    }
+    function onStalled() {
+      if (isStream) return;
+      onError();
     }
 
     attemptPlay();
@@ -157,7 +169,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     video.addEventListener("playing", onPlaying);
     video.addEventListener("waiting", onWaiting);
     video.addEventListener("error", onError);
-    video.addEventListener("stalled", onError);
+    video.addEventListener("stalled", onStalled);
 
     // Belt-and-suspenders: browsers don't always fire the above events when
     // expected on stock video CDNs, so poll for as long as this card stays
@@ -175,7 +187,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       // a socket that's stalled before it started.
       if (video.paused && video.readyState === 0) {
         stuckTicks += 1;
-        if (stuckTicks >= 8 && !hlsRef.current) {
+        if (stuckTicks >= 8 && !hlsRef.current && !isStream) {
           stuckTicks = 0;
           video.load();
           window.setTimeout(attemptPlay, 300);
@@ -203,11 +215,11 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("error", onError);
-      video.removeEventListener("stalled", onError);
+      video.removeEventListener("stalled", onStalled);
       window.clearInterval(retryInterval);
       window.clearTimeout(tapToPlayTimeout);
     };
-  }, [isActive, paused, hlsRef]);
+  }, [isActive, paused, hlsRef, ad.videoUrl]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -223,11 +235,16 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
 
   useEffect(() => {
     // Reset this card's local playback UI when it scrolls out of view, so it
-    // starts fresh next time the user swipes back to it.
+    // starts fresh next time the user swipes back to it. Pas na het scrollen:
+    // direct terugspoelen terwijl de kaart nog half zichtbaar is gaf een flits naar het beginbeeld.
     if (isActive) return;
-    if (videoRef.current) videoRef.current.currentTime = 0;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPaused(false);
+    const t = window.setTimeout(() => {
+      const video = videoRef.current;
+      if (video && video.currentTime > 0.2) video.currentTime = 0;
+    }, 700);
+    return () => window.clearTimeout(t);
   }, [isActive]);
 
   function handleTimeUpdate() {
@@ -421,11 +438,13 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     <div className="relative h-full w-full overflow-hidden bg-slate select-none">
       {/* De video staat vast: geen zijwaarts slepen. Omhoog en omlaag swipen blijft werken. */}
       <div className="h-full w-full">
-        {fit === "contain" && ad.posterUrl && (
+        {fit === "contain" && backdrop && (
+          // Een piepklein plaatje dat wordt opgerekt is vanzelf vaag; een blur-filter over het hele scherm
+          // maakte het scrollen zwaar.
           <div
             aria-hidden="true"
-            className="absolute inset-0 scale-125 bg-cover bg-center opacity-60 blur-2xl"
-            style={{ backgroundImage: `url(${ad.posterUrl})` }}
+            className="absolute inset-0 bg-cover bg-center opacity-60"
+            style={{ backgroundImage: `url(${backdrop})` }}
           />
         )}
         <video
@@ -582,3 +601,7 @@ export function FeedCard({ ad, company, product, isActive, isNear, onSkip }: Fee
     </div>
   );
 }
+
+// Alleen de kaarten waarvan iets verandert (actief of dichtbij) worden opnieuw getekend; de rest blijft
+// staan tijdens het scrollen.
+export const FeedCard = memo(FeedCardImpl);

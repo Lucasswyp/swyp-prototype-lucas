@@ -49,17 +49,18 @@ export default function FeedPage() {
     if (hasMore && index >= orderedAds.length - LOAD_MORE_THRESHOLD) loadMore();
   }
 
-  function scrollToIndex(index: number) {
+  // Stabiel (verandert niet bij elke scroll), zodat de video-kaarten niet steeds opnieuw getekend worden.
+  const orderedRef = useRef(orderedAds);
+  useEffect(() => {
+    orderedRef.current = orderedAds;
+  }, [orderedAds]);
+  const skipAd = useCallback((adId: string) => {
+    const index = orderedRef.current.findIndex((a) => a.id === adId);
     const el = containerRef.current;
-    if (!el) return;
-    el.scrollTo({ top: index * el.clientHeight, behavior: "smooth" });
-  }
-
-  function skip(index: number) {
-    if (index < orderedAds.length - 1) {
-      scrollToIndex(index + 1);
+    if (index !== -1 && index < orderedRef.current.length - 1 && el) {
+      el.scrollTo({ top: (index + 1) * el.clientHeight, behavior: "smooth" });
     }
-  }
+  }, []);
 
   // Pull-down-at-top gesture: "give me a fresh feed".
   const refreshFeed = useCallback(async () => {
@@ -146,8 +147,10 @@ export default function FeedPage() {
                 company={company}
                 product={product}
                 isActive={i === activeIndex}
-                isNear={Math.abs(i - activeIndex) === 1}
-                onSkip={() => skip(i)}
+                // De volgende twee video's en de vorige worden alvast geladen: sneller swipen
+                // en nog steeds geen wachttijd.
+                isNear={i !== activeIndex && i - activeIndex >= -1 && i - activeIndex <= 2}
+                onSkip={skipAd}
               />
             </div>
           );

@@ -36,3 +36,13 @@ export const MAX_VIDEO_SECONDS_TOLERANCE = 1;
 export function isVideoTooLong(durationSeconds: number): boolean {
   return Number.isFinite(durationSeconds) && durationSeconds > MAX_VIDEO_SECONDS + MAX_VIDEO_SECONDS_TOLERANCE;
 }
+
+/**
+ * Achtergrond voor een video die niet het hele scherm vult: het poster-plaatje, maar piepklein
+ * opgevraagd (Mux kan dat) en dan opgerekt. Voor andere plaatjes geen achtergrond.
+ */
+export function backdropUrl(posterUrl: string | undefined | null): string | null {
+  if (!posterUrl || !posterUrl.includes("image.mux.com")) return null;
+  const sep = posterUrl.includes("?") ? "&" : "?";
+  return `${posterUrl}${sep}width=48`;
+}

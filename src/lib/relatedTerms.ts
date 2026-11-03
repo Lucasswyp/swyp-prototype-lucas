@@ -157,3 +157,36 @@ export function relatedTermCount() {
   for (const list of normalizedTerms!) for (const t of list) all.add(t);
   return all.size;
 }
+
+export interface DictionaryTerm {
+  /** Zoals het getoond wordt (kleine letters, zoals in het woordenboek). */
+  text: string;
+  /** Zonder accenten en leestekens, voor vergelijken. */
+  norm: string;
+  /** Hoe belangrijk: lager is belangrijker (staat vooraan in een groep, in een vroege groep). */
+  weight: number;
+}
+
+let dictionaryCache: DictionaryTerm[] | null = null;
+
+/** Alle termen uit het woordenboek, ontdubbeld, voor het aanvullen tijdens het typen. */
+export function dictionaryTerms(): DictionaryTerm[] {
+  if (dictionaryCache) return dictionaryCache;
+  build();
+  const best = new Map<string, DictionaryTerm>();
+  groups!.forEach((group, gi) => {
+    group.terms.forEach((text, pos) => {
+      const norm = normalize(text);
+      if (!norm || norm.length < 2) return;
+      const weight = pos + gi * 0.2;
+      const prev = best.get(norm);
+      if (!prev || weight < prev.weight) best.set(norm, { text: text.toLowerCase(), norm, weight });
+    });
+  });
+  dictionaryCache = [...best.values()];
+  return dictionaryCache;
+}
+
+export function normalizeSearchText(s: string) {
+  return normalize(s);
+}

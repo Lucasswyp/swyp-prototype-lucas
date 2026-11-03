@@ -204,6 +204,21 @@ export async function fetchAdsPage(
   return { ads, hasMore: rows.length === limit };
 }
 
+// Video's op id ophalen, in dezelfde volgorde als de lijst. Alleen goedgekeurde video's.
+export async function fetchAdsByIds(ids: string[]): Promise<Ad[]> {
+  const unique = [...new Set(ids)].slice(0, 60);
+  if (unique.length === 0) return [];
+  const { data, error } = await createClient()
+    .from("ads")
+    .select("*")
+    .eq("moderation_status", "approved")
+    .in("id", unique);
+  if (error) throw error;
+  const ads = await withCampaignRewards(data ?? []);
+  const byId = new Map(ads.map((a) => [a.id, a]));
+  return unique.map((id) => byId.get(id)).filter((a): a is Ad => !!a);
+}
+
 export async function fetchCampaigns(): Promise<Campaign[]> {
   const supabase = createClient();
   const { data, error } = await supabase

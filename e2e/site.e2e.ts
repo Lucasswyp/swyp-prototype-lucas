@@ -143,6 +143,41 @@ test.describe("de app als gast", () => {
     await expect.poll(() => page.evaluate(() => document.querySelector("video")?.muted)).toBe(false);
   });
 
+  test("typen in zoeken geeft voorstellen die per letter preciezer worden", async ({ page }) => {
+    await page.goto("/app/search", { waitUntil: "domcontentloaded" });
+    const later = page.getByText("Later, ik wil eerst kijken");
+    await later.first().waitFor({ timeout: 10_000 }).then(() => later.first().click()).catch(() => {});
+    const input = page.getByPlaceholder("Zoek merken, producten, deals...");
+    await input.click();
+    const suggestions = page.getByTestId("search-suggestions").locator("button");
+    await input.pressSequentially("n", { delay: 60 });
+    await expect(suggestions.first()).toBeVisible({ timeout: 10_000 });
+    const withN = await suggestions.allInnerTexts();
+    expect(withN.length).toBeGreaterThan(3);
+    expect(withN.some((t) => /nike/i.test(t))).toBe(true);
+    expect(withN.some((t) => /nieuwe schoenen/i.test(t))).toBe(true);
+    await input.pressSequentially("ie", { delay: 60 });
+    await expect.poll(async () => (await suggestions.allInnerTexts()).every((t) => /^nie/i.test(t.trim()))).toBe(true);
+  });
+
+  test("zoekresultaten zijn video's: tik er een aan en je swipet door de video's bij je zoekopdracht", async ({ page }) => {
+    await page.goto("/app/search", { waitUntil: "domcontentloaded" });
+    const later = page.getByText("Later, ik wil eerst kijken");
+    await later.first().waitFor({ timeout: 10_000 }).then(() => later.first().click()).catch(() => {});
+    const input = page.getByPlaceholder("Zoek merken, producten, deals...");
+    await input.click();
+    await input.fill("match");
+    await input.press("Enter");
+    const tile = page.locator("button.aspect-\\[9\\/16\\]").first();
+    await expect(tile).toBeVisible({ timeout: 15_000 });
+    await tile.click();
+    await expect(page).toHaveURL(/\/app\/search\/feed\?q=match/, { timeout: 15_000 });
+    await expect(page.locator(".snap-start").first()).toBeVisible({ timeout: 15_000 });
+    await page.getByLabel("Terug naar zoekresultaten").click();
+    await expect(page).toHaveURL(/\/app\/search\?q=match/);
+    await expect(page.getByPlaceholder("Zoek merken, producten, deals...")).toHaveValue("match");
+  });
+
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {
     await page.goto("/app/search");
     await page.getByPlaceholder("Zoek merken, producten, deals...").fill("pizza");

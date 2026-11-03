@@ -1,6 +1,6 @@
 # App Store-inzending Swyp
 
-Alles wat je nodig hebt om Swyp in App Store Connect te zetten, in de volgorde van het formulier. Stand: 22 oktober 2026, versie 1.0 (build 18).
+Alles wat je nodig hebt om Swyp in App Store Connect te zetten, in de volgorde van het formulier. Stand: 3 november 2026, versie 1.0 (build 18). Alleen iPhone (geen iPad), alleen staand.
 
 Wat al in de app zit: privacy-manifest (`ios/App/App/PrivacyInfo.xcprivacy`), beschrijvingen bij camera en foto's, accountverwijdering in de app, Inloggen met Apple, melden en blokkeren, openbare supportpagina, privacybeleid en voorwaarden.
 
@@ -43,6 +43,9 @@ Zet de naam van de app en de categorie niet in de zoekwoorden; Apple telt die al
 > • Stuur een video naar een vriend en verdien extra tokens.
 > • Wissel je tokens in voor kortingscodes van bedrijven.
 > • Hou je streak vast: elke dag swipen levert een bonus op.
+>
+> ZOEKEN
+> Typ een letter en Swyp stelt meteen voor wat je zoekt, en elke letter erbij maakt het preciezer. Je zoekresultaat is een stroom video's, net als je feed.
 >
 > BERICHTEN
 > Stuur video's naar vrienden, chat met ze en reageer met een emoji. Je kunt gebruikers blokkeren en melden.
@@ -134,23 +137,22 @@ Haptiek en de native deelmelding zitten in build 18, dus de goedkoopste winst te
 
 ## 7. Schermafbeeldingen
 
-Verplicht: 6,9 inch (1320 × 2868) en 6,5 inch (1284 × 2778). Minstens 3, het liefst 6. Gebruik echte video's met echte producten; met één testvideo ziet het er leeg uit. Voorstel:
+Klaar in `docs/app-store/screenshots/`: de kale schermen en de versies met een kop erboven (`met-kop/`), allemaal 1320 x 2868 (6,9 inch), genomen met je echte video's van swyp.it:
 
-1. **Feed:** "Swipe door video's en verdien tokens" (met een mooie video en een zichtbaar tokensaldo).
-2. **Bedrijfsprofiel:** "Alle video's van een bedrijf op een rij".
-3. **Zoeken:** "Vind video's bij wat je zoekt".
-4. **Rewards:** "Wissel je tokens in voor echte kortingen".
-5. **Berichten:** "Stuur video's naar vrienden en verdien extra".
-6. **Streak en wallet:** "Elke dag swipen, elke dag een bonus".
+1. **Feed:** "Swipe door video's en verdien tokens"
+2. **Bedrijfsprofiel:** "Alle video's van een bedrijf op een rij"
+3. **Zoeken met voorstellen:** "Zoeken die met je meedenkt"
+4. **Zoekresultaten als video's:** "Zoek en krijg meteen video's"
+5. **Rewards:** "Wissel je tokens in voor echte kortingen"
 
-Maak ze met je demo-account in de TestFlight-app op een iPhone 15 Pro Max of 16 Pro Max, of in de simulator. Tip: zodra er 5 tot 10 echte video's staan.
+Upload de bestanden uit `met-kop/` in App Store Connect bij 6,9 inch (Apple schaalt ze naar de kleinere formaten). Wil je er een zesde bij met Berichten of Wallet, maak die dan met je demo-account op een iPhone of in de simulator. De app is alleen voor iPhone, dus er zijn geen iPad-schermen nodig.
 
 ## 8. Stappen voor jou
 
 Dingen die alleen met jouw logins kunnen:
 
 1. **developer.apple.com, Certificates, Identifiers & Profiles, Identifiers, it.swyp.app:** zet "Associated Domains" aan en sla op (nodig voor universele links). Laat Xcode daarna automatisch het profiel vernieuwen.
-2. **Build 18 uploaden** zoals build 17 (nieuw app-specifiek wachtwoord uit de sleutelhanger, nooit in de chat).
+2. **Build 18 opnieuw maken en uploaden** (nieuw app-specifiek wachtwoord uit de sleutelhanger, nooit in de chat). Het bevat nu de echte opstartafbeelding, alleen iPhone en alleen staand. Let op: de Apple-inlogplug-in moet eerst Capacitor 8 toestaan, anders bouwt Xcode niet (zie het bericht van Claude).
 3. **App Store Connect:** nieuwe app, vul secties 1 tot 4 hierboven in, upload de schermafbeeldingen, kies build 18.
 4. **Demo-accounts maken:** een consument, een tweede consument (om berichten te laten zien) en een bedrijf. Wachtwoorden vul jij zelf in.
 5. **Juridisch:** privacybeleid en voorwaarden laten controleren voordat je indient (zie `docs/verwerkingsoverzicht.md`).

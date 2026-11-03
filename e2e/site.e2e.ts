@@ -110,15 +110,15 @@ test.describe("de app als gast", () => {
   });
 
   test("de knoppen in de feed zijn standaard het glazen kapsel, en het klassieke ontwerp blijft te kiezen", async ({ page }) => {
-    await page.goto("/app");
-    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
-    await page.goto("/app?knoppen=a");
-    await expect(page.getByLabel("Opslaan")).toBeVisible({ timeout: 20_000 });
+    await page.goto("/app", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("Bewaar", { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+    await page.goto("/app?knoppen=a", { waitUntil: "domcontentloaded" });
+    await expect(page.getByLabel("Opslaan").first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("Bewaar", { exact: true })).toHaveCount(0);
-    await page.goto("/app"); // de keuze voor klassiek blijft staan
+    await page.goto("/app", { waitUntil: "domcontentloaded" }); // de keuze voor klassiek blijft staan
     await expect(page.getByText("Bewaar", { exact: true })).toHaveCount(0);
-    await page.goto("/app?knoppen=b");
-    await expect(page.getByText("Bewaar", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await page.goto("/app?knoppen=b", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("Bewaar", { exact: true }).first()).toBeVisible({ timeout: 20_000 });
   });
 
   test("het i-tje is weg uit de knoppen en de productknop brengt een gast naar het product", async ({ page }) => {

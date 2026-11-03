@@ -76,7 +76,7 @@ Goede branches om mee te beginnen: restaurants en koffiebars, sportscholen en yo
 
 Zoek op Google Maps en Instagram naar bijvoorbeeld: "koffie Haarlem", "sportschool Hoofddorp", "kapper Amsterdam", "streetwear webshop Nederland". Kies bedrijven die actief posten op Instagram of TikTok; die hebben al video's.
 
-Neem per bedrijf op: naam, branche, plaats, contactpersoon (zoek de eigenaar op Instagram of LinkedIn), kanaal.
+Neem per bedrijf op: naam, branche, plaats, contactpersoon (zoek de eigenaar op Instagram of LinkedIn), kanaal. De lijst in docs/adverteerderslijst.csv bevat al 39 bedrijven met openbare zakelijke contactgegevens als startpunt; kijk bij elk even of ze echt video's posten en nog open zijn.
 
 ### Eerste bericht (WhatsApp, Instagram of e-mail)
 > Hoi [naam], ik ben Lucas van Swyp. Wij zijn een nieuwe app waarin mensen korte video's van lokale bedrijven bekijken en daar punten voor krijgen die ze bij de bedrijven inwisselen voor een korting. Ik zoek een paar bedrijven die in de beginfase gratis meedoen, in ruil voor eerlijke feedback. Jij levert één video, wij zetten hem live, en je ziet hoeveel mensen hem bekijken, liken en doorklikken. Heb je 15 minuten om het te bespreken?

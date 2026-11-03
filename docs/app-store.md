@@ -121,10 +121,12 @@ Swyp is een web-app in een iOS-schil (Capacitor). Apple wijst apps af die "allee
 - Pushmeldingen (streak-herinnering en nieuwe berichten).
 - Inloggen met Apple.
 - Toegang tot camera en fotobibliotheek voor je profielfoto.
-- Delen via het systeem en universele links (na build 18 en Associated Domains).
+- Haptische feedback (trilling) bij liken, bewaren en het verdienen van tokens, met bijpassende beloningsanimaties.
+- Delen via de native deelmelding van iOS en universele links (na build 18 en Associated Domains).
+- Een lanceeranimatie met het merklogo bij een koude start.
 - Een eigen economie met tokens, beloningen en kortingscodes die niet op de website te gebruiken is zonder account.
 
-Wil je dit risico verkleinen? De goedkoopste winst is haptische feedback bij liken en een tokenbonus, en een native share-sheet. Dat kan ik toevoegen, maar het vraagt een nieuwe build.
+Haptiek en de native deelmelding zitten in build 18, dus de goedkoopste winst tegen dit risico is al binnen. Noem ze in de reviewernotities: "De app gebruikt native haptiek, pushmeldingen, Inloggen met Apple, camera/foto's en de iOS-deelmelding en is niet alleen een website in een schil." Bij een afwijzing op 4.2 zeg het mij; dan voeg ik nog een native onderdeel toe (bijvoorbeeld een badge op het app-icoon voor ongelezen berichten).
 
 ## 6. Exportcompliance
 

@@ -1,8 +1,40 @@
-﻿Nr;Bedrijf;Branche;Plaats;Contactpersoon;Kanaal (WhatsApp/Instagram/E-mail/Bellen);Eerste bericht (datum);Opvolging (datum);Reactie;Gesprek gepland (datum en tijd);Status (nieuw/benaderd/reactie/gesprek/aangemeld/live/geen reactie/afgewezen);Notities
-1;;;;;;;;;;nieuw;
-2;;;;;;;;;;nieuw;
-3;;;;;;;;;;nieuw;
-4;;;;;;;;;;nieuw;
-5;;;;;;;;;;nieuw;
-6;;;;;;;;;;nieuw;
-7;;;;;;;;;;nieuw;
+﻿Nr;Bedrijf;Branche;Plaats;Contactpersoon;Kanaal (WhatsApp/Instagram/E-mail/Bellen);Contactgegeven (openbaar, zakelijk);Eerste bericht (datum);Opvolging (datum);Reactie;Gesprek gepland (datum en tijd);Status (nieuw/benaderd/reactie/gesprek/aangemeld/live/geen reactie/afgewezen);Notities
+1;Coffee Habits;Koffiebar;Haarlem;;E-mail;info@coffeehabits.nl;;;;;nieuw;Specialty coffee, twee zaken in centrum, Instagram @coffeehabits.haarlem (check zelf of ze video's posten)
+2;Ax Specialty Coffee;Koffiebar;Haarlem;;E-mail;axel@axspecialtycoffee.nl;;;;;nieuw;Piepklein koffiezaakje met eigen Instagram @axspecialtycoffee, zeer goed beoordeeld (check zelf of ze video's posten)
+3;Artesano Bakkerij;Bakkerij;Haarlem;;E-mail;info@artesanobakkerij.com;;;;;nieuw;Zelfstandige bakkerij aan Tempeliersstraat, Instagram @artesanobakkerij (check zelf of ze video's posten)
+4;Native Haarlem;Koffiebar;Haarlem;;E-mail;info@nativehaarlem.nl;;;;;nieuw;Zelfstandige koffiebar aan de Breestraat, bekend in Haarlemse koffielijstjes (check zelf of ze video's posten)
+5;Café Trouw;Lunchroom;Haarlem;;E-mail;info@cafetrouw.nl;;;;;nieuw;Eigen zaak aan Koningstraat, actief Instagram-account @cafe.trouw (check zelf of ze video's posten)
+6;Hofje zonder Zorgen;Lunchroom;Haarlem;;E-mail;info@hofjezonderzorgen.nl;;;;;nieuw;Lunchroom in een hofje, enige vestiging, Instagram @hofjezonderzorgen (check zelf of ze video's posten)
+7;Gelateria Bartoli;IJssalon;Haarlem;;Website;https://www.bartoli.nl/contact/;;;;;nieuw;Ambachtelijk schepijs, 35+ smaken, seizoenszaak maart tot oktober (check zelf of ze video's posten)
+8;IJscafé Da Benito;IJssalon;Haarlem;;Instagram;@ijscafedabenito;;;;;nieuw;IJscafé aan Soendaplein, verhuurt ook ijskar, Instagram actief (check zelf of ze video's posten)
+9;MOOCA;Lunchroom;Hoofddorp;;E-mail;info@mooca.nl;;;;;nieuw;Koffiebar met lunch, won Lekkerste Lunchroombroodje van Nederland 2024 (check zelf of ze video's posten)
+10;KASTAN;Restaurant;Hoofddorp;;E-mail;info@kastan.nl;;;;;nieuw;Zelfstandig restaurant bij station, Instagram @kastan_hoofddorp (check zelf of ze video's posten)
+11;Masami Fusion Cuisine;Restaurant;Hoofddorp;;E-mail;info@masami.nl;;;;;nieuw;Asian fusion en sushi, Instagram @masamifusioncuisine (check zelf of ze video's posten)
+12;Boka's Koffiebar;Koffiebar;Amsterdam;;E-mail;info@bokas.nl;;;;;nieuw;Buurtkoffiebar Van der Pekstraat, Amsterdam Noord, Instagram @bokas_amsterdam (check zelf of ze video's posten)
+13;Ulmus Bakkerij;Bakkerij;Amsterdam;;E-mail;info@ulmusbakkerij.nl;;;;;nieuw;Desembrood en gebak, eigen webshop met bestellijst (check zelf of ze video's posten)
+14;Darios Barbers;Barbershop;Haarlem;Dario Braun;Instagram;@dariosbarbers.nl;;;;;nieuw;Zeven werkplekken, Instagram-feed met reels, eigenaar werkt zelf in de zaak (check zelf of ze video's posten)
+15;Wilson's Barbershop;Barbershop;Haarlem;Lloyd Wilson;E-mail;info@wilsonsbarbershop.nl;;;;;nieuw;Zelfstandige barbershop sinds 2016 met eigen Instagram en TikTok (check zelf of ze video's posten)
+16;Barbershop Noubar;Barbershop;Haarlem;;Instagram;@barbershopnoubar;;;;;nieuw;Kleine barbershop sinds 2023 in het centrum, actief op Instagram (check zelf of ze video's posten)
+17;Mad Daddy's Barbershop;Barbershop;Haarlem;;E-mail;barbershop@maddaddys.nl;;;;;nieuw;Lokale barbershop in de Vijfhoek met eigen Instagram (check zelf of ze video's posten)
+18;Barbershop Hardi;Barbershop;Amsterdam;;E-mail;info@barbershophardi.nl;;;;;nieuw;Kleine buurtbarbershop met veel reviews en Instagram-account (check zelf of ze video's posten)
+19;CrossFit Hoofddorp;CrossFit;Hoofddorp;David Wamsteker;E-mail;info@crossfithoofddorp.nl;;;;;nieuw;Zelfstandige box met eigen Instagram, eigenaar staat vermeld op CrossFit-lijst (check zelf of ze video's posten)
+20;CrossFit Haarlem;CrossFit;Haarlem;Willem Oudemans;E-mail;info@crossfithaarlem.nl;;;;;nieuw;Zelfstandige box met eigen Instagram, oprichter en coach is aanspreekpunt (check zelf of ze video's posten)
+21;De Krachtbox;Sportschool;Haarlem;;E-mail;info@dekrachtbox.nl;;;;;nieuw;Kleinschalige bootcamp- en boksstudio met eigen Instagram (check zelf of ze video's posten)
+22;Pilates Noord;Pilates;Amsterdam;;E-mail;info@pilatesnoord.nl;;;;;nieuw;Kleine zelfstandige pilatesstudio in Amsterdam-Noord met zakelijk e-mailadres (check zelf of ze video's posten)
+23;Studio AnnaMora;Pilates;Amsterdam;;E-mail;info@studioannamora.com;;;;;nieuw;Zelfstandige studio in het centrum sinds 2004 met eigen Instagram (check zelf of ze video's posten)
+24;YogaZenter;Yoga;Amsterdam;;E-mail;info@yogazenter.nl;;;;;nieuw;Zelfstandige yogastudio in Amsterdam-Oost met eigen Instagram (check zelf of ze video's posten)
+25;Yogastudio BE;Yoga;Haarlem;;E-mail;bewelcome@yogastudiobe.nl;;;;;nieuw;Kleine yogastudio met twee Haarlemse locaties, persoonlijke sfeer (check zelf of ze video's posten)
+26;Skinz Clinic;Beautysalon;Hoofddorp;Lisa;Instagram;@skinzclinic.nl;;;;;nieuw;Eigenaar Lisa runt zelf de salon, actief op Instagram (check zelf of ze video's posten)
+27;STYGR;Kleding (eigen merk);Haarlem;Florine en Paulette Stijger;E-mail;webshop@stygr.com;;;;;nieuw;Handgemaakte bomberjacks van twee zussen uit Haarlem, actief op Instagram en TikTok. (check zelf of ze video's posten)
+28;CÉ Official;Kleding (eigen merk);Haarlem;;E-mail;info@ce-official.nl;;;;;nieuw;Eigen slow-fashionlabel met atelier en winkel in Haarlem, Instagram-account aanwezig. (check zelf of ze video's posten)
+29;Drifter Store;Kleding boetiek;Haarlem;;E-mail;webshop@drifterstore.nl;;;;;nieuw;Haarlemse lifestyle- en modeboetiek met webshop en actief Instagram-account. (check zelf of ze video's posten)
+30;Kloffie;Kleding en sneakers boetiek;Haarlem;;E-mail;info@kloffiehaarlem.nl;;;;;nieuw;Multibrand herenboetiek en sneakerwinkel in Haarlem met webshop en Instagram. (check zelf of ze video's posten)
+31;u n t i t l e d haarlem;Kleding boetiek;Haarlem;;E-mail;info@untitled-haarlem.nl;;;;;nieuw;Damesboetiek met webshop en eigen label naast merken, Instagram-account. (check zelf of ze video's posten)
+32;De Popshop Haarlem;Alternatieve kleding en accessoires;Haarlem;;E-mail;info@depopshop.nl;;;;;nieuw;Alternatieve kleding en collectibles in Haarlem, webshop en Instagram. (check zelf of ze video's posten)
+33;PRJCT AMS;Kleding (eigen label);Amsterdam;;E-mail;webshop@prjctams.nl;;;;;nieuw;Herenboetiek met eigen label en jonge ontwerpers, webshop en Instagram. (check zelf of ze video's posten)
+34;The Maker Store;Cadeaus en accessoires;Amsterdam;;E-mail;hello@themakerstore.nl;;;;;nieuw;Concept store met cadeaus en mode van Amsterdamse makers, Instagram-account. (check zelf of ze video's posten)
+35;Pockies;Kleding (eigen merk);Amsterdam;;E-mail;support@pockies.com;;;;;nieuw;Amsterdams loungewear-merk (boxershort met zakken), actief op Instagram en TikTok. (check zelf of ze video's posten)
+36;Maha Amsterdam;Kleding en sneakers boetiek;Amsterdam;;E-mail;info@maha-amsterdam.com;;;;;nieuw;Boetiek voor sneakers en kleding met webshop, Instagram en TikTok. (check zelf of ze video's posten)
+37;New Amsterdam Surf Association;Kleding (eigen merk);Amsterdam;Paul Zepe;E-mail;service@newamsterdamsurf.com;;;;;nieuw;Surf-streetwearmerk met eigen winkel in centrum, Instagram en TikTok. (check zelf of ze video's posten)
+38;The New Originals;Kleding (eigen merk);Amsterdam;;E-mail;support@theneworiginals.eu;;;;;nieuw;Amsterdams streetwearlabel sinds 2015 met webshop, Instagram-account. (check zelf of ze video's posten)
+39;In Gold We Trust;Kleding (eigen merk);Amsterdam;;E-mail;klantenservice@ingoldwetrust-official.com;;;;;nieuw;Amsterdams herenstreetwearlabel met webshop en winkel, Instagram en TikTok. (check zelf of ze video's posten)

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { useData } from "@/contexts/DataContext";
-import { createProduct, createAd, createCampaign, uploadAdVideo, uploadAdImage, FIXED_REWARDS } from "@/lib/data";
+import { createProduct, updateProduct, createAd, createCampaign, uploadAdVideo, uploadAdImage, FIXED_REWARDS } from "@/lib/data";
+import { PhotoUpload } from "@/components/business/PhotoUpload";
 import { NumberField } from "@/components/ui/NumberField";
 import { CTA_DEFAULT_COLOR, CTA_PRESETS, ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
 import { MAX_VIDEO_SECONDS, describeVideoFormat, isVideoTooLong, videoFit } from "@/lib/videoFit";
@@ -61,8 +62,6 @@ export default function CreateCampaignPage() {
   const [isFree, setIsFree] = useState(false);
   const [thumbFile, setThumbFile] = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
@@ -108,13 +107,6 @@ export default function CreateCampaignPage() {
     setThumbPreview(URL.createObjectURL(file));
   }
 
-  function handleProductImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setProductImageFile(file);
-    setProductImagePreview(URL.createObjectURL(file));
-  }
-
   async function handlePublish() {
     if (!videoFile) {
       setUploadError("Upload eerst een video.");
@@ -148,7 +140,6 @@ export default function CreateCampaignPage() {
         videoUrl = await uploadAdVideo(businessId, videoFile);
       }
       if (thumbFile) uploadedPoster = await uploadAdImage(businessId, thumbFile);
-      const uploadedProductImage = productImageFile ? await uploadAdImage(businessId, productImageFile) : "";
       setUploading(false);
       setUploadProgress(null);
 
@@ -158,7 +149,7 @@ export default function CreateCampaignPage() {
         const created = await createProduct(businessId, {
           name: newProduct.name,
           description: newProduct.description,
-          imageUrl: uploadedProductImage || newProduct.imageUrl || uploadedPoster || videoUrl,
+          imageUrl: newProduct.imageUrl || uploadedPoster || videoUrl,
           price: isFree ? 0 : newProduct.price,
           oldPrice: newProduct.oldPrice,
           category: newProduct.category,
@@ -286,6 +277,7 @@ export default function CreateCampaignPage() {
             </div>
 
             {mode === "existing" ? (
+              <div className="flex flex-col gap-4">
               <div className="grid sm:grid-cols-2 gap-3">
                 {ownProducts.map((p) => (
                   <button
@@ -307,6 +299,24 @@ export default function CreateCampaignPage() {
                 {ownProducts.length === 0 && (
                   <p className="text-sm text-white/40">Je hebt nog geen producten. Kies &quot;Nieuw product&quot;.</p>
                 )}
+              </div>
+              {selectedExistingProduct && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 text-white/60">
+                    Productfoto van &quot;{selectedExistingProduct.name}&quot; wijzigen (optioneel)
+                  </label>
+                  <PhotoUpload
+                    businessId={businessId}
+                    imageUrl={selectedExistingProduct.imageUrl}
+                    changeLabel="Andere productfoto kiezen"
+                    onChange={async (url) => {
+                      await updateProduct({ ...selectedExistingProduct, imageUrl: url });
+                      refresh();
+                    }}
+                  />
+                  <p className="mt-1.5 text-[11px] text-white/40">De nieuwe foto geldt meteen voor dit product.</p>
+                </div>
+              )}
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
@@ -366,17 +376,12 @@ export default function CreateCampaignPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium mb-1.5 text-white/60">Productfoto (optioneel)</label>
-                  <div className="flex items-center gap-3">
-                    {productImagePreview && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={productImagePreview} alt="" className="h-14 w-14 rounded-lg object-cover" />
-                    )}
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm hover:border-violet/50">
-                      <Upload size={16} className="text-white/50" />
-                      {productImagePreview ? "Andere foto kiezen" : "Foto uploaden"}
-                      <input type="file" accept="image/*" onChange={handleProductImageSelect} className="hidden" />
-                    </label>
-                  </div>
+                  <PhotoUpload
+                    businessId={businessId}
+                    imageUrl={newProduct.imageUrl || undefined}
+                    onChange={(url) => setNewProduct((p) => ({ ...p, imageUrl: url }))}
+                    label="Productfoto uploaden"
+                  />
                   <input
                     value={newProduct.imageUrl}
                     onChange={(e) => setNewProduct((p) => ({ ...p, imageUrl: e.target.value }))}
@@ -534,7 +539,7 @@ export default function CreateCampaignPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Radius (km)</label>
-                <input type="number" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
+                <NumberField value={radiusKm} onChange={setRadiusKm} ariaLabel="Radius in kilometers" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
               </div>
             </div>
             <div>

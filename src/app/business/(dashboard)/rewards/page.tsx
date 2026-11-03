@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberField } from "@/components/ui/NumberField";
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -219,19 +220,19 @@ export default function BusinessRewardsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Token cost</label>
-              <input
-                type="number"
+              <NumberField
                 value={form.tokenCost}
-                onChange={(e) => setForm((f) => ({ ...f, tokenCost: Number(e.target.value) }))}
+                onChange={(tokenCost) => setForm((f) => ({ ...f, tokenCost }))}
+                ariaLabel="Token cost"
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
               />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Voorraad</label>
-              <input
-                type="number"
+              <NumberField
                 value={form.stock}
-                onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) }))}
+                onChange={(stock) => setForm((f) => ({ ...f, stock }))}
+                ariaLabel="Voorraad"
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
               />
             </div>

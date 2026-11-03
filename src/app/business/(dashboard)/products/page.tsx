@@ -1,5 +1,7 @@
 "use client";
 
+import { PhotoUpload } from "@/components/business/PhotoUpload";
+import { NumberField } from "@/components/ui/NumberField";
 import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -144,19 +146,23 @@ export default function ProductsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Prijs (€)</label>
-              <input
-                type="number"
+              <NumberField
+                allowDecimals
                 value={form.price}
-                onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+                onChange={(price) => setForm((f) => ({ ...f, price }))}
+                ariaLabel="Prijs"
+                placeholder="0 (gratis)"
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
               />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Oude prijs (optioneel)</label>
-              <input
-                type="number"
-                value={form.oldPrice ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, oldPrice: e.target.value ? Number(e.target.value) : undefined }))}
+              <NumberField
+                allowDecimals
+                value={form.oldPrice ?? 0}
+                onChange={(n) => setForm((f) => ({ ...f, oldPrice: n > 0 ? n : undefined }))}
+                ariaLabel="Oude prijs"
+                placeholder=""
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
               />
             </div>
@@ -185,11 +191,19 @@ export default function ProductsPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1.5 text-white/60">Productfoto URL</label>
+            <label className="block text-xs font-medium mb-1.5 text-white/60">Productfoto</label>
+            <PhotoUpload
+              businessId={businessId}
+              imageUrl={form.imageUrl}
+              onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+              label="Productfoto uploaden"
+              changeLabel="Andere productfoto kiezen"
+            />
             <input
+              placeholder="of plak een link naar een foto (https://...)"
+              className="mt-2 w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
               value={form.imageUrl}
               onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-              className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
             />
           </div>
           <Button fullWidth className="mt-2" disabled={!form.name || saving} onClick={save}>

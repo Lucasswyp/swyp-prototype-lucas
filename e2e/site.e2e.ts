@@ -132,16 +132,15 @@ test.describe("de app als gast", () => {
     await expect(page).toHaveURL(/\/app\/product\//, { timeout: 15_000 });
   });
 
-  test("het geluid staat uit en gaat aan met de geluidsknop", async ({ page }) => {
+  test("het geluid staat altijd aan: er is geen knop om het uit te zetten", async ({ page }) => {
     await page.goto("/app");
     const later = page.getByText("Later, ik wil eerst kijken");
     await later.first().waitFor({ timeout: 8_000 }).then(() => later.first().click()).catch(() => {});
-    const on = page.getByLabel("Geluid aan").first();
-    await expect(on).toBeVisible({ timeout: 20_000 });
-    await on.click();
-    await expect(page.getByLabel("Geluid uit").first()).toBeVisible();
-    await page.getByLabel("Geluid uit").first().click();
-    await expect(page.getByLabel("Geluid aan").first()).toBeVisible();
+    await expect(page.locator('a[href^="/app/product/"]').first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByLabel(/Geluid (aan|uit)/)).toHaveCount(0);
+    // Na de eerste aanraking staat de video in beeld niet meer op "gedempt".
+    await page.mouse.click(10, 10);
+    await expect.poll(() => page.evaluate(() => document.querySelector("video")?.muted)).toBe(false);
   });
 
   test("zoeken geeft zonder fout een antwoord", async ({ page }) => {

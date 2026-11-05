@@ -18,7 +18,6 @@ import { MAX_VIDEO_SECONDS, describeVideoFormat, isVideoTooLong, videoFit } from
 import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
 import { formatPrice, cn } from "@/lib/utils";
 import type { CampaignObjective, Category, Product } from "@/types";
-import { interestOptions } from "@/data/seed";
 
 const objectives: CampaignObjective[] = [
   "Brand awareness",
@@ -31,7 +30,11 @@ const objectives: CampaignObjective[] = [
 
 const categories: Category[] = ["Fashion", "Food", "Tech", "Fitness", "Travel", "Beauty", "Events", "Days Out", "Restaurants"];
 
-const steps = ["Doel", "Advertentie", "Targeting", "Budget", "Preview", "Publiceren"];
+const steps = ["Doel", "Advertentie", "Budget", "Preview", "Publiceren"];
+
+// Zo bereikt een campagne nu iedereen. Gericht adverteren op leeftijd, geslacht of plaats gebeurt nog niet,
+// dus we vragen er ook niet naar; deze waarden betekenen "iedereen".
+const REACH_EVERYONE = { ageMin: 16, ageMax: 65, gender: "Alle" as const, location: "Nederland", radiusKm: 0, interests: [] as Category[] };
 
 export default function CreateCampaignPage() {
   const router = useRouter();
@@ -74,12 +77,6 @@ export default function CreateCampaignPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
-  const [ageMin, setAgeMin] = useState(18);
-  const [ageMax, setAgeMax] = useState(35);
-  const [gender, setGender] = useState<"Alle" | "Man" | "Vrouw">("Alle");
-  const [location, setLocation] = useState("Nederland");
-  const [radiusKm, setRadiusKm] = useState(50);
-  const [interests, setInterests] = useState<Category[]>([business.category as Category]);
   const [dailyBudget, setDailyBudget] = useState(75);
   const [totalBudget, setTotalBudget] = useState(2250);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -94,10 +91,6 @@ export default function CreateCampaignPage() {
     mode === "existing"
       ? selectedExistingProduct
       : ({ ...newProduct, price: isFree ? 0 : newProduct.price, id: "new", companyId: businessId, rating: 5, highlights: [] } as Product);
-
-  function toggleInterest(cat: Category) {
-    setInterests((s) => (s.includes(cat) ? s.filter((c) => c !== cat) : [...s, cat]));
-  }
 
   function handleVideoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -187,13 +180,13 @@ export default function CreateCampaignPage() {
         totalBudget,
         startDate: noDates ? "" : startDate,
         endDate: noDates ? "" : endDate,
-        targeting: { ageMin, ageMax, gender, location, radiusKm, interests },
+        targeting: REACH_EVERYONE,
         rewardRules: { ...FIXED_REWARDS },
       });
 
       refresh();
       setPublished(campaignId);
-      setStep(5);
+      setStep(4);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Er ging iets mis bij het publiceren.");
     } finally {
@@ -528,56 +521,6 @@ export default function CreateCampaignPage() {
         )}
 
         {step === 2 && (
-          <div className="flex flex-col gap-5">
-            <div>
-              <label className="block text-sm font-medium mb-2">Leeftijd: {ageMin} – {ageMax}</label>
-              <div className="flex gap-3">
-                <input type="range" min={16} max={65} value={ageMin} onChange={(e) => setAgeMin(Number(e.target.value))} className="flex-1" />
-                <input type="range" min={16} max={65} value={ageMax} onChange={(e) => setAgeMax(Number(e.target.value))} className="flex-1" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Geslacht</label>
-              <div className="flex gap-2">
-                {(["Alle", "Man", "Vrouw"] as const).map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => setGender(g)}
-                    className={cn("rounded-full px-4 py-1.5 text-sm border", gender === g ? "bg-white text-indigo border-transparent" : "border-white/15 text-white/60")}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Locatie</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Radius (km)</label>
-                <NumberField value={radiusKm} onChange={setRadiusKm} ariaLabel="Radius in kilometers" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm outline-none focus:border-violet" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Interesses</label>
-              <div className="flex flex-wrap gap-2">
-                {interestOptions.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => toggleInterest(cat)}
-                    className={cn("rounded-full px-3 py-1.5 text-xs font-medium border", interests.includes(cat) ? "bg-white text-indigo border-transparent" : "border-white/15 text-white/60")}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Dagbudget (€)</label>
@@ -602,8 +545,13 @@ export default function CreateCampaignPage() {
           </div>
         )}
 
-        {step === 4 && previewProduct && (
+        {step === 3 && previewProduct && (
           <div className="flex flex-col items-center gap-4">
+            <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-white/70">
+              <p className="mb-1 font-semibold text-white">Wie ziet je video?</p>
+              Iedereen die Swyp gebruikt. Gericht adverteren op leeftijd, geslacht of plaats kan nog niet. Dat komt zodra er genoeg kijkers zijn om
+              dat zinvol te maken. Wie je bereikt zie je straks onder Audience, zonder dat we iemand bij naam noemen.
+            </div>
             <div className="relative w-[280px] h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-slate">
               {videoPreview && (
                 <video
@@ -659,7 +607,7 @@ export default function CreateCampaignPage() {
         <Button variant="secondary" disabled={step === 0 || publishing} onClick={() => setStep((s) => s - 1)}>
           Vorige
         </Button>
-        {step < 4 ? (
+        {step < 3 ? (
           <Button
             onClick={() => setStep((s) => s + 1)}
             disabled={(step === 1 && (!canGoToStep2 || !canGoToStep3))}

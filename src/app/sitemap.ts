@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const paths = ["/", "/for-business", "/get-started", "/business/signup", "/privacy", "/terms", "/voorwaarden-bedrijven", "/support", "/test"];
+const paths = ["/", "/for-business", "/get-started", "/business/signup", "/privacy", "/terms", "/voorwaarden-bedrijven", "/support", "/installeren", "/test"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return paths.map((path) => ({

@@ -46,6 +46,8 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Swyp",
   },
+  // Oudere iPhones (voor iOS 16.4) kijken alleen naar deze tag om als app te openen.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {

@@ -41,6 +41,14 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     a: "Controleer op je iPhone onder Instellingen, dan Meldingen, dan Swyp of meldingen aan staan. Open daarna de app opnieuw.",
   },
   {
+    q: "Kan ik Swyp als app op mijn beginscherm zetten?",
+    a: (
+      <>
+        Ja, zonder App Store. Zie <Link href="/installeren" className="underline text-white">swyp.it/installeren</Link> voor de stappen op iPhone en Android.
+      </>
+    ),
+  },
+  {
     q: "Ik ben een bedrijf en wil adverteren",
     a: (
       <>

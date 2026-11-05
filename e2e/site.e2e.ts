@@ -25,7 +25,7 @@ test.describe("openbare pagina's", () => {
     for (const claim of ["roas", "attributie", "conversie", "retention"]) expect(text).not.toContain(claim);
   });
 
-  for (const path of ["/privacy", "/terms", "/support", "/get-started", "/business/login", "/test"]) {
+  for (const path of ["/privacy", "/terms", "/support", "/get-started", "/business/login", "/installeren", "/test"]) {
     test(`${path} laadt`, async ({ page }) => {
       const res = await page.goto(path);
       expect(res?.status()).toBe(200);

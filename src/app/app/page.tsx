@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FeedCard } from "@/components/consumer/FeedCard";
+import { InstallHint } from "@/components/consumer/InstallHint";
 import { PullToRefreshIndicator } from "@/components/consumer/PullToRefreshIndicator";
 import { TokenBadge } from "@/components/ui/TokenBadge";
 import { Logo } from "@/components/ui/Logo";
@@ -30,7 +31,7 @@ export default function FeedPage() {
   const { companies, products, loading: catalogLoading, refresh: refreshCatalog } = useData();
   const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds, syncNewest } = usePaginatedAds();
   const { blockedCompanyIds } = useWallet();
-  const { nudgeLogin } = useConsumerAuth();
+  const { nudgeLogin, promptOpen } = useConsumerAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -210,6 +211,8 @@ export default function FeedPage() {
       </div>
 
       <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} triggerDistance={triggerDistance} />
+
+      <InstallHint ready={activeIndex >= 3 && !promptOpen} />
 
       <div className="pointer-events-none absolute top-[calc(env(safe-area-inset-top)+0.75rem)] left-0 right-0 z-30 h-7">
         <Link href="/app/wallet" className="pointer-events-auto absolute right-4 top-0">

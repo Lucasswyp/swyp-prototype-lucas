@@ -17,6 +17,14 @@ test.describe("openbare pagina's", () => {
     await expect(page.getByText("Voorbeeld met fictieve cijfers")).toBeVisible();
   });
 
+  test("bedrijvenpagina noemt de prijs en belooft geen ROAS of conversies", async ({ page }) => {
+    await page.goto("/for-business");
+    await expect(page.getByText("€149", { exact: false }).first()).toBeVisible();
+    await expect(page.getByText("exclusief btw").first()).toBeVisible();
+    const text = (await page.locator("body").innerText()).toLowerCase();
+    for (const claim of ["roas", "attributie", "conversie", "retention"]) expect(text).not.toContain(claim);
+  });
+
   for (const path of ["/privacy", "/terms", "/support", "/get-started", "/business/login", "/test"]) {
     test(`${path} laadt`, async ({ page }) => {
       const res = await page.goto(path);

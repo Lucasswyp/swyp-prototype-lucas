@@ -3,38 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Coins, Gift, Radar } from "lucide-react";
+import { Video, Coins, Gift, Radar } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
+import { ONBOARDING_SLIDES as slides } from "@/lib/onboardingSlides";
 
-const slides = [
-  {
-    icon: Sparkles,
-    title: "Ontdek dingen die je écht leuk vindt",
-    body: "Swyp toont je advertenties van merken die aansluiten bij jouw interesses — geen ruis, alleen relevant.",
-  },
-  {
-    icon: Coins,
-    title: "Swipe en verdien Swyp Tokens",
-    body: "Elke keer dat je kijkt, liket of opslaat, verdien je Tokens. Jouw aandacht is waardevol.",
-  },
-  {
-    icon: Gift,
-    title: "Wissel je Tokens in voor echte voordelen",
-    body: "Kortingen, gratis producten, upgrades en meer — rechtstreeks van de merken die je volgt.",
-  },
-  {
-    icon: Radar,
-    title: "Hoe beter Swyp jou kent, hoe relevanter je feed wordt",
-    body: "Kies zo dadelijk je interesses. Je feed past zich continu aan op basis van wat je doet.",
-  },
-];
+const ICONS = { video: Video, coins: Coins, gift: Gift, interests: Radar } as const;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const router = useRouter();
   const isLast = step === slides.length - 1;
   const Slide = slides[step];
+  const SlideIcon = ICONS[Slide.icon];
 
   return (
     <div className="flex h-full w-full flex-col justify-between px-6 pb-10 pt-16 bg-[radial-gradient(circle_at_50%_0%,rgba(123,61,255,0.25),transparent_60%)]">
@@ -52,11 +33,11 @@ export default function OnboardingPage() {
           className="flex flex-col items-center text-center gap-6"
         >
           <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-violet/30 to-magenta/20 border border-white/10 glow-violet">
-            <Slide.icon size={36} className="text-white" />
+            <SlideIcon size={36} className="text-white" />
           </div>
           <div>
             <h2 className="font-heading text-2xl font-bold leading-snug mb-3">{Slide.title}</h2>
-            <p className="text-white/60 text-sm leading-relaxed max-w-[280px] mx-auto">{Slide.body}</p>
+            <p className="text-white/70 text-sm leading-relaxed max-w-[300px] mx-auto">{Slide.body}</p>
           </div>
         </motion.div>
       </AnimatePresence>
@@ -84,7 +65,7 @@ export default function OnboardingPage() {
         </Button>
         {!isLast && (
           <button
-            className="text-sm text-white/40 hover:text-white/70"
+            className="text-sm text-white/60 hover:text-white"
             onClick={() => router.push("/app/interests")}
           >
             Overslaan

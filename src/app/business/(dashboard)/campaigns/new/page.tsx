@@ -18,6 +18,7 @@ import { MAX_VIDEO_SECONDS, describeVideoFormat, isVideoTooLong, videoFit } from
 import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
 import { formatPrice, cn } from "@/lib/utils";
 import type { CampaignObjective, Category, Product } from "@/types";
+import { objectiveLabel } from "@/lib/dashboardLabels";
 
 const objectives: CampaignObjective[] = [
   "Brand awareness",
@@ -255,7 +256,7 @@ export default function CreateCampaignPage() {
                     objective === o ? "border-transparent bg-gradient-to-r from-violet to-magenta" : "border-white/10 bg-white/5 text-white/70"
                   )}
                 >
-                  {o}
+                  {objectiveLabel(o)}
                 </button>
               ))}
             </div>
@@ -550,7 +551,7 @@ export default function CreateCampaignPage() {
             <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-relaxed text-white/70">
               <p className="mb-1 font-semibold text-white">Wie ziet je video?</p>
               Iedereen die Swyp gebruikt. Gericht adverteren op leeftijd, geslacht of plaats kan nog niet. Dat komt zodra er genoeg kijkers zijn om
-              dat zinvol te maken. Wie je bereikt zie je straks onder Audience, zonder dat we iemand bij naam noemen.
+              dat zinvol te maken. Wie je bereikt zie je straks onder Doelgroep, zonder dat we iemand bij naam noemen.
             </div>
             <div className="relative w-[280px] h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-slate">
               {videoPreview && (

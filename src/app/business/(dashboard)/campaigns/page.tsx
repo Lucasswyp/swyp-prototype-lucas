@@ -12,6 +12,7 @@ import { useData } from "@/contexts/DataContext";
 import { fetchInteractionsForBusiness, fetchCampaignSpend, computeAnalytics, topUpCampaign, removeAdVideo, updateCampaignStatus as updateCampaignStatusRemote, type Interaction } from "@/lib/data";
 import { formatEuro, formatNumber, cn } from "@/lib/utils";
 import type { Campaign, CampaignStatus } from "@/types";
+import { objectiveLabel, statusLabel } from "@/lib/dashboardLabels";
 
 const statusStyles: Record<CampaignStatus, string> = {
   Active: "bg-emerald-500/15 text-emerald-300",
@@ -87,7 +88,7 @@ export default function CampaignsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold mb-1">Campaigns</h1>
+          <h1 className="font-heading text-2xl font-bold mb-1">Campagnes</h1>
           <p className="text-white/50 text-sm">Beheer en analyseer al je Swyp-campagnes.</p>
         </div>
         <Link href="/business/campaigns/new">
@@ -107,7 +108,7 @@ export default function CampaignsPage() {
               filter === s ? "bg-white text-indigo border-transparent" : "border-white/15 text-white/50"
             )}
           >
-            {s}
+            {s === "Alle" ? s : statusLabel(s)}
           </button>
         ))}
       </div>
@@ -121,12 +122,12 @@ export default function CampaignsPage() {
           <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="text-left text-xs text-white/40 border-b border-white/10">
-                <th className="px-4 py-3 font-medium">Campaign</th>
+                <th className="px-4 py-3 font-medium">Campagne</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Budget</th>
-                <th className="px-4 py-3 font-medium">Impressions</th>
-                <th className="px-4 py-3 font-medium">Engagement</th>
-                <th className="px-4 py-3 font-medium">Clicks</th>
+                <th className="px-4 py-3 font-medium">Weergaven</th>
+                <th className="px-4 py-3 font-medium">Likes en opslagen</th>
+                <th className="px-4 py-3 font-medium">Doorgeklikt</th>
                 <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
@@ -140,11 +141,11 @@ export default function CampaignsPage() {
                       <Link href={`/business/campaigns/${c.id}`} className="font-medium hover:text-magenta">
                         {c.name}
                       </Link>
-                      <p className="text-xs text-white/35">{c.objective}</p>
+                      <p className="text-xs text-white/55">{objectiveLabel(c.objective)}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusStyles[c.status])}>
-                        {c.status}
+                        {statusLabel(c.status)}
                       </span>
                     </td>
                     <td className="px-4 py-3 tabular-nums">
@@ -187,7 +188,7 @@ export default function CampaignsPage() {
                         >
                           <Trash2 size={15} />
                         </button>
-                        <Link href={`/business/campaigns/${c.id}`} title="Analytics" className="rounded-lg p-1.5 hover:bg-white/10 block">
+                        <Link href={`/business/campaigns/${c.id}`} title="Cijfers bekijken" className="rounded-lg p-1.5 hover:bg-white/10 block">
                           <BarChart3 size={15} />
                         </Link>
                       </div>

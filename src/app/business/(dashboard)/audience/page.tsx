@@ -20,7 +20,7 @@ export default function AudiencePage() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold mb-1">Audience</h1>
+      <h1 className="font-heading text-2xl font-bold mb-1">Doelgroep</h1>
       <p className="text-white/50 text-sm mb-6">Wie bereik je met je video&apos;s: echte kijkers die iets met je video&apos;s deden.</p>
 
       {summary === undefined && (

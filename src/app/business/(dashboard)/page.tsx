@@ -87,7 +87,7 @@ export default function BusinessOverviewPage() {
         <div>
           <h1 className="font-heading text-2xl font-bold mb-1">{hour === null ? "Welkom" : greeting(hour)}, {business.name}</h1>
           <p className="text-white/50 text-sm">
-            Live data van echte Swyp-gebruikers — {ownAdsCount} actieve advertentie{ownAdsCount === 1 ? "" : "s"}.
+            Live cijfers van echte Swyp-gebruikers: {ownAdsCount} actieve advertentie{ownAdsCount === 1 ? "" : "s"}.
           </p>
         </div>
         {loading && <span className="text-xs text-white/30">laden...</span>}
@@ -96,18 +96,18 @@ export default function BusinessOverviewPage() {
       {!loading && <OnboardingCard steps={steps} />}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <MetricCard label="Impressions" value={formatNumber(totals.impressions)} icon={Eye} />
+        <MetricCard label="Weergaven" value={formatNumber(totals.impressions)} icon={Eye} />
         <MetricCard label="Unieke kijkers" value={formatNumber(totals.uniqueDevices)} icon={Smartphone} />
-        <MetricCard label="Completion rate" value={formatPercent(completionRate)} icon={Eye} />
-        <MetricCard label="Engagement" value={formatPercent(engagementRate)} icon={Heart} />
+        <MetricCard label="Uitgekeken" value={formatPercent(completionRate)} icon={Eye} />
+        <MetricCard label="Likes en opslagen" value={formatPercent(engagementRate)} icon={Heart} />
         <MetricCard label="Likes" value={formatNumber(totals.likes)} icon={Heart} />
-        <MetricCard label="Saves" value={formatNumber(totals.saves)} icon={Bookmark} />
-        <MetricCard label="Clicks naar winkel" value={formatNumber(totals.clicks)} icon={MousePointerClick} />
+        <MetricCard label="Opgeslagen" value={formatNumber(totals.saves)} icon={Bookmark} />
+        <MetricCard label="Doorgeklikt naar je winkel" value={formatNumber(totals.clicks)} icon={MousePointerClick} />
         <MetricCard label="Doorgestuurd naar vrienden" value={formatNumber(totals.shares)} icon={Send} />
         <MetricCard label="Rewards ingewisseld" value={formatNumber(redemptionCount)} icon={Ticket} />
       </div>
 
-      <ChartContainer title="Impressions over tijd" subtitle="Laatste 14 dagen, echte kijkers">
+      <ChartContainer title="Weergaven per dag" subtitle="Laatste 14 dagen, echte kijkers">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={viewSeries} margin={{ left: -20, top: 8, right: 8 }}>
             <defs>

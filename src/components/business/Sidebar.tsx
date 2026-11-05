@@ -19,13 +19,13 @@ import { useBusiness } from "@/contexts/BusinessContext";
 import { createClient } from "@/lib/supabase/client";
 
 const items = [
-  { href: "/business", label: "Overview", icon: LayoutDashboard },
-  { href: "/business/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/business/products", label: "Products", icon: Package },
+  { href: "/business", label: "Overzicht", icon: LayoutDashboard },
+  { href: "/business/campaigns", label: "Campagnes", icon: Megaphone },
+  { href: "/business/products", label: "Producten", icon: Package },
   { href: "/business/rewards", label: "Rewards", icon: Gift },
-  { href: "/business/audience", label: "Audience", icon: Users },
-  { href: "/business/creative-insights", label: "Creative Insights", icon: Lightbulb },
-  { href: "/business/settings", label: "Settings", icon: Settings },
+  { href: "/business/audience", label: "Doelgroep", icon: Users },
+  { href: "/business/creative-insights", label: "Video-inzichten", icon: Lightbulb },
+  { href: "/business/settings", label: "Instellingen", icon: Settings },
 ];
 
 export function Sidebar() {

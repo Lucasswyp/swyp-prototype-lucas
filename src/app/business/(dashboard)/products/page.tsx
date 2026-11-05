@@ -89,7 +89,7 @@ export default function ProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold mb-1">Products</h1>
+          <h1 className="font-heading text-2xl font-bold mb-1">Producten</h1>
           <p className="text-white/50 text-sm">Beheer je productcatalogus voor advertenties en rewards.</p>
         </div>
         <Button className="gap-1.5" onClick={openCreate}>

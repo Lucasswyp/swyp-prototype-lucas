@@ -6,13 +6,13 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 
 const items = [
-  { href: "/business", label: "Overview" },
-  { href: "/business/campaigns", label: "Campaigns" },
-  { href: "/business/products", label: "Products" },
+  { href: "/business", label: "Overzicht" },
+  { href: "/business/campaigns", label: "Campagnes" },
+  { href: "/business/products", label: "Producten" },
   { href: "/business/rewards", label: "Rewards" },
-  { href: "/business/audience", label: "Audience" },
-  { href: "/business/creative-insights", label: "Insights" },
-  { href: "/business/settings", label: "Settings" },
+  { href: "/business/audience", label: "Doelgroep" },
+  { href: "/business/creative-insights", label: "Inzichten" },
+  { href: "/business/settings", label: "Instellingen" },
 ];
 
 export function MobileTabs() {

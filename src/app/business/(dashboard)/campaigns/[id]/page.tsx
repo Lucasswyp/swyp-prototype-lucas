@@ -19,6 +19,7 @@ import { useData } from "@/contexts/DataContext";
 import { fetchInteractionsForBusiness, computeAnalytics, type Interaction } from "@/lib/data";
 import { formatEuro, formatNumber, formatPercent, formatDate } from "@/lib/utils";
 import { dailySeries } from "@/lib/chartData";
+import { objectiveLabel } from "@/lib/dashboardLabels";
 
 export default function CampaignAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -67,24 +68,24 @@ export default function CampaignAnalyticsPage({ params }: { params: Promise<{ id
         <div>
           <h1 className="font-heading text-2xl font-bold mb-1">{campaign.name}</h1>
           <p className="text-white/50 text-sm">
-            {campaign.objective} · {campaign.startDate || campaign.endDate ? `${campaign.startDate ? formatDate(campaign.startDate) : "Direct"} – ${campaign.endDate ? formatDate(campaign.endDate) : "geen einddatum"}` : "Geen vaste looptijd"}
+            {objectiveLabel(campaign.objective)} · {campaign.startDate || campaign.endDate ? `${campaign.startDate ? formatDate(campaign.startDate) : "Direct"} – ${campaign.endDate ? formatDate(campaign.endDate) : "geen einddatum"}` : "Geen vaste looptijd"}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <MetricCard label="Budget" value={formatEuro(campaign.totalBudget)} />
-        <MetricCard label="Impressions" value={formatNumber(totals.impressions)} />
-        <MetricCard label="Completion rate" value={formatPercent(completionRate)} />
+        <MetricCard label="Weergaven" value={formatNumber(totals.impressions)} />
+        <MetricCard label="Uitgekeken" value={formatPercent(completionRate)} />
         <MetricCard label="Unieke kijkers" value={formatNumber(totals.uniqueDevices)} />
         <MetricCard label="Likes" value={formatNumber(totals.likes)} />
-        <MetricCard label="Saves" value={formatNumber(totals.saves)} />
-        <MetricCard label="Clicks naar winkel" value={formatNumber(totals.clicks)} />
+        <MetricCard label="Opgeslagen" value={formatNumber(totals.saves)} />
+        <MetricCard label="Doorgeklikt naar je winkel" value={formatNumber(totals.clicks)} />
         <MetricCard label="Doorgestuurd naar vrienden" value={formatNumber(totals.shares)} />
         <MetricCard label="Volledig bekeken" value={formatNumber(totals.completed)} />
       </div>
 
-      <ChartContainer title="Impressions over tijd" subtitle="Echte weergaves van testers">
+      <ChartContainer title="Weergaven per dag" subtitle="Echte weergaves van testers">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={viewSeries} margin={{ left: -20, top: 8, right: 8 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -97,12 +98,12 @@ export default function CampaignAnalyticsPage({ params }: { params: Promise<{ id
       </ChartContainer>
 
       <div className="mt-4">
-        <ChartContainer title="Engagement signals" height={200}>
+        <ChartContainer title="Wat kijkers deden" height={200}>
           <div className="flex h-full flex-col justify-center gap-4">
             {[
-              { icon: Heart, label: "Like", value: totals.impressions > 0 ? (totals.likes / totals.impressions) * 100 : 0 },
-              { icon: Bookmark, label: "Save", value: totals.impressions > 0 ? (totals.saves / totals.impressions) * 100 : 0 },
-              { icon: MousePointerClick, label: "Product click", value: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0 },
+              { icon: Heart, label: "Geliked", value: totals.impressions > 0 ? (totals.likes / totals.impressions) * 100 : 0 },
+              { icon: Bookmark, label: "Opgeslagen", value: totals.impressions > 0 ? (totals.saves / totals.impressions) * 100 : 0 },
+              { icon: MousePointerClick, label: "Doorgeklikt", value: totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0 },
             ].map((row) => (
               <div key={row.label} className="flex items-center gap-3">
                 <row.icon size={16} className="text-white/40 shrink-0" />

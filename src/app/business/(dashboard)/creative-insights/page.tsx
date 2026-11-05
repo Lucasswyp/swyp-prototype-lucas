@@ -50,7 +50,7 @@ export default function CreativeInsightsPage() {
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-bold mb-1">Creative Insights</h1>
+      <h1 className="font-heading text-2xl font-bold mb-1">Video-inzichten</h1>
       <p className="text-white/50 text-sm mb-6">
         Wat er echt gebeurt met je video&apos;s, afgeleid van je eigen cijfers. Vanaf {MIN_IMPRESSIONS} weergaven per video geven we tips.
       </p>

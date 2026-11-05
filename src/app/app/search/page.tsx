@@ -156,6 +156,10 @@ export default function SearchPage() {
       setQ(fromUrl);
       // Je komt terug op je resultaten: geen toetsenbord ervoor.
       inputRef.current?.blur();
+    } else if (document.activeElement === inputRef.current) {
+      // Het veld kreeg al aandacht (autoFocus) voordat de pagina klaar was; die melding missen we
+      // dan, en de voorstellen zouden pas na een tweede tik verschijnen.
+      setInputFocused(true);
     }
   }, []);
 
@@ -352,8 +356,27 @@ export default function SearchPage() {
         </div>
       )}
 
+      {!q && !visibleResults && (
+        <EmptyState
+          icon={SearchIcon}
+          title="Waar ben je naar op zoek?"
+          description="Zoek een bedrijf, een product of een soort zaak, zoals koffie of sport. Je ziet meteen de video's erbij."
+        />
+      )}
+
       {noResults && (
-        <EmptyState icon={SearchIcon} title={`Geen resultaten voor "${q}"`} description="Probeer een andere zoekterm." />
+        <>
+          <EmptyState
+            icon={SearchIcon}
+            title={`Geen resultaten voor "${q}"`}
+            description="Swyp is nieuw, dus er staan nog niet veel bedrijven in. Probeer een andere term, of bekijk de video's die er wel zijn."
+            action={
+              <Link href="/app" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-indigo">
+                Naar de video&apos;s
+              </Link>
+            }
+          />
+        </>
       )}
 
       {visibleResults && tab === "videos" && visibleResults.videos.length > 0 && (

@@ -235,7 +235,7 @@ export default function UserAuthPage() {
           )}
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px flex-1 bg-white/10" />
-            <span className="text-[11px] text-white/30 uppercase tracking-wide">of met e-mail</span>
+            <span className="text-[11px] text-white/55 uppercase tracking-wide">of met e-mail</span>
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
@@ -279,7 +279,7 @@ export default function UserAuthPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-white/60">Geslacht</label>
+                    <label className="block text-xs font-medium mb-1.5 text-white/70">Geslacht</label>
                     <select
                       required
                       value={gender}
@@ -297,7 +297,7 @@ export default function UserAuthPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-white/60">Geboortedatum</label>
+                    <label className="block text-xs font-medium mb-1.5 text-white/70">Geboortedatum</label>
                     <input
                       required
                       type="date"
@@ -308,6 +308,9 @@ export default function UserAuthPage() {
                     />
                   </div>
                 </div>
+                <p className="-mt-1 text-xs leading-relaxed text-white/55">
+                  Swyp is voor {MIN_AGE} jaar en ouder. Bedrijven zien alleen aantallen per groep (bijvoorbeeld leeftijd en geslacht), nooit wie je bent.
+                </p>
               </>
             )}
             <div>
@@ -344,16 +347,23 @@ export default function UserAuthPage() {
             >
               {loading ? "Bezig..." : mode === "signup" ? "Start met Swyp" : "Inloggen"}
             </Button>
+            {mode === "signup" && (
+              <p className="text-xs leading-relaxed text-white/55">
+                Inloggen is gratis. Door verder te gaan ga je akkoord met de{" "}
+                <Link href="/terms" target="_blank" className="underline text-white/75">voorwaarden</Link> en het{" "}
+                <Link href="/privacy" target="_blank" className="underline text-white/75">privacybeleid</Link>.
+              </p>
+            )}
           </form>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-6 flex flex-col gap-1.5">
+        <p className="text-center text-sm text-white/55 mt-6 flex flex-col gap-2">
           {mode === "login" && (
-            <Link href="/wachtwoord-vergeten" className="hover:text-white/60">
+            <Link href="/wachtwoord-vergeten" className="hover:text-white">
               Wachtwoord vergeten?
             </Link>
           )}
-          <Link href="/get-started" className="hover:text-white/60">
+          <Link href="/get-started" className="hover:text-white">
             ← Ander pad kiezen
           </Link>
         </p>

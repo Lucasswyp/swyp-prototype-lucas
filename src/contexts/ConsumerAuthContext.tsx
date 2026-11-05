@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import { consumePendingReferral } from "@/lib/referral";
@@ -12,6 +12,8 @@ interface ConsumerAuthValue {
   profileIncomplete: boolean;
   markProfileComplete: () => void;
   requireAuth: () => boolean;
+  /** Vraagt een gast (hooguit één keer per sessie) om in te loggen, nadat die iets gezien heeft. */
+  nudgeLogin: () => void;
   closePrompt: () => void;
   referralAward: number | null;
   dismissReferralAward: () => void;
@@ -28,11 +30,14 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
   // drives a one-time redirect to /app/complete-profile (see AppLayout).
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [referralAward, setReferralAward] = useState<number | null>(null);
+  // De nieuwste stand, voor de uitgestelde vraag om in te loggen (die loopt buiten een render om).
+  const guestRef = useRef(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data }) => {
       setIsLoggedIn(!!data.user);
+      guestRef.current = !data.user;
       if (data.user) {
         posthog.identify(data.user.id, { email: data.user.email });
         const { data: consumer } = await supabase
@@ -46,15 +51,10 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
         if (referral?.awarded && referral.points) setReferralAward(referral.points);
       }
       setLoading(false);
-      // Show the login/signup sheet once per session for guests, a beat
-      // after the feed itself has loaded — never block the first video.
-      if (!data.user && !sessionStorage.getItem("swyp_entry_prompt_shown")) {
-        sessionStorage.setItem("swyp_entry_prompt_shown", "1");
-        window.setTimeout(() => setPromptOpen(true), 1200);
-      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session?.user);
+      guestRef.current = !session?.user;
       if (event === "SIGNED_IN" && session?.user) {
         posthog.identify(session.user.id, { email: session.user.email });
       }
@@ -71,6 +71,16 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
     return false;
   }
 
+  // Niet meteen bij het openen: eerst een paar video's zien, dan pas de vraag om in te loggen.
+  function nudgeLogin() {
+    if (!guestRef.current) return;
+    try {
+      if (sessionStorage.getItem("swyp_entry_prompt_shown")) return;
+      sessionStorage.setItem("swyp_entry_prompt_shown", "1");
+    } catch {}
+    setPromptOpen(true);
+  }
+
   return (
     <ConsumerAuthContext.Provider
       value={{
@@ -80,6 +90,7 @@ export function ConsumerAuthProvider({ children }: { children: ReactNode }) {
         profileIncomplete,
         markProfileComplete: () => setProfileIncomplete(false),
         requireAuth,
+        nudgeLogin,
         closePrompt: () => setPromptOpen(false),
         referralAward,
         dismissReferralAward: () => setReferralAward(null),

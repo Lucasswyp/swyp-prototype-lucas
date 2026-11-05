@@ -8,6 +8,7 @@ import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { signInWithGoogle } from "@/lib/googleAuth";
 import { signInWithApple } from "@/lib/appleAuth";
 import { LogoMark } from "@/components/ui/Logo";
+import { TokenExplainer } from "@/components/consumer/TokenExplainer";
 
 export function LoginPromptModal() {
   const { promptOpen, closePrompt } = useConsumerAuth();
@@ -59,7 +60,7 @@ export function LoginPromptModal() {
             exit={{ scale: 0.92, opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-3xl bg-slate p-6 pb-7 text-center"
+            className="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto rounded-3xl bg-slate p-6 pb-7 text-center"
           >
             <button
               onClick={closePrompt}
@@ -73,10 +74,12 @@ export function LoginPromptModal() {
               <LogoMark size={52} />
             </div>
             <h2 className="font-heading text-lg font-bold mb-1.5">Welkom bij Swyp</h2>
-            <p className="text-sm text-white/50 mb-5">
-              Log in om Swyp Tokens te verdienen, producten op te slaan en rewards in te wisselen. Je kunt ook
-              gewoon blijven kijken.
+            <p className="text-sm text-white/65 mb-4">
+              Verdien tokens met video&apos;s kijken en wissel ze in voor korting bij bedrijven. Inloggen is gratis.
             </p>
+            <div className="mb-5">
+              <TokenExplainer compact />
+            </div>
 
             <button
               type="button"
@@ -118,9 +121,13 @@ export function LoginPromptModal() {
                 Doorgaan met e-mail
               </button>
             </Link>
-            <button onClick={closePrompt} className="text-sm text-white/40 py-3">
+            <button onClick={closePrompt} className="mt-1 w-full rounded-xl py-3 text-sm font-medium text-white/75 hover:bg-white/5 hover:text-white">
               Later, ik wil eerst kijken
             </button>
+            <p className="mt-1 text-xs text-white/50">
+              We verkopen je gegevens niet. Lees ons{" "}
+              <Link href="/privacy" className="underline">privacybeleid</Link>.
+            </p>
           </motion.div>
         </motion.div>
       )}

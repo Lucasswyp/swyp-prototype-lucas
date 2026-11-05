@@ -129,6 +129,20 @@ test.describe("de app als gast", () => {
     await expect(page.getByText("Bewaar", { exact: true }).first()).toBeVisible({ timeout: 20_000 });
   });
 
+  test("het inlogvenster komt niet meteen, wel na de derde video, en legt de tokens uit", async ({ page }) => {
+    await page.goto("/app");
+    await expect(page.locator('a[href^="/app/product/"]').first()).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(3_000);
+    await expect(page.getByText("Welkom bij Swyp")).toHaveCount(0);
+    const feed = page.locator(".snap-y").first();
+    const h = await page.evaluate(() => window.innerHeight);
+    await feed.evaluate((el, y) => el.scrollTo({ top: y }), 2 * h);
+    await expect(page.getByText("Welkom bij Swyp")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Zo verdien je Swyp Tokens")).toBeVisible();
+    await page.getByText("Later, ik wil eerst kijken").click();
+    await expect(page.getByText("Welkom bij Swyp")).toHaveCount(0);
+  });
+
   test("het i-tje is weg uit de knoppen en de productknop brengt een gast naar het product", async ({ page }) => {
     await page.goto("/app");
     await expect(page.locator('a[href^="/app/product/"]').first()).toBeVisible({ timeout: 20_000 });
@@ -153,8 +167,8 @@ test.describe("de app als gast", () => {
 
   test("typen in zoeken geeft voorstellen die per letter preciezer worden", async ({ page }) => {
     await page.goto("/app/search", { waitUntil: "domcontentloaded" });
-    const later = page.getByText("Later, ik wil eerst kijken");
-    await later.first().waitFor({ timeout: 10_000 }).then(() => later.first().click()).catch(() => {});
+    // Het inlogvenster komt niet meer meteen; wacht tot de pagina klaar is met laden voor we typen.
+    await page.waitForLoadState("networkidle");
     const input = page.getByPlaceholder("Zoek merken, producten, deals...");
     await input.click();
     const suggestions = page.getByTestId("search-suggestions").locator("button");
@@ -170,8 +184,8 @@ test.describe("de app als gast", () => {
 
   test("zoekresultaten zijn video's: tik er een aan en je swipet door de video's bij je zoekopdracht", async ({ page }) => {
     await page.goto("/app/search", { waitUntil: "domcontentloaded" });
-    const later = page.getByText("Later, ik wil eerst kijken");
-    await later.first().waitFor({ timeout: 10_000 }).then(() => later.first().click()).catch(() => {});
+    // Het inlogvenster komt niet meer meteen; wacht tot de pagina klaar is met laden voor we typen.
+    await page.waitForLoadState("networkidle");
     const input = page.getByPlaceholder("Zoek merken, producten, deals...");
     await input.click();
     await input.fill("match");

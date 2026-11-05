@@ -9,6 +9,7 @@ import { Logo } from "@/components/ui/Logo";
 import { useAppStore } from "@/store/useAppStore";
 import { useData } from "@/contexts/DataContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { useStableFeedOrder } from "@/lib/useStableFeedOrder";
 import { usePaginatedAds } from "@/lib/usePaginatedAds";
@@ -29,6 +30,7 @@ export default function FeedPage() {
   const { companies, products, loading: catalogLoading, refresh: refreshCatalog } = useData();
   const { ads, loading: adsLoading, hasMore, loadMore, refresh: refreshAds, syncNewest } = usePaginatedAds();
   const { blockedCompanyIds } = useWallet();
+  const { nudgeLogin } = useConsumerAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -45,6 +47,19 @@ export default function FeedPage() {
   const getAdId = useCallback((a: Ad) => a.id, []);
   const groupKey = useCallback((a: Ad) => (interests.length === 0 || interests.includes(a.category) ? 0 : 1), [interests]);
   const orderedAds = useStableFeedOrder(visible, getAdId, groupKey, refreshKey, saved?.ids);
+
+  // Wie de derde video bereikt heeft iets gezien: nu mag de vraag om in te loggen.
+  useEffect(() => {
+    if (activeIndex >= 2) nudgeLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex]);
+
+  // Wie gewoon blijft kijken zonder door te swipen krijgt de vraag na een minuut.
+  useEffect(() => {
+    const t = window.setTimeout(nudgeLogin, 60_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleScroll() {
     const el = containerRef.current;

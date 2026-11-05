@@ -8,6 +8,7 @@ import { SwypToken } from "@/components/ui/SwypToken";
 import { Card } from "@/components/ui/Card";
 import { TimeAgo } from "@/components/ui/TimeAgo";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { TokenExplainer } from "@/components/consumer/TokenExplainer";
 import { formatTokens, formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
 
@@ -67,14 +68,18 @@ export default function WalletPage() {
           </Card>
         </Link>
 
-        <h2 className="font-heading font-bold text-sm mb-3 text-white/50 uppercase tracking-wide">
-          Token history
+        <div className="mb-6">
+          <TokenExplainer />
+        </div>
+
+        <h2 className="font-heading font-bold text-sm mb-3 text-white/60 uppercase tracking-wide">
+          Geschiedenis
         </h2>
         {walletHistory.length === 0 ? (
           <EmptyState
             icon={History}
             title="Nog geen geschiedenis"
-            description="Swipe, like en bewaar advertenties om je eerste Swyp Tokens te verdienen."
+            description="Kijk video's, like en bewaar ze om je eerste Swyp Tokens te verdienen."
           />
         ) : (
         <div className="flex flex-col gap-2">

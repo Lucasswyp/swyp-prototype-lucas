@@ -5,6 +5,8 @@ import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
 import { ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
 import { backdropUrl, videoFit, type VideoFit } from "@/lib/videoFit";
 import { isAppActive, onAppActiveChange } from "@/lib/appVisibility";
+import { bumpWatchHintSeen, readWatchHintSeen, shouldShowWatchHint, watchGoalProgress } from "@/lib/watchHint";
+import { WatchRewardHint } from "@/components/consumer/WatchRewardHint";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -74,6 +76,9 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
   const liked = optimisticLiked || likedAdIds.has(ad.id);
   const saved = savedProductIds.has(product.id);
   const { requireAuth, isLoggedIn } = useConsumerAuth();
+  // Aanwijzing "kijk tot het eind", alleen bij de eerste video's die iemand op dit apparaat ziet.
+  const [showWatchHint, setShowWatchHint] = useState(false);
+  const [watchPct, setWatchPct] = useState(0);
   const [safetySheetOpen, setSafetySheetOpen] = useState(false);
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
 
@@ -91,6 +96,14 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
       completeFiredRef.current = false;
       playedMsRef.current = 0;
       lastPlayingTickRef.current = null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWatchPct(0);
+      if (shouldShowWatchHint(readWatchHintSeen())) {
+        bumpWatchHintSeen();
+        setShowWatchHint(true);
+      } else {
+        setShowWatchHint(false);
+      }
     }
   }, [isActive]);
 
@@ -291,6 +304,9 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
       logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "complete" });
     }
 
+    // Voor de aanwijzing hoeven we maar af en toe bij te werken, niet bij elke tik van de klok.
+    if (showWatchHint) setWatchPct((prev) => (Math.abs(prev - pct) >= 2 ? pct : prev));
+
     // Watching plays freely as a guest — earning Tokens for it requires an account.
     if (!isLoggedIn) return;
     markWatched(ad.id, pct);
@@ -301,6 +317,8 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
         // new award — otherwise re-watching an already-awarded ad (no new
         // reward, but this still runs) would keep inflating "watch80" counts
         // relative to "impression", pushing completion rate over 100%.
+        // Al eerder verdiend of niets te verdienen: dan was de aanwijzing hier niet op zijn plaats.
+        setShowWatchHint(false);
         if (!result.awarded) return;
         logInteraction({ deviceId: getDeviceId(), businessId: company.id, adId: ad.id, productId: product.id, eventName: "watch80" });
       });
@@ -484,6 +502,15 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
       </div>
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
+
+      {isActive && showWatchHint && watchPct < 80 && (
+        <WatchRewardHint
+          tokens={ad.rewardRules.watch80}
+          progress={watchGoalProgress(watchPct)}
+          loggedIn={isLoggedIn}
+          onLogin={() => requireAuth()}
+        />
+      )}
 
       <AnimatePresence>
         {isActive && buffering && !needsTapToPlay && (

@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { isHlsUrl, useHlsSource } from "@/lib/useHlsSource";
 import { ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
 import { backdropUrl, videoFit, type VideoFit } from "@/lib/videoFit";
-import { onAppActiveChange } from "@/lib/appVisibility";
+import { isAppActive, onAppActiveChange } from "@/lib/appVisibility";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -122,13 +122,19 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
     // Instead, keep attempting play() on every readiness signal until
     // video.paused actually goes false, then stop.
     let cancelled = false;
+    // Buiten beeld (andere app, ander tabblad) mag niets de video weer starten: ook de
+    // herstelpogingen hieronder niet, anders hoor je het geluid na een halve seconde weer.
+    let appActive = isAppActive();
 
     function attemptPlay() {
-      if (cancelled || !video || video.paused === false) return;
+      if (cancelled || !appActive || !video || video.paused === false) return;
       // Het geluid staat altijd aan. Een browser staat dat pas toe na de eerste tik; tot dan
       // start de video zonder geluid en gaat het aan bij de eerste aanraking (zie hieronder).
       video.muted = false;
-      video.play().catch(() => {
+      video.play().catch((err: unknown) => {
+        // Een pauze midden in het starten (andere app, volgende video) meldt de browser ook als
+        // fout. Dat is geen weigering: dan juist niet opnieuw starten.
+        if (cancelled || !appActive || (err as { name?: string } | null)?.name === "AbortError") return;
         // Met geluid mag de browser het starten weigeren; dan start hij zonder geluid.
         if (!video.muted) {
           video.muted = true;
@@ -170,6 +176,7 @@ function FeedCardImpl({ ad, company, product, isActive, isNear, prefetch = "full
     // Terug in beeld: verder waar je was.
     const stopWatchingApp = onAppActiveChange((active) => {
       if (cancelled) return;
+      appActive = active;
       if (active) attemptPlay();
       else video.pause();
     });

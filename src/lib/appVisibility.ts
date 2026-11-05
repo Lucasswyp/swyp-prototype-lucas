@@ -6,6 +6,21 @@
 // blijft alles precies zoals je het achterliet.
 export const APP_RESUME_REFRESH_MS = 30 * 60 * 1000;
 
+// De laatst bekende stand, voor code die pas later start (een kaart die opnieuw opbouwt terwijl de
+// app buiten beeld is mag niet zelf weer gaan spelen). Begint bij de eerste vraag.
+let current: boolean | null = null;
+
+export function isAppActive(): boolean {
+  if (current === null) {
+    if (typeof document === "undefined") return true;
+    current = document.visibilityState !== "hidden";
+    onAppActiveChange((active) => {
+      current = active;
+    });
+  }
+  return current;
+}
+
 export function onAppActiveChange(callback: (active: boolean) => void): () => void {
   let last: boolean | null = null;
   const emit = (active: boolean) => {
@@ -17,6 +32,12 @@ export function onAppActiveChange(callback: (active: boolean) => void): () => vo
   const onVisibility = () => emit(document.visibilityState !== "hidden");
   const onPageHide = () => emit(false);
   const onPageShow = () => emit(document.visibilityState !== "hidden");
+  // Op een computer blijft het tabblad "zichtbaar" als je naar een ander programma gaat; het
+  // venster verliest dan wel de aandacht. Zonder dit speelt het geluid daar gewoon door.
+  const onBlur = () => emit(false);
+  const onFocus = () => emit(document.visibilityState !== "hidden");
+  window.addEventListener("blur", onBlur);
+  window.addEventListener("focus", onFocus);
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("pagehide", onPageHide);
   window.addEventListener("pageshow", onPageShow);
@@ -35,6 +56,8 @@ export function onAppActiveChange(callback: (active: boolean) => void): () => vo
 
   return () => {
     cancelled = true;
+    window.removeEventListener("blur", onBlur);
+    window.removeEventListener("focus", onFocus);
     document.removeEventListener("visibilitychange", onVisibility);
     window.removeEventListener("pagehide", onPageHide);
     window.removeEventListener("pageshow", onPageShow);

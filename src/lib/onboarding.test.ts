@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_BUSINESS_LOGO } from "@/lib/businessDefaults";
 import { buildOnboardingSteps, greeting, onboardingProgress } from "@/lib/onboarding";
 
 const empty = { logoUrl: "", productCount: 0, adStatuses: [] as ("pending" | "approved" | "rejected")[], impressions: 0 };
@@ -14,6 +15,10 @@ describe("buildOnboardingSteps", () => {
   it("telt een videobestand niet als logo", () => {
     expect(state(buildOnboardingSteps({ ...empty, logoUrl: "https://x.nl/a.mov" }), "logo")).toBe("todo");
     expect(state(buildOnboardingSteps({ ...empty, logoUrl: "https://x.nl/a.png" }), "logo")).toBe("done");
+  });
+
+  it("telt het standaardplaatje van een nieuw bedrijf niet als eigen logo", () => {
+    expect(state(buildOnboardingSteps({ ...empty, logoUrl: DEFAULT_BUSINESS_LOGO }), "logo")).toBe("todo");
   });
 
   it("zegt dat de video wordt gecontroleerd zolang hij op goedkeuring wacht", () => {

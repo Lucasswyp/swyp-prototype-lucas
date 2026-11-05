@@ -1,36 +1,28 @@
 "use client";
 
 import posthog from "posthog-js";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { BUSINESS_CATEGORY_OPTIONS } from "@/lib/businessCategories";
+import { CAMPAIGN_PRICE_EUR } from "@/lib/businessTerms";
 import type { Category } from "@/types";
-
-const categories: Category[] = [
-  "Fashion",
-  "Food",
-  "Tech",
-  "Fitness",
-  "Travel",
-  "Beauty",
-  "Events",
-  "Days Out",
-  "Restaurants",
-];
 
 export default function BusinessSignupPage() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
-  const [category, setCategory] = useState<Category>("Fashion");
+  const [category, setCategory] = useState<Category | "">("");
   const [location, setLocation] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const passwordHintId = useId();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,49 +62,57 @@ export default function BusinessSignupPage() {
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
           <h1 className="font-heading text-lg font-bold mb-1">Meld je bedrijf aan</h1>
-          <p className="text-sm text-white/50 mb-6">Maak een gratis Swyp Business account.</p>
+          <p className="text-sm text-white/60 mb-6">Een account is gratis. Je betaalt pas als je een campagne start.</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-white/60">Bedrijfsnaam</label>
+              <label htmlFor="naam" className="block text-xs font-medium mb-1.5 text-white/70">Bedrijfsnaam</label>
               <input
+                id="naam"
                 required
+                autoComplete="organization"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
-                placeholder="bv. NØRR"
+                placeholder="Naam van je bedrijf"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-white/60">Categorie</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as Category)}
-                  className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
-                >
-                  {categories.map((c) => (
-                    <option key={c} value={c} className="bg-slate">
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-white/60">Locatie</label>
-                <input
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
-                  placeholder="Amsterdam"
-                />
-              </div>
+            <div>
+              <label htmlFor="cat" className="block text-xs font-medium mb-1.5 text-white/70">Wat voor bedrijf is het?</label>
+              <select
+                id="cat"
+                required
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Category)}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
+              >
+                <option value="" className="bg-slate">Kies wat het beste past</option>
+                {BUSINESS_CATEGORY_OPTIONS.map((c) => (
+                  <option key={c.value} value={c.value} className="bg-slate">
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-white/60">E-mailadres</label>
+              <label htmlFor="plaats" className="block text-xs font-medium mb-1.5 text-white/70">Plaats</label>
               <input
+                id="plaats"
+                required
+                autoComplete="address-level2"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
+                placeholder="bv. Haarlem"
+              />
+            </div>
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium mb-1.5 text-white/70">E-mailadres</label>
+              <input
+                id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
@@ -120,18 +120,31 @@ export default function BusinessSignupPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-white/60">Wachtwoord</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
-                placeholder="••••••••"
-              />
+              <label htmlFor="wachtwoord" className="block text-xs font-medium mb-1.5 text-white/70">Wachtwoord</label>
+              <div className="relative">
+                <input
+                  id="wachtwoord"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  aria-describedby={passwordHintId}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg bg-white/5 border border-white/10 pl-3 pr-16 py-2.5 text-sm outline-none focus:border-violet"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-2 my-auto h-8 rounded-md px-2 text-xs font-medium text-white/70 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  {showPassword ? "Verberg" : "Toon"}
+                </button>
+              </div>
+              <p id={passwordHintId} className="mt-1 text-xs text-white/55">Minimaal 8 tekens.</p>
             </div>
-            <label className="flex items-start gap-2.5 text-xs text-white/60 leading-relaxed">
+            <label className="flex items-start gap-2.5 text-xs text-white/70 leading-relaxed">
               <input
                 type="checkbox"
                 required
@@ -148,17 +161,21 @@ export default function BusinessSignupPage() {
               </span>
             </label>
             {error && <p className="text-sm text-red-300">{error}</p>}
-            <Button type="submit" fullWidth className="mt-2" disabled={loading || !acceptedTerms}>
+            <Button type="submit" fullWidth className="mt-2" disabled={loading}>
               {loading ? "Bezig..." : "Account aanmaken"}
             </Button>
+            <p className="text-xs leading-relaxed text-white/55">
+              Daarna kom je meteen in je dashboard, waar je je eerste video uploadt. We controleren elke video voordat hij live gaat.
+              Een campagne kost €{CAMPAIGN_PRICE_EUR} per 30 dagen, exclusief btw. Je krijgt dan een factuur.
+            </p>
           </form>
         </div>
 
-        <p className="text-center text-xs text-white/30 mt-6 flex flex-col gap-1.5">
-          <Link href="/business/login" className="hover:text-white/60">
+        <p className="text-center text-sm text-white/55 mt-6 flex flex-col gap-2">
+          <Link href="/business/login" className="hover:text-white">
             Al een account? Log in
           </Link>
-          <Link href="/get-started" className="hover:text-white/60">
+          <Link href="/get-started" className="hover:text-white">
             ← Ander pad kiezen
           </Link>
         </p>

@@ -1,4 +1,5 @@
 import { isUsableImageUrl } from "@/lib/imageUrl";
+import { hasOwnLogo } from "@/lib/businessDefaults";
 
 export type StepState = "done" | "todo" | "waiting" | "problem";
 
@@ -38,7 +39,7 @@ export function buildOnboardingSteps({ logoUrl, productCount, adStatuses, impres
       id: "logo",
       title: "Logo of profielfoto",
       text: "Zo herkennen kijkers je bedrijf in de feed en op je profiel.",
-      state: isUsableImageUrl(logoUrl) ? "done" : "todo",
+      state: isUsableImageUrl(logoUrl) && hasOwnLogo(logoUrl) ? "done" : "todo",
       href: "/business/settings",
       action: "Foto toevoegen",
     },

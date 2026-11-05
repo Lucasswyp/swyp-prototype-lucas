@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import type { Category } from "@/types";
 import { BUSINESS_TERMS_VERSION } from "@/lib/businessTerms";
+import { DEFAULT_BUSINESS_BANNER, DEFAULT_BUSINESS_LOGO } from "@/lib/businessDefaults";
 
 export async function POST(request: Request) {
   // Unauthenticated by design (there's no account yet) — the one endpoint
@@ -40,11 +41,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const defaultLogo =
-    "https://images.unsplash.com/photo-1611817757591-c3f345024273?w=200&q=80&auto=format&fit=crop";
-  const defaultBanner =
-    "https://images.unsplash.com/photo-1611817757591-c3f345024273?w=1200&q=80&auto=format&fit=crop";
-
   const { error: insertError } = await admin.from("businesses").insert({
     auth_user_id: created.user.id,
     name: companyName,
@@ -52,8 +48,8 @@ export async function POST(request: Request) {
     location: location || "Nederland",
     website: "",
     description: "",
-    logo_url: defaultLogo,
-    banner_url: defaultBanner,
+    logo_url: DEFAULT_BUSINESS_LOGO,
+    banner_url: DEFAULT_BUSINESS_BANNER,
     verified: false,
     followers: 0,
   });

@@ -12,6 +12,8 @@ import { createProduct, updateProduct, createAd, createCampaign, uploadAdVideo, 
 import { PhotoUpload } from "@/components/business/PhotoUpload";
 import { NumberField } from "@/components/ui/NumberField";
 import { CTA_DEFAULT_COLOR, CTA_PRESETS, ctaTextColor, normalizeCtaColor } from "@/lib/ctaColor";
+import { CTA_DEFAULT_LABEL, ctaLabelForObjective, isPresetCtaLabel } from "@/lib/ctaLabels";
+import { CtaLabelPicker } from "@/components/business/CtaLabelPicker";
 import { MAX_VIDEO_SECONDS, describeVideoFormat, isVideoTooLong, videoFit } from "@/lib/videoFit";
 import { USE_MUX, uploadVideoToMux, type UploadProgress } from "@/lib/muxUpload";
 import { formatPrice, cn } from "@/lib/utils";
@@ -56,7 +58,10 @@ export default function CreateCampaignPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
-  const [ctaLabel, setCtaLabel] = useState("Bekijk product");
+  const [ctaLabel, setCtaLabel] = useState<string>(ctaLabelForObjective("Sales"));
+  // Zodra het bedrijf zelf een knoptekst kiest, verandert die niet meer mee met het campagnedoel.
+  const [ctaTouched, setCtaTouched] = useState(false);
+  const [ctaCustom, setCtaCustom] = useState(false);
   const [ctaColor, setCtaColor] = useState<string>(CTA_DEFAULT_COLOR);
   const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
@@ -248,7 +253,10 @@ export default function CreateCampaignPage() {
               {objectives.map((o) => (
                 <button
                   key={o}
-                  onClick={() => setObjective(o)}
+                  onClick={() => {
+                    setObjective(o);
+                    if (!ctaTouched) setCtaLabel(ctaLabelForObjective(o));
+                  }}
                   className={cn(
                     "rounded-xl border p-3.5 text-left text-sm font-medium",
                     objective === o ? "border-transparent bg-gradient-to-r from-violet to-magenta" : "border-white/10 bg-white/5 text-white/70"
@@ -454,7 +462,7 @@ export default function CreateCampaignPage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div>
               <div>
                 <label className="block text-xs font-medium mb-1.5 text-white/60">Caption</label>
                 <input
@@ -464,15 +472,23 @@ export default function CreateCampaignPage() {
                   className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 text-white/60">CTA-tekst</label>
-                <input
-                  value={ctaLabel}
-                  onChange={(e) => setCtaLabel(e.target.value)}
-                  className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-violet"
-                />
-              </div>
             </div>
+
+            <CtaLabelPicker
+              value={ctaLabel}
+              custom={ctaCustom}
+              onPick={(label) => {
+                setCtaLabel(label);
+                setCtaCustom(false);
+                setCtaTouched(true);
+              }}
+              onCustom={() => {
+                setCtaCustom(true);
+                setCtaTouched(true);
+                if (isPresetCtaLabel(ctaLabel)) setCtaLabel("");
+              }}
+              onType={setCtaLabel}
+            />
 
             <div>
               <label className="block text-xs font-medium mb-1.5 text-white/60">Kleur van de knop</label>
@@ -505,7 +521,7 @@ export default function CreateCampaignPage() {
                 className="inline-flex mt-3 items-center gap-1.5 rounded-full text-sm font-bold px-4 py-2"
                 style={{ backgroundColor: normalizeCtaColor(ctaColor), color: ctaTextColor(ctaColor) }}
               >
-                {ctaLabel || "Bekijk product"} →
+                {ctaLabel.trim() || CTA_DEFAULT_LABEL} →
               </span>
             </div>
           </div>
@@ -621,7 +637,7 @@ export default function CreateCampaignPage() {
                   className="inline-block rounded-full text-xs font-bold px-3 py-1.5"
                   style={{ backgroundColor: normalizeCtaColor(ctaColor), color: ctaTextColor(ctaColor) }}
                 >
-                  {ctaLabel} →
+                  {ctaLabel.trim() || CTA_DEFAULT_LABEL} →
                 </span>
               </div>
             </div>

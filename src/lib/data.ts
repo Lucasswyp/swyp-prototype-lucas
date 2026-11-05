@@ -4,6 +4,7 @@
 import { isUsableImageUrl } from "@/lib/imageUrl";
 import { muxPlaybackIdFromUrl, storagePathFromUrl } from "@/lib/muxAsset";
 import { CTA_DEFAULT_COLOR, normalizeCtaColor } from "@/lib/ctaColor";
+import { cleanCtaLabel } from "@/lib/ctaLabels";
 import { resizeImage } from "@/lib/imageUpload";
 import { createClient } from "@/lib/supabase/client";
 import type { Company, Product, Ad, Campaign, Reward } from "@/types";
@@ -338,7 +339,7 @@ export async function createAd(businessId: string, ad: {
       poster_url: ad.posterUrl,
       caption: ad.caption,
       category: ad.category,
-      cta_label: ad.ctaLabel,
+      cta_label: cleanCtaLabel(ad.ctaLabel),
       // Alleen meesturen als het bedrijf een eigen kleur koos; wit is de standaard.
       ...(ad.ctaColor && normalizeCtaColor(ad.ctaColor) !== CTA_DEFAULT_COLOR ? { cta_color: normalizeCtaColor(ad.ctaColor) } : {}),
     })

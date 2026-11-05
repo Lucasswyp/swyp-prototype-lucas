@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   AreaChart,
   Area,
@@ -18,10 +18,14 @@ import { useData } from "@/contexts/DataContext";
 import { fetchInteractionsForBusiness, fetchRedemptionsForBusiness, computeAnalytics, type Interaction } from "@/lib/data";
 import { formatNumber, formatPercent } from "@/lib/utils";
 import { dailySeries } from "@/lib/chartData";
+import { buildOnboardingSteps, greeting } from "@/lib/onboarding";
+import { OnboardingCard } from "@/components/business/OnboardingCard";
+
+const subscribeNever = () => () => {};
 
 export default function BusinessOverviewPage() {
   const { businessId, business } = useBusiness();
-  const { ads } = useData();
+  const { ads, products } = useData();
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [redemptionCount, setRedemptionCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,19 @@ export default function BusinessOverviewPage() {
 
   const totals = useMemo(() => computeAnalytics(interactions), [interactions]);
   const ownAdsCount = ads.filter((a) => a.companyId === businessId).length;
+  // De server kent de tijd van de bezoeker niet; daar blijft het bij "Welkom".
+  const hour = useSyncExternalStore(subscribeNever, () => new Date().getHours(), () => null);
+
+  const steps = useMemo(
+    () =>
+      buildOnboardingSteps({
+        logoUrl: business.logoUrl,
+        productCount: products.filter((p) => p.companyId === businessId).length,
+        adStatuses: ads.filter((a) => a.companyId === businessId).map((a) => a.moderationStatus),
+        impressions: totals.impressions,
+      }),
+    [business.logoUrl, products, businessId, ads, totals.impressions]
+  );
 
   const completionRate = totals.impressions > 0 ? (totals.watch80 / totals.impressions) * 100 : 0;
   const engagementRate = totals.impressions > 0 ? ((totals.likes + totals.saves) / totals.impressions) * 100 : 0;
@@ -68,13 +85,15 @@ export default function BusinessOverviewPage() {
     <div>
       <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold mb-1">Goedemiddag, {business.name}</h1>
+          <h1 className="font-heading text-2xl font-bold mb-1">{hour === null ? "Welkom" : greeting(hour)}, {business.name}</h1>
           <p className="text-white/50 text-sm">
             Live data van echte Swyp-gebruikers — {ownAdsCount} actieve advertentie{ownAdsCount === 1 ? "" : "s"}.
           </p>
         </div>
         {loading && <span className="text-xs text-white/30">laden...</span>}
       </div>
+
+      {!loading && <OnboardingCard steps={steps} />}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <MetricCard label="Impressions" value={formatNumber(totals.impressions)} icon={Eye} />

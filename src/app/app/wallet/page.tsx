@@ -11,9 +11,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { TokenExplainer } from "@/components/consumer/TokenExplainer";
 import { formatTokens, formatEuro, cn } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import { GuestGate } from "@/components/consumer/GuestGate";
 
 export default function WalletPage() {
   const { balance: tokenBalance, history: walletHistory, refreshHistory } = useWallet();
+  const { isLoggedIn, loading: authLoading } = useConsumerAuth();
 
   // Awards no longer auto-refresh the history list (see WalletContext) —
   // refresh it whenever this page is actually opened instead.
@@ -31,6 +34,8 @@ export default function WalletPage() {
     .filter((t) => t.amount < 0)
     // 1 token = EUR 0.01, fixed platform-wide (see supabase/rewards.sql).
     .reduce((sum, t) => sum + Math.abs(t.amount) * 0.01, 0);
+
+  if (!authLoading && !isLoggedIn) return <GuestGate title="Wallet" back />;
 
   return (
     <div className="min-h-full pb-28">

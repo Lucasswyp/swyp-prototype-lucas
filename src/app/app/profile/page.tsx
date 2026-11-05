@@ -24,6 +24,8 @@ import { TopBar } from "@/components/consumer/TopBar";
 import { Card } from "@/components/ui/Card";
 import { formatTokens, formatEuro } from "@/lib/utils";
 import { useWallet } from "@/contexts/WalletContext";
+import { useConsumerAuth } from "@/contexts/ConsumerAuthContext";
+import { GuestGate } from "@/components/consumer/GuestGate";
 import { useData } from "@/contexts/DataContext";
 import { fetchMyProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +44,7 @@ const menu = [
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { isLoggedIn, loading: authLoading } = useConsumerAuth();
   const [name, setName] = useState("Swyp-gebruiker");
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -77,6 +80,18 @@ export default function ProfilePage() {
   const totalSaved = walletHistory
     .filter((t) => t.amount < 0)
     .reduce((sum, t) => sum + Math.abs(t.amount) * 0.01, 0);
+
+  if (!authLoading && !isLoggedIn) return (
+      <GuestGate
+        title="Profiel"
+        links={[
+          { label: "Swyp op je beginscherm", href: "/installeren" },
+          { label: "Help en contact", href: "/support" },
+          { label: "Privacy", href: "/privacy" },
+          { label: "Voorwaarden", href: "/terms" },
+        ]}
+      />
+    );
 
   return (
     <div className="min-h-full pb-28">

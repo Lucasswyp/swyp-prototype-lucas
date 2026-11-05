@@ -207,6 +207,15 @@ test.describe("de app als gast", () => {
     await expect(page.getByText(/Geen resultaten voor|Video's|Producten|Bedrijven|Rewards/).first()).toBeVisible({ timeout: 15_000 });
   });
 
+  test("wallet en profiel leggen een gast uit hoe je tokens bewaart, in plaats van nullen te tonen", async ({ page }) => {
+    for (const path of ["/app/wallet", "/app/profile"]) {
+      await page.goto(path);
+      await expect(page.getByText("Log in om je tokens te bewaren")).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText("Zo verdien je Swyp Tokens")).toBeVisible();
+      await expect(page.getByText("Uitloggen")).toHaveCount(0);
+    }
+  });
+
   test("het meldingenscherm is niet voor gasten", async ({ page }) => {
     await page.goto("/admin/reports");
     await expect(page.getByText(/Log in met je Swyp-account om meldingen af te handelen|geen adminrechten/).first()).toBeVisible({ timeout: 15_000 });

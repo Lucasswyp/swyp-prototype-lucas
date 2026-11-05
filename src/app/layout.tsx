@@ -1,3 +1,4 @@
+import { startupImageLinks } from "@/lib/startupImages";
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { StoreHydrator } from "@/components/StoreHydrator";
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Swyp",
+    startupImage: startupImageLinks,
   },
   // Oudere iPhones (voor iOS 16.4) kijken alleen naar deze tag om als app te openen.
   other: { "apple-mobile-web-app-capable": "yes" },

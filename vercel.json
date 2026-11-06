@@ -7,6 +7,10 @@
     {
       "path": "/api/algolia/reindex",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/pending-ads",
+      "schedule": "0 8 * * *"
     }
   ]
 }

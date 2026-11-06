@@ -15,7 +15,7 @@ export default function TermsPage() {
       <section className="px-4 sm:px-6 py-16">
         <div className="max-w-2xl mx-auto">
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold mb-2">Gebruiksvoorwaarden</h1>
-          <p className="text-white/40 text-sm mb-10">Laatst bijgewerkt: 23 september 2026</p>
+          <p className="text-white/60 text-sm mb-10">Laatst bijgewerkt: 23 september 2026</p>
 
           <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200 mb-10">
             Concepttekst — nog niet juridisch gecontroleerd door een jurist. De bedrijfsgegevens hieronder kloppen,

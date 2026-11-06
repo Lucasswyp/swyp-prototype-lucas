@@ -243,21 +243,23 @@ export default function UserAuthPage() {
             {mode === "signup" && (
               <>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-white/60">Naam</label>
+                  <label htmlFor="vn-naam" className="block text-xs font-medium mb-1.5 text-white/60">Naam</label>
                   <input
                     required
-                    value={name}
+                    id="vn-naam"
+value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
                     placeholder="Jouw naam"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 text-white/60">Gebruikersnaam</label>
+                  <label htmlFor="vn-gebruikersnaam" className="block text-xs font-medium mb-1.5 text-white/60">Gebruikersnaam</label>
                   <div className="relative">
                     <input
                       required
-                      value={username}
+                      id="vn-gebruikersnaam"
+value={username}
                       onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                       className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 pr-8 text-sm outline-none focus:border-violet"
                       placeholder="jouwnaam"
@@ -279,10 +281,11 @@ export default function UserAuthPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-white/70">Geslacht</label>
+                    <label htmlFor="vn-geslacht" className="block text-xs font-medium mb-1.5 text-white/70">Geslacht</label>
                     <select
                       required
-                      value={gender}
+                      id="vn-geslacht"
+value={gender}
                       onChange={(e) => setGender(e.target.value)}
                       className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
                     >
@@ -297,11 +300,12 @@ export default function UserAuthPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1.5 text-white/70">Geboortedatum</label>
+                    <label htmlFor="vn-geboortedatum" className="block text-xs font-medium mb-1.5 text-white/70">Geboortedatum</label>
                     <input
                       required
                       type="date"
-                      value={birthdate}
+                      id="vn-geboortedatum"
+value={birthdate}
                       onChange={(e) => setBirthdate(e.target.value)}
                       max={new Date().toISOString().slice(0, 10)}
                       className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet [color-scheme:dark]"
@@ -314,23 +318,25 @@ export default function UserAuthPage() {
               </>
             )}
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-white/60">E-mailadres</label>
+              <label htmlFor="vn-email" className="block text-xs font-medium mb-1.5 text-white/60">E-mailadres</label>
               <input
                 type="email"
                 required
-                value={email}
+                id="vn-email"
+value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
                 placeholder="jij@voorbeeld.nl"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 text-white/60">Wachtwoord</label>
+              <label htmlFor="vn-wachtwoord" className="block text-xs font-medium mb-1.5 text-white/60">Wachtwoord</label>
               <input
                 type="password"
                 required
                 minLength={6}
-                value={password}
+                id="vn-wachtwoord"
+value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm outline-none focus:border-violet"
                 placeholder="••••••••"

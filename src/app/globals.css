@@ -91,3 +91,17 @@ h4,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Inzoomen mag (toegankelijkheid). Om te voorkomen dat een iPhone bij het typen zelf inzoomt, moeten
+   invoervelden op een telefoon minstens 16px zijn. Dubbeltikken zoomt niet, knijpen wel. */
+body {
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
